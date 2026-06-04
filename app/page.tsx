@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 type AnalysisResult = {
   tone: string;
@@ -11,17 +11,62 @@ type AnalysisResult = {
   improvedRewrite: string;
 };
 
+const defaultAnalysisResult: AnalysisResult = {
+  tone: "Unknown",
+  confidenceScore: 0,
+  clarityScore: 0,
+  emotionalInterpretation: "No emotional interpretation was provided.",
+  recipientLikelyPerception: "No recipient perception was provided.",
+  improvedRewrite: "No rewrite suggestion was provided.",
+};
+
+function normalizeAnalysisResult(value: unknown): AnalysisResult {
+  if (!value || typeof value !== "object") return defaultAnalysisResult;
+
+  const result = value as Record<string, unknown>;
+
+  return {
+    tone:
+      typeof result.tone === "string"
+        ? result.tone
+        : defaultAnalysisResult.tone,
+    confidenceScore:
+      typeof result.confidenceScore === "number"
+        ? result.confidenceScore
+        : defaultAnalysisResult.confidenceScore,
+    clarityScore:
+      typeof result.clarityScore === "number"
+        ? result.clarityScore
+        : defaultAnalysisResult.clarityScore,
+    emotionalInterpretation:
+      typeof result.emotionalInterpretation === "string"
+        ? result.emotionalInterpretation
+        : defaultAnalysisResult.emotionalInterpretation,
+    recipientLikelyPerception:
+      typeof result.recipientLikelyPerception === "string"
+        ? result.recipientLikelyPerception
+        : defaultAnalysisResult.recipientLikelyPerception,
+    improvedRewrite:
+      typeof result.improvedRewrite === "string"
+        ? result.improvedRewrite
+        : defaultAnalysisResult.improvedRewrite,
+  };
+}
+
 export default function Home() {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState("");
+  const [rewriteCopied, setRewriteCopied] = useState(false);
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleAnalyze = async () => {
     if (isLoading) return;
 
     setResult(null);
     setError("");
+    setRewriteCopied(false);
 
     if (!message.trim()) {
       setError("Paste a message before analyzing.");
@@ -39,13 +84,16 @@ export default function Home() {
         body: JSON.stringify({ message }),
       });
 
-      const data = await response.json();
+      const rawText = await response.text();
+      const data = rawText ? JSON.parse(rawText) : null;
+
+      console.log("Analyze API response received by frontend:", data);
 
       if (!response.ok) {
         throw new Error(data?.error || "Analysis failed. Please try again.");
       }
 
-      setResult(data);
+      setResult(normalizeAnalysisResult(data));
     } catch (error) {
       setError(
         error instanceof Error
@@ -54,6 +102,25 @@ export default function Home() {
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCopyRewrite = async () => {
+    if (!result?.improvedRewrite) return;
+
+    try {
+      await navigator.clipboard.writeText(result.improvedRewrite);
+      setRewriteCopied(true);
+
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+
+      copyTimeoutRef.current = setTimeout(() => {
+        setRewriteCopied(false);
+      }, 1600);
+    } catch {
+      setError("Copy did not work in this browser. You can still select the rewrite manually.");
     }
   };
 
@@ -75,7 +142,7 @@ export default function Home() {
               Before you hit send...
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600 sm:text-xl">
-              Paste your message and find out how it actually sounds.
+              Paste a draft and see how it might land before it leaves your hands.
             </p>
           </div>
 
@@ -119,13 +186,13 @@ export default function Home() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  Result preview
+                  Read before sending
                 </p>
                 <h2 className="mt-2 text-xl font-semibold text-slate-950 sm:text-2xl">
                   {isLoading
-                    ? "Analyzing your message..."
+                    ? "Reading the room..."
                     : result
-                      ? "Analysis complete"
+                      ? "A calmer version is ready"
                       : "Nothing analyzed yet"}
                 </h2>
               </div>
@@ -138,65 +205,73 @@ export default function Home() {
             >
               {isLoading ? (
                 <p className="text-sm leading-6 text-slate-600">
-                  Working through your words to give you a quick sense of tone,
-                  clarity, and how the recipient may feel.
+                  Checking the tone, the subtext, and the part your recipient is
+                  most likely to notice.
                 </p>
               ) : result ? (
-                <div className="space-y-5 rounded-3xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <div className="rounded-3xl bg-slate-50 p-5 text-center">
-                      <p className="text-sm font-semibold text-slate-500">
+                <div className="space-y-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
+                  <div className="rounded-[1.5rem] bg-slate-950 p-5 text-white shadow-[0_18px_50px_-35px_rgba(15,23,42,0.5)] sm:p-6">
+                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">
+                      Send this instead
+                    </p>
+                    <p className="mt-4 text-base leading-7 text-slate-50 sm:text-lg sm:leading-8">
+                      {result.improvedRewrite}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleCopyRewrite}
+                      className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-100"
+                    >
+                      {rewriteCopied ? "Copied" : "Copy Rewrite"}
+                    </button>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                         Tone
                       </p>
-                      <p className="mt-2 text-lg font-semibold text-slate-950">
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
                         {result.tone}
                       </p>
                     </div>
-                    <div className="rounded-3xl bg-slate-50 p-5 text-center">
-                      <p className="text-sm font-semibold text-slate-500">
+                    <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                         Confidence
                       </p>
-                      <p className="mt-2 text-lg font-semibold text-slate-950">
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
                         {result.confidenceScore}/10
                       </p>
                     </div>
-                    <div className="rounded-3xl bg-slate-50 p-5 text-center">
-                      <p className="text-sm font-semibold text-slate-500">
+                    <div className="rounded-2xl bg-slate-50 px-4 py-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
                         Clarity
                       </p>
-                      <p className="mt-2 text-lg font-semibold text-slate-950">
+                      <p className="mt-1 text-sm font-semibold text-slate-900">
                         {result.clarityScore}/10
                       </p>
                     </div>
                   </div>
 
-                  <div className="space-y-5 text-sm text-slate-600">
-                    <div>
+                  <div className="grid gap-4 text-sm leading-6 text-slate-600 md:grid-cols-2">
+                    <div className="border-t border-slate-200 pt-4">
                       <p className="font-semibold text-slate-900">
-                        Emotional interpretation
+                        What it gives off
                       </p>
-                      <p>{result.emotionalInterpretation}</p>
+                      <p className="mt-2">{result.emotionalInterpretation}</p>
                     </div>
-                    <div>
+                    <div className="border-t border-slate-200 pt-4">
                       <p className="font-semibold text-slate-900">
-                        Recipient likely perception
+                        How they may read it
                       </p>
-                      <p>{result.recipientLikelyPerception}</p>
-                    </div>
-                    <div>
-                      <p className="font-semibold text-slate-900">
-                        Improved rewrite suggestion
-                      </p>
-                      <p className="rounded-3xl bg-slate-100 p-4 text-slate-950">
-                        {result.improvedRewrite}
-                      </p>
+                      <p className="mt-2">{result.recipientLikelyPerception}</p>
                     </div>
                   </div>
                 </div>
               ) : (
                 <p className="text-sm leading-6 text-slate-600">
                   Once you paste a message and tap Analyze, this card will show
-                  how your writing sounds and where it might be stronger.
+                  the cleaner version first, then the tone notes behind it.
                 </p>
               )}
             </div>

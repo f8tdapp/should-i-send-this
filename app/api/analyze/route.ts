@@ -9,21 +9,6 @@ type AnalysisResult = {
   improvedRewrite: string;
 };
 
-function isAnalysisResult(value: unknown): value is AnalysisResult {
-  if (!value || typeof value !== "object") return false;
-
-  const result = value as Record<string, unknown>;
-
-  return (
-    typeof result.tone === "string" &&
-    typeof result.confidenceScore === "number" &&
-    typeof result.clarityScore === "number" &&
-    typeof result.emotionalInterpretation === "string" &&
-    typeof result.recipientLikelyPerception === "string" &&
-    typeof result.improvedRewrite === "string"
-  );
-}
-
 const client = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
@@ -53,6 +38,55 @@ function createDemoAnalysis(message: string): AnalysisResult {
       ? "I wanted to check in and see where things stand. When you have a moment, could you let me know how you are feeling about this?"
       : "I wanted to share this clearly and check whether it works for you. Let me know what you think when you have a chance.",
   };
+}
+
+function normalizeAnalysisResult(
+  value: unknown,
+  message: string,
+): AnalysisResult {
+  const fallback = createDemoAnalysis(message);
+
+  if (!value || typeof value !== "object") return fallback;
+
+  const result = value as Record<string, unknown>;
+
+  return {
+    tone: typeof result.tone === "string" ? result.tone : fallback.tone,
+    confidenceScore:
+      typeof result.confidenceScore === "number"
+        ? result.confidenceScore
+        : fallback.confidenceScore,
+    clarityScore:
+      typeof result.clarityScore === "number"
+        ? result.clarityScore
+        : fallback.clarityScore,
+    emotionalInterpretation:
+      typeof result.emotionalInterpretation === "string"
+        ? result.emotionalInterpretation
+        : fallback.emotionalInterpretation,
+    recipientLikelyPerception:
+      typeof result.recipientLikelyPerception === "string"
+        ? result.recipientLikelyPerception
+        : fallback.recipientLikelyPerception,
+    improvedRewrite:
+      typeof result.improvedRewrite === "string"
+        ? result.improvedRewrite
+        : fallback.improvedRewrite,
+  };
+}
+
+function parseAnalysisText(text: string) {
+  const cleaned = text.trim();
+  const fencedJsonMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const jsonText = fencedJsonMatch?.[1] ?? cleaned;
+  const start = jsonText.indexOf("{");
+  const end = jsonText.lastIndexOf("}");
+
+  if (start === -1 || end === -1 || end <= start) {
+    throw new Error("OpenAI response did not contain a JSON object.");
+  }
+
+  return JSON.parse(jsonText.slice(start, end + 1));
 }
 
 export async function POST(request: Request) {
@@ -117,30 +151,29 @@ export async function POST(request: Request) {
 
     const cleaned = (text || "").trim();
     if (!cleaned) {
-      console.error("Analyze: empty response from OpenAI", resp);
-      return new Response(JSON.stringify({ error: "Analysis failed. Please try again." }), {
-        status: 502,
+      console.error(
+        "Analyze: empty response from OpenAI. Returning demo analysis fallback.",
+        resp,
+      );
+      return new Response(JSON.stringify(createDemoAnalysis(message)), {
+        status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    let analysis: unknown;
+    let analysis = createDemoAnalysis(message);
     try {
-      analysis = JSON.parse(cleaned);
+      analysis = normalizeAnalysisResult(parseAnalysisText(cleaned), message);
     } catch (err) {
-      console.error("Analyze: failed to parse JSON from OpenAI response", { err, cleaned });
-      return new Response(JSON.stringify({ error: "Analysis failed. Invalid response format." }), {
-        status: 502,
-        headers: { "Content-Type": "application/json" },
-      });
+      console.error(
+        "Analyze: failed to parse JSON from OpenAI response. Returning demo analysis fallback.",
+        { err, cleaned },
+      );
+      analysis = createDemoAnalysis(message);
     }
 
-    if (!isAnalysisResult(analysis)) {
-      console.error("Analyze: response JSON did not match schema", analysis);
-      return new Response(JSON.stringify({ error: "Analysis failed. Invalid result content." }), {
-        status: 502,
-        headers: { "Content-Type": "application/json" },
-      });
+    if (process.env.NODE_ENV === "development") {
+      console.log("Analyze: normalized API response", analysis);
     }
 
     return new Response(JSON.stringify(analysis), {
@@ -153,7 +186,13 @@ export async function POST(request: Request) {
       error,
     );
 
-    return new Response(JSON.stringify(createDemoAnalysis(message)), {
+    const analysis = createDemoAnalysis(message);
+
+    if (process.env.NODE_ENV === "development") {
+      console.log("Analyze: fallback API response", analysis);
+    }
+
+    return new Response(JSON.stringify(analysis), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
