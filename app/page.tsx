@@ -59,6 +59,7 @@ export default function Home() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState("");
   const [rewriteCopied, setRewriteCopied] = useState(false);
+  const [showRewrite, setShowRewrite] = useState(false);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleAnalyze = async () => {
@@ -67,6 +68,7 @@ export default function Home() {
     setResult(null);
     setError("");
     setRewriteCopied(false);
+    setShowRewrite(false);
 
     if (!message.trim()) {
       setError("Paste a message before analyzing.");
@@ -94,6 +96,8 @@ export default function Home() {
       }
 
       setResult(normalizeAnalysisResult(data));
+      setShowRewrite(false);
+      setRewriteCopied(false);
     } catch (error) {
       setError(
         error instanceof Error
@@ -120,7 +124,9 @@ export default function Home() {
         setRewriteCopied(false);
       }, 1600);
     } catch {
-      setError("Copy did not work in this browser. You can still select the rewrite manually.");
+      setError(
+        "Copy did not work in this browser. You can still select the rewrite manually.",
+      );
     }
   };
 
@@ -211,22 +217,6 @@ export default function Home() {
                 </p>
               ) : result ? (
                 <div className="space-y-6 rounded-3xl bg-white p-5 shadow-sm ring-1 ring-slate-200 sm:p-6">
-                  <div className="rounded-[1.5rem] bg-slate-950 p-5 text-white shadow-[0_18px_50px_-35px_rgba(15,23,42,0.5)] sm:p-6">
-                    <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">
-                      Send this instead
-                    </p>
-                    <p className="mt-4 text-base leading-7 text-slate-50 sm:text-lg sm:leading-8">
-                      {result.improvedRewrite}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleCopyRewrite}
-                      className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-100"
-                    >
-                      {rewriteCopied ? "Copied" : "Copy Rewrite"}
-                    </button>
-                  </div>
-
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="rounded-2xl bg-slate-50 px-4 py-3">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
@@ -268,11 +258,53 @@ export default function Home() {
                       <p className="mt-2">{result.recipientLikelyPerception}</p>
                     </div>
                   </div>
+
+                  {!showRewrite ? (
+                    <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 p-5 text-center sm:p-6">
+                      <p className="text-sm leading-6 text-slate-600">
+                        Okay, the read has landed. Now for the part you can
+                        actually send.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setShowRewrite(true)}
+                        className="mt-4 inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-slate-950 px-6 py-3 text-base font-semibold text-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 sm:w-auto"
+                      >
+                        Show me the sendable version
+                      </button>
+                    </div>
+                  ) : null}
+
+                  <div
+                    aria-hidden={!showRewrite}
+                    className={`overflow-hidden transition-all duration-500 ease-out ${
+                      showRewrite
+                        ? "max-h-[520px] translate-y-0 opacity-100 blur-0"
+                        : "max-h-0 translate-y-3 opacity-0 blur-sm"
+                    }`}
+                  >
+                    <div className="rounded-[1.5rem] bg-slate-950 p-5 text-white shadow-[0_18px_50px_-35px_rgba(15,23,42,0.5)] sm:p-6">
+                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">
+                        Send this instead
+                      </p>
+                      <p className="mt-4 text-base leading-7 text-slate-50 sm:text-lg sm:leading-8">
+                        {result.improvedRewrite}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleCopyRewrite}
+                        className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-100"
+                      >
+                        {rewriteCopied ? "Copied" : "Copy Rewrite"}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <p className="text-sm leading-6 text-slate-600">
                   Once you paste a message and tap Analyze, this card will show
-                  the sendable version first, then the honest read behind it.
+                  the honest read first, then let you reveal the sendable
+                  version.
                 </p>
               )}
             </div>
