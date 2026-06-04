@@ -13,30 +13,158 @@ const client = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
+function inferDemoContext(message: string) {
+  const lowerMessage = message.toLowerCase();
+
+  if (/\b(job|boss|work|email|meeting|manager|coworker)\b/.test(lowerMessage)) {
+    return "work";
+  }
+
+  if (/\b(date|dating|ignore|ignoring|text me|miss you)\b/.test(lowerMessage)) {
+    return "dating";
+  }
+
+  if (/\b(sorry|apologize|apology|my fault)\b/.test(lowerMessage)) {
+    return "apology";
+  }
+
+  if (/\b(friend|hang out|hangout|plans)\b/.test(lowerMessage)) {
+    return "friendship";
+  }
+
+  if (/\b(mom|dad|family|sister|brother|parent)\b/.test(lowerMessage)) {
+    return "family";
+  }
+
+  return "general";
+}
+
 function createDemoAnalysis(message: string): AnalysisResult {
   const isDevelopment = process.env.NODE_ENV === "development";
   const trimmedMessage = message.trim();
+  const lowerMessage = trimmedMessage.toLowerCase();
+  const context = inferDemoContext(trimmedMessage);
   const soundsTentative =
     /\b(just|maybe|sorry|checking|wondering|upset|if you can)\b/i.test(
       trimmedMessage,
     ) || trimmedMessage.includes("?");
+  const soundsAngry =
+    /\b(sucks|hate|angry|mad|annoyed|whatever|ridiculous|done)\b/i.test(
+      trimmedMessage,
+    );
+  const usesLolAsArmor = /\blol\b/i.test(trimmedMessage);
+  const isPassiveAggressive =
+    /\b(per my last email|k\.?$|whatever|fine|sure|no worries)\b/i.test(
+      trimmedMessage,
+    );
+  const isBlunt = trimmedMessage.length < 40 || soundsAngry;
   const label = isDevelopment ? "Demo mode: " : "";
 
+  let improvedRewrite =
+    "I want to say this clearly without making it heavier than it needs to be. Can we talk about it?";
+  let emotionalInterpretation =
+    "This is readable, but it is leaving a little too much emotional homework for the other person.";
+  let recipientLikelyPerception =
+    "They will probably understand the point, but they may also wonder what you are not saying out loud.";
+
+  if (lowerMessage === "k." || lowerMessage === "k") {
+    emotionalInterpretation =
+      "This has the emotional warmth of a folding chair. Technically a response, spiritually a door closing.";
+    recipientLikelyPerception =
+      "They will likely read this as cold, annoyed, or deliberately clipped.";
+    improvedRewrite =
+      "Okay. I am not thrilled about it, but I hear you.";
+  } else if (lowerMessage.includes("are you ignoring me")) {
+    emotionalInterpretation = usesLolAsArmor
+      ? "You are absolutely not 'lol'-ing right now. The joke is wearing a tiny fake mustache over panic."
+      : "This is asking for reassurance, but it comes in a little hot.";
+    recipientLikelyPerception =
+      "They may feel accused before they have a chance to explain, even if you mostly want reassurance.";
+    improvedRewrite =
+      "Hey, I might be reading into it, but I haven't heard from you and wanted to check in. Are we okay?";
+  } else if (lowerMessage.includes("per my last email")) {
+    emotionalInterpretation =
+      "This sounds like you're one inconvenience away from attaching a PDF titled 'Enough.'";
+    recipientLikelyPerception =
+      "They will read it as professional, but also as a very polished warning shot.";
+    improvedRewrite =
+      "Following up on my last email. Could you take another look when you have a chance?";
+  } else if (lowerMessage.includes("whatever") && lowerMessage.includes("do what you want")) {
+    emotionalInterpretation =
+      "You do not, in fact, want them to do whatever they want.";
+    recipientLikelyPerception =
+      "They will probably hear the frustration, but the wording invites a fight instead of a real answer.";
+    improvedRewrite =
+      "I'm frustrated, and I don't want to keep going in circles. Do what you think is best, but I want you to know this matters to me.";
+  } else if (lowerMessage.includes("this job sucks")) {
+    emotionalInterpretation =
+      "This is extremely clear emotionally and extremely unhelpful logistically. Valid mood, not yet a plan.";
+    recipientLikelyPerception =
+      "They will know you are fed up, but they may not know whether you want support, change, or just a place to vent.";
+    improvedRewrite =
+      "I'm really frustrated with work right now. I need to figure out what's actually fixable, because this is wearing me down.";
+  } else if (context === "work" && soundsAngry) {
+    emotionalInterpretation =
+      "The frustration is doing the driving here. It may be true, but it needs a steering wheel.";
+    recipientLikelyPerception =
+      "They will likely focus on the heat of the message before they get to the actual issue.";
+    improvedRewrite =
+      "I'm pretty frustrated with how this is going. Can we talk through what needs to change?";
+  } else if (context === "work") {
+    emotionalInterpretation = isPassiveAggressive
+      ? "This is wearing a blazer, but the sleeves are full of passive aggression."
+      : "This is mostly clear, but it could use a little more human oxygen.";
+    recipientLikelyPerception =
+      "They will read it as professional, though it may feel clipped if there is tension already.";
+    improvedRewrite =
+      "I wanted to follow up and make sure we're on the same page. What would be the best next step here?";
+  } else if (context === "dating" && soundsTentative) {
+    emotionalInterpretation = usesLolAsArmor
+      ? "The 'lol' is doing emotional camouflage. You are trying to sound chill while very much not feeling chill."
+      : "This wants reassurance but is trying not to look like it wants reassurance.";
+    recipientLikelyPerception =
+      "They may sense the anxiety underneath and either reassure you or feel cornered by it.";
+    improvedRewrite =
+      "Hey, I might be overthinking it, but I wanted to check in. Are we good?";
+  } else if (context === "apology") {
+    emotionalInterpretation =
+      "This is close, but a real apology needs less self-protection and more ownership.";
+    recipientLikelyPerception =
+      "They will be looking for whether you understand the impact, not just whether you regret the awkwardness.";
+    improvedRewrite =
+      "I'm sorry. I can see how that came across, and I should have handled it better.";
+  } else if (soundsAngry) {
+    emotionalInterpretation =
+      "The feeling is honest. The delivery is where things start throwing furniture.";
+    recipientLikelyPerception =
+      "They will probably get defensive unless the message gives them something clear to respond to.";
+    improvedRewrite =
+      "I'm upset, and I want to be honest about that without making this worse. Can we talk about what's going on?";
+  } else if (soundsTentative) {
+    emotionalInterpretation = usesLolAsArmor
+      ? "The casual wording is doing a lot of emotional heavy lifting. The 'lol' is not fooling anyone."
+      : "This is gentle, but it is also circling the point like it might get in trouble for landing.";
+    recipientLikelyPerception =
+      "They may read it as sweet, but also a little unsure or approval-seeking.";
+    improvedRewrite =
+      "Hey, I wanted to check in without making this weird. How are you feeling about things?";
+  }
+
   return {
-    tone: `${label}${soundsTentative ? "Warm but tentative" : "Direct and calm"}`,
-    confidenceScore: soundsTentative ? 6 : 8,
-    clarityScore: soundsTentative ? 7 : 8,
-    emotionalInterpretation: `${label}${
-      soundsTentative
-        ? "The message reads as thoughtful, but a little unsure. It may be trying to soften the ask more than necessary."
-        : "The message reads as steady and practical, with enough emotional restraint to avoid sounding reactive."
+    tone: `${label}${
+      isPassiveAggressive
+        ? "Passive-aggressive"
+        : soundsAngry
+          ? "Frustrated and blunt"
+          : soundsTentative
+            ? "Anxious but trying to sound chill"
+            : "Clear enough, a little under-seasoned"
     }`,
-    recipientLikelyPerception: soundsTentative
-      ? "They may see you as considerate, though they might also sense some worry or hesitation behind the wording."
-      : "They will likely understand the point quickly and read the message as respectful and composed.",
-    improvedRewrite: soundsTentative
-      ? "I wanted to check in and see where things stand. When you have a moment, could you let me know how you are feeling about this?"
-      : "I wanted to share this clearly and check whether it works for you. Let me know what you think when you have a chance.",
+    confidenceScore: isBlunt || soundsTentative ? 6 : 8,
+    clarityScore: isBlunt ? 6 : 8,
+    emotionalInterpretation: `${label}${emotionalInterpretation}`,
+    recipientLikelyPerception,
+    improvedRewrite,
   };
 }
 
@@ -125,7 +253,75 @@ export async function POST(request: Request) {
   }
 
   try {
-    const prompt = `You are a kind, practical assistant that analyzes a short message before it is sent.\n\nReturn ONLY valid JSON (no extra text) with these keys: tone (string), confidenceScore (number 0-10), clarityScore (number 0-10), emotionalInterpretation (string), recipientLikelyPerception (string), improvedRewrite (string).\n\nMessage:\n${message.trim()}`;
+    const prompt = `You are "Should I Send This?", the user's brutally honest friend reading their texts before they hit send.
+
+Product voice:
+- Funny, but useful.
+- Honest, but not cruel.
+- Sharp, but not mean.
+- Human, not corporate.
+- Emotionally intelligent, not therapy-speak.
+- Screenshot-worthy when the message deserves it.
+- The humor should come from emotional accuracy, not random jokes.
+- Do not make every answer a joke. Some messages need sincerity.
+
+Analyze the draft and return ONLY valid JSON. Do not include markdown, comments, or extra text.
+
+Required JSON keys:
+- tone: string
+- confidenceScore: number from 0-10
+- clarityScore: number from 0-10
+- emotionalInterpretation: string
+- recipientLikelyPerception: string
+- improvedRewrite: string
+
+Analysis style rules:
+- The analysis should sound like a socially sharp friend who can read the room.
+- Detect passive aggression, fake casualness, insecurity, desperation, neediness, emotional coldness, overexplaining, avoidance, manipulation, mixed signals, trying too hard to sound chill, and "lol" used as emotional camouflage.
+- Be painfully accurate when appropriate, but never cruel.
+- Say the quiet part out loud if it helps the user understand how the message lands.
+- Use humor sparingly and only when it reveals the real emotional subtext.
+- If the message is serious, vulnerable, or high-stakes, be more sincere than funny.
+- Avoid clinical phrases like "this indicates" or "you may be experiencing."
+- Avoid corporate phrases like "clear communication" unless the work context truly needs it.
+
+Rewrite style rules:
+- The improvedRewrite should sound like something a normal person would actually send.
+- Make the analysis funny/sharp when appropriate, but make the improvedRewrite useful.
+- Do not make the improvedRewrite sarcastic unless that is clearly appropriate.
+- Do not default to phrases like "I am feeling..." unless that is truly the most natural option.
+- Avoid robotic phrasing, corporate filler, HR language, and therapist-speak unless the context clearly calls for it.
+- Preserve the sender's emotional intent. Do not sanitize all emotion out of the message.
+- Make the message clearer and easier to receive, not bland.
+- Match the likely context when possible: dating, work, friendship, family, apology, confrontation.
+- Keep casual messages casual.
+- Keep professional messages professional, but not stiff.
+- Do not over-polish casual texts.
+- If the original message is blunt, preserve some directness while making it less damaging.
+- If the original message is anxious, make it calmer without removing warmth.
+- If the original message is angry, make it honest but controlled.
+- If the original message is very short, the rewrite can be short too.
+- Do not make every message sound like HR.
+
+Examples of the desired voice:
+- Input: "hey just checking if you're mad at me lol"
+  emotionalInterpretation: "You are absolutely not 'lol'-ing right now. The joke is wearing a tiny fake mustache over panic."
+  improvedRewrite: "Hey, I might be overthinking it, but I wanted to check in. Are we okay?"
+- Input: "K."
+  emotionalInterpretation: "This has the emotional warmth of a folding chair. Technically a response, spiritually a door closing."
+  improvedRewrite: "Okay. I am not thrilled about it, but I hear you."
+- Input: "whatever do what you want"
+  emotionalInterpretation: "You do not, in fact, want them to do whatever they want."
+  improvedRewrite: "I'm frustrated, and I don't want to keep going in circles. Do what you think is best, but I want you to know this matters to me."
+- Input: "per my last email"
+  emotionalInterpretation: "This sounds like you're one inconvenience away from attaching a PDF titled 'Enough.'"
+  improvedRewrite: "Following up on my last email. Could you take another look when you have a chance?"
+- Input: "this job sucks"
+  emotionalInterpretation: "This is extremely clear emotionally and extremely unhelpful logistically. Valid mood, not yet a plan."
+  improvedRewrite: "I'm really frustrated with work right now. I need to figure out what's actually fixable, because this is wearing me down."
+
+Message:
+${message.trim()}`;
 
     const resp = await client.responses.create({
       model: "gpt-4.1-mini",

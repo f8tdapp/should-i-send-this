@@ -136,13 +136,14 @@ export default function Home() {
         <div className="rounded-[2rem] border border-slate-200 bg-white/95 p-6 shadow-[0_30px_100px_-50px_rgb(15,23,42,0.18)] backdrop-blur-xl sm:p-10">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-[0.35em] text-slate-500">
-              Before you send
+              Your brutally honest friend reading your texts
             </p>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
               Before you hit send...
             </h1>
             <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600 sm:text-xl">
-              Paste a draft and see how it might land before it leaves your hands.
+              Find out what your message actually sounds like before it leaves
+              your hands.
             </p>
           </div>
 
@@ -192,7 +193,7 @@ export default function Home() {
                   {isLoading
                     ? "Reading the room..."
                     : result
-                      ? "A calmer version is ready"
+                      ? "The read is in"
                       : "Nothing analyzed yet"}
                 </h2>
               </div>
@@ -271,7 +272,7 @@ export default function Home() {
               ) : (
                 <p className="text-sm leading-6 text-slate-600">
                   Once you paste a message and tap Analyze, this card will show
-                  the cleaner version first, then the tone notes behind it.
+                  the sendable version first, then the honest read behind it.
                 </p>
               )}
             </div>
