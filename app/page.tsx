@@ -11,6 +11,174 @@ type AnalysisResult = {
   improvedRewrite: string;
 };
 
+type SignaturePhrase = {
+  text: string;
+  keywords: string[];
+};
+
+const signaturePhrases: SignaturePhrase[] = [
+  {
+    text: 'You are absolutely not "lol"-ing right now.',
+    keywords: ["lol", "haha", "lmao"],
+  },
+  {
+    text: "This has the emotional warmth of a folding chair.",
+    keywords: ["k.", "k", "ok.", "okay."],
+  },
+  {
+    text: "This text was drafted by anxiety and approved by panic.",
+    keywords: ["mad at me", "ignoring me", "are we okay", "checking"],
+  },
+  {
+    text: 'You do not, in fact, mean "whatever."',
+    keywords: ["whatever"],
+  },
+  {
+    text: "This is trying to sound casual while wearing a tiny stress suit.",
+    keywords: ["just checking", "no worries", "all good"],
+  },
+  {
+    text: "The message says chill. The subtext is doing push-ups.",
+    keywords: ["chill", "fine", "lol"],
+  },
+  {
+    text: "This is a soft launch for a much bigger feeling.",
+    keywords: ["maybe", "wondering", "just wanted"],
+  },
+  {
+    text: "You are asking a question, but emotionally you already have a spreadsheet.",
+    keywords: ["why", "what did i do", "are you"],
+  },
+  {
+    text: "This is not a text. This is a temperature check with Wi-Fi.",
+    keywords: ["checking", "check in", "are we"],
+  },
+  {
+    text: "This sounds like you want reassurance but packed it in bubble wrap.",
+    keywords: ["just", "maybe", "if you want"],
+  },
+  {
+    text: "This is emotionally expensive for a message this short.",
+    keywords: ["k", "fine", "sure", "whatever"],
+  },
+  {
+    text: "This is passive aggression in a clean outfit.",
+    keywords: ["per my last email", "as stated", "as mentioned"],
+  },
+  {
+    text: "This message is smiling with its teeth clenched.",
+    keywords: ["no worries", "all good", "fine"],
+  },
+  {
+    text: "This sounds like you are one follow-up away from becoming a calendar invite.",
+    keywords: ["follow up", "following up", "per my last email"],
+  },
+  {
+    text: "This is technically polite and spiritually furious.",
+    keywords: ["per my last email", "as discussed", "regards"],
+  },
+  {
+    text: "This is trying very hard to be the bigger person and is sweating.",
+    keywords: ["i understand", "no worries", "it's fine"],
+  },
+  {
+    text: "This has the energy of someone typing, deleting, and typing again.",
+    keywords: ["maybe", "just", "sorry", "wondering"],
+  },
+  {
+    text: "This is a tiny message carrying a full emotional suitcase.",
+    keywords: ["k", "ok", "fine", "sure"],
+  },
+  {
+    text: "This sounds like a boundary trying to introduce itself.",
+    keywords: ["can't", "need", "stop", "not okay"],
+  },
+  {
+    text: "This is the text version of pretending not to care while absolutely caring.",
+    keywords: ["whatever", "do what you want", "it's cool"],
+  },
+  {
+    text: "This is not rude yet, but it is looking at rude from across the room.",
+    keywords: ["fine", "sure", "okay then"],
+  },
+  {
+    text: "This is frustration with no forwarding address.",
+    keywords: ["sucks", "hate", "annoyed", "ridiculous"],
+  },
+  {
+    text: "This message has a point, but it is hiding behind the attitude.",
+    keywords: ["whatever", "done", "ridiculous"],
+  },
+  {
+    text: "This is a valid feeling in a slightly dangerous outfit.",
+    keywords: ["angry", "mad", "sucks", "hate"],
+  },
+  {
+    text: "This is giving less 'quick question' and more 'please answer before I spiral.'",
+    keywords: ["quick question", "just checking", "are you ignoring"],
+  },
+  {
+    text: "This is overexplaining because silence feels illegal right now.",
+    keywords: ["because", "i just mean", "what i meant"],
+  },
+  {
+    text: "This message brought receipts, but nobody asked for the whole binder.",
+    keywords: ["because", "also", "another thing", "to be clear"],
+  },
+  {
+    text: "This is avoidance wearing a helpful little hat.",
+    keywords: ["maybe later", "we'll see", "not sure"],
+  },
+  {
+    text: "This is mixed signals with decent punctuation.",
+    keywords: ["miss you", "but", "i don't know"],
+  },
+  {
+    text: "This is trying to be low-maintenance while needing maintenance immediately.",
+    keywords: ["no pressure", "whenever", "if you want"],
+  },
+  {
+    text: "This is a confrontation wearing slippers.",
+    keywords: ["can we talk", "we need to talk", "not okay"],
+  },
+  {
+    text: "This is a little too polished for someone who is not mad.",
+    keywords: ["regards", "best", "per my last email"],
+  },
+  {
+    text: "This is a cry for clarity pretending to be a casual ping.",
+    keywords: ["hey", "just checking", "are we good"],
+  },
+  {
+    text: "This message is doing emotional gymnastics to avoid saying the simple thing.",
+    keywords: ["i guess", "maybe", "sort of"],
+  },
+  {
+    text: "This is neediness trying to pass as logistics.",
+    keywords: ["when can", "haven't heard", "reply"],
+  },
+  {
+    text: "This is cold enough to make the other person start rereading the chat history.",
+    keywords: ["k", "ok", "sure"],
+  },
+  {
+    text: "This is honest, but it arrives holding a tiny hammer.",
+    keywords: ["truth", "honestly", "sucks", "ridiculous"],
+  },
+  {
+    text: "This sounds less chill than you think it does.",
+    keywords: ["chill", "lol", "whatever", "no worries"],
+  },
+  {
+    text: "This is a reasonable request with a dramatic little shadow.",
+    keywords: ["can you", "could you", "please"],
+  },
+  {
+    text: "This message is not wrong. It is just arriving without a seatbelt.",
+    keywords: ["angry", "mad", "done", "hate"],
+  },
+];
+
 const defaultAnalysisResult: AnalysisResult = {
   tone: "Unknown",
   confidenceScore: 0,
@@ -51,6 +219,79 @@ function normalizeAnalysisResult(value: unknown): AnalysisResult {
         ? result.improvedRewrite
         : defaultAnalysisResult.improvedRewrite,
   };
+}
+
+function getAnalysisText(result: AnalysisResult, message: string) {
+  return [
+    message,
+    result.tone,
+    result.emotionalInterpretation,
+    result.recipientLikelyPerception,
+    result.improvedRewrite,
+  ]
+    .join(" ")
+    .toLowerCase();
+}
+
+function getSignaturePhrase(result: AnalysisResult, message: string) {
+  const analysisText = getAnalysisText(result, message);
+
+  return signaturePhrases.find((phrase) =>
+    phrase.keywords.some((keyword) => analysisText.includes(keyword)),
+  )?.text;
+}
+
+function getReadSeverity(result: AnalysisResult, message: string) {
+  const analysisText = getAnalysisText(result, message);
+  const lowScores = result.confidenceScore <= 5 || result.clarityScore <= 5;
+
+  if (analysisText.includes("lol") && /panic|anxiety|spiral|ignoring/.test(analysisText)) {
+    return "One LOL Away From A Breakdown";
+  }
+
+  if (/passive|per my last email|whatever|fine|sure|k\./.test(analysisText)) {
+    return "Passive Aggressive Lite";
+  }
+
+  if (/anxious|anxiety|panic|spiral|reassurance|needy/.test(analysisText)) {
+    return "Drafted By Anxiety";
+  }
+
+  if (/angry|frustrated|furious|mad|sucks|hate|loaded/.test(analysisText)) {
+    return "Emotionally Loaded";
+  }
+
+  if (/expensive|overexplaining|defensive|cold/.test(analysisText) || lowScores) {
+    return "Emotionally Expensive";
+  }
+
+  if (result.confidenceScore <= 7 || result.clarityScore <= 7) {
+    return "Slightly Concerning";
+  }
+
+  return "Mostly Fine";
+}
+
+function getSubtext(result: AnalysisResult, message: string) {
+  const signaturePhrase = getSignaturePhrase(result, message);
+
+  if (signaturePhrase) return signaturePhrase;
+
+  const analysisText = getAnalysisText(result, message);
+
+  if (/sorry|apolog/.test(analysisText)) {
+    return "You are trying to repair something without making the apology a whole production.";
+  }
+
+  if (/work|job|email|manager|boss/.test(analysisText)) {
+    return "You want to stay professional, but the inside voice is already pacing.";
+  }
+
+  if (/date|dating|relationship|miss you/.test(analysisText)) {
+    return "You want connection, but you are trying not to look like you want connection.";
+  }
+
+  return "The message is saying one thing, but the emotional subtitles are doing extra work.";
 }
 
 export default function Home() {
@@ -129,6 +370,13 @@ export default function Home() {
       );
     }
   };
+
+  const socialMirror = result
+    ? {
+        severity: getReadSeverity(result, message),
+        subtext: getSubtext(result, message),
+      }
+    : null;
 
   return (
     <div className="min-h-screen bg-[#f5efe4] text-slate-950 font-sans antialiased">
@@ -216,30 +464,40 @@ export default function Home() {
                 </p>
               ) : result ? (
                 <div className="space-y-8">
-                  <div className="grid gap-2.5 sm:grid-cols-3">
-                    <div className="rounded-2xl bg-[#fffdf8]/75 px-4 py-3.5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
-                        Tone
-                      </p>
-                      <p className="mt-1 text-sm font-medium leading-5 text-slate-800">
-                        {result.tone}
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-[#fffdf8]/75 px-4 py-3.5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
-                        Confidence
-                      </p>
-                      <p className="mt-1 text-sm font-medium leading-5 text-slate-800">
-                        {result.confidenceScore}/10
-                      </p>
-                    </div>
-                    <div className="rounded-2xl bg-[#fffdf8]/75 px-4 py-3.5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
-                        Clarity
-                      </p>
-                      <p className="mt-1 text-sm font-medium leading-5 text-slate-800">
-                        {result.clarityScore}/10
-                      </p>
+                  <div className="space-y-4">
+                    {socialMirror ? (
+                      <div className="inline-flex max-w-full rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-[#fff2d8] shadow-[0_18px_45px_-34px_rgba(15,23,42,0.8)]">
+                        <span className="truncate">
+                          Read Severity: {socialMirror.severity}
+                        </span>
+                      </div>
+                    ) : null}
+
+                    <div className="grid gap-2.5 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-[#fffdf8]/75 px-4 py-3.5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
+                          Tone
+                        </p>
+                        <p className="mt-1 text-sm font-medium leading-5 text-slate-800">
+                          {result.tone}
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-[#fffdf8]/75 px-4 py-3.5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
+                          Confidence
+                        </p>
+                        <p className="mt-1 text-sm font-medium leading-5 text-slate-800">
+                          {result.confidenceScore}/10
+                        </p>
+                      </div>
+                      <div className="rounded-2xl bg-[#fffdf8]/75 px-4 py-3.5">
+                        <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
+                          Clarity
+                        </p>
+                        <p className="mt-1 text-sm font-medium leading-5 text-slate-800">
+                          {result.clarityScore}/10
+                        </p>
+                      </div>
                     </div>
                   </div>
 
@@ -252,6 +510,16 @@ export default function Home() {
                         {result.emotionalInterpretation}
                       </p>
                     </div>
+                    {socialMirror ? (
+                      <div className="rounded-[1.55rem] bg-[#fffdf8]/85 p-6 text-lg leading-8 text-slate-800 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.4)] ring-1 ring-slate-950/[0.04] sm:p-8 sm:text-xl sm:leading-9">
+                        <p className="text-sm font-semibold uppercase tracking-[0.13em] text-[#2f6fed]">
+                          The Subtext
+                        </p>
+                        <p className="mt-4 max-w-2xl">
+                          {socialMirror.subtext}
+                        </p>
+                      </div>
+                    ) : null}
                     <div className="rounded-[1.55rem] bg-[#eef4f7] p-6 text-lg leading-8 text-slate-700 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.45)] ring-1 ring-[#8fb2c3]/20 sm:p-8 sm:text-xl sm:leading-9">
                       <p className="text-sm font-semibold uppercase tracking-[0.13em] text-[#4e7282]">
                         How this lands
