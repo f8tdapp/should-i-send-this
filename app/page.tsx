@@ -131,7 +131,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f3ec] text-slate-950 font-sans antialiased">
+    <div className="min-h-screen bg-[#f5efe4] text-slate-950 font-sans antialiased">
       <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-5 py-12 sm:px-8 sm:py-20">
         <div className="mb-6 text-center sm:text-left">
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-slate-500">
@@ -139,7 +139,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="rounded-[1.75rem] bg-white/90 p-5 shadow-[0_32px_100px_-60px_rgba(15,23,42,0.34)] ring-1 ring-slate-950/5 backdrop-blur-xl sm:p-10">
+        <div className="rounded-[1.75rem] bg-[#fffdf8]/95 p-5 shadow-[0_32px_100px_-60px_rgba(15,23,42,0.34)] ring-1 ring-slate-950/5 backdrop-blur-xl sm:p-10">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#2f6fed]">
               Honestly?
@@ -188,7 +188,7 @@ export default function Home() {
             </button>
           </div>
 
-          <section className="mt-12 rounded-[1.5rem] bg-[#f4f6ff] p-5 shadow-sm ring-1 ring-[#2f6fed]/10 sm:mt-14 sm:p-8">
+          <section className="mt-12 rounded-[1.5rem] bg-[#f6f3eb] p-5 shadow-sm ring-1 ring-slate-950/[0.04] sm:mt-14 sm:p-8">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#2f6fed]">
@@ -215,55 +215,55 @@ export default function Home() {
                   most likely to notice.
                 </p>
               ) : result ? (
-                <div className="space-y-7">
+                <div className="space-y-8">
                   <div className="grid gap-2.5 sm:grid-cols-3">
-                    <div className="rounded-full bg-white/70 px-4 py-3 ring-1 ring-slate-950/5">
-                      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    <div className="rounded-2xl bg-[#fffdf8]/75 px-4 py-3.5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
                         Tone
                       </p>
-                      <p className="mt-0.5 text-sm font-medium text-slate-900">
+                      <p className="mt-1 text-sm font-medium leading-5 text-slate-800">
                         {result.tone}
                       </p>
                     </div>
-                    <div className="rounded-full bg-white/70 px-4 py-3 ring-1 ring-slate-950/5">
-                      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    <div className="rounded-2xl bg-[#fffdf8]/75 px-4 py-3.5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
                         Confidence
                       </p>
-                      <p className="mt-0.5 text-sm font-medium text-slate-900">
+                      <p className="mt-1 text-sm font-medium leading-5 text-slate-800">
                         {result.confidenceScore}/10
                       </p>
                     </div>
-                    <div className="rounded-full bg-white/70 px-4 py-3 ring-1 ring-slate-950/5">
-                      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    <div className="rounded-2xl bg-[#fffdf8]/75 px-4 py-3.5">
+                      <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
                         Clarity
                       </p>
-                      <p className="mt-0.5 text-sm font-medium text-slate-900">
+                      <p className="mt-1 text-sm font-medium leading-5 text-slate-800">
                         {result.clarityScore}/10
                       </p>
                     </div>
                   </div>
 
-                  <div className="space-y-5">
-                    <div className="rounded-[1.6rem] bg-[#fff4df] p-6 shadow-[0_24px_60px_-50px_rgba(164,106,5,0.55)] ring-1 ring-[#efbd5b]/35 sm:p-8">
-                      <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#9b6508]">
+                  <div className="space-y-6">
+                    <div className="rounded-[1.7rem] bg-[#fff2d8] p-6 shadow-[0_28px_70px_-55px_rgba(164,106,5,0.65)] ring-1 ring-[#efbd5b]/35 sm:p-8">
+                      <p className="text-sm font-semibold uppercase tracking-[0.13em] text-[#9b6508]">
                         The vibe
                       </p>
-                      <p className="mt-4 max-w-2xl text-[1.7rem] font-semibold leading-[1.12] tracking-tight text-slate-950 sm:text-[2.45rem]">
+                      <p className="mt-5 max-w-2xl text-[1.75rem] font-semibold leading-[1.12] tracking-tight text-slate-950 sm:text-[2.55rem]">
                         {result.emotionalInterpretation}
                       </p>
                     </div>
-                    <div className="rounded-[1.35rem] bg-white/75 p-5 text-base leading-7 text-slate-600 ring-1 ring-slate-950/5 sm:p-6">
-                      <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    <div className="rounded-[1.55rem] bg-[#eef4f7] p-6 text-lg leading-8 text-slate-700 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.45)] ring-1 ring-[#8fb2c3]/20 sm:p-8 sm:text-xl sm:leading-9">
+                      <p className="text-sm font-semibold uppercase tracking-[0.13em] text-[#4e7282]">
                         How this lands
                       </p>
-                      <p className="mt-3 text-slate-700">
+                      <p className="mt-4 max-w-2xl text-slate-800">
                         {result.recipientLikelyPerception}
                       </p>
                     </div>
                   </div>
 
                   {!showRewrite ? (
-                    <div className="rounded-[1.5rem] border border-dashed border-[#2f6fed]/35 bg-white/70 p-5 text-center shadow-sm sm:p-7">
+                    <div className="rounded-[1.5rem] border border-dashed border-[#2f6fed]/30 bg-[#fffdf8]/75 p-6 text-center shadow-sm sm:p-7">
                       <p className="mx-auto max-w-md text-base font-medium leading-7 text-slate-700">
                         The damage report is in. Want the version with fewer
                         emotional shrapnel pieces?
