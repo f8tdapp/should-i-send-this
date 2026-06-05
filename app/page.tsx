@@ -131,28 +131,28 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f7f5f1] text-slate-950 font-sans antialiased">
-      <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-5 py-14 sm:px-8 sm:py-20">
-        <div className="mb-7 text-center sm:text-left">
+    <div className="min-h-screen bg-[#f7f3ec] text-slate-950 font-sans antialiased">
+      <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-5 py-12 sm:px-8 sm:py-20">
+        <div className="mb-6 text-center sm:text-left">
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-slate-500">
             should i send this?
           </p>
         </div>
 
-        <div className="rounded-[1.75rem] bg-white/90 p-5 shadow-[0_30px_90px_-55px_rgba(15,23,42,0.28)] ring-1 ring-slate-950/5 backdrop-blur-xl sm:p-10">
+        <div className="rounded-[1.75rem] bg-white/90 p-5 shadow-[0_32px_100px_-60px_rgba(15,23,42,0.34)] ring-1 ring-slate-950/5 backdrop-blur-xl sm:p-10">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#2f6fed]">
               Honestly?
             </p>
-            <h1 className="mt-4 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
+            <h1 className="mt-4 text-5xl font-semibold leading-[0.98] tracking-tight text-slate-950 sm:text-6xl">
               Before you hit send...
             </h1>
-            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600 sm:text-xl">
+            <p className="mt-5 max-w-lg text-lg leading-8 text-slate-600 sm:text-xl">
               You think this sounds chill. Let&apos;s check.
             </p>
           </div>
 
-          <div className="mt-12 space-y-6">
+          <div className="mt-11 space-y-5 sm:mt-12 sm:space-y-6">
             <label htmlFor="message" className="sr-only">
               Message input
             </label>
@@ -162,7 +162,7 @@ export default function Home() {
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               placeholder="Hey, just checking if you're upset with me..."
-              className="w-full min-h-[260px] rounded-[1.5rem] border border-slate-200/80 bg-[#fffdf9] px-6 py-5 text-sm text-slate-900 shadow-[0_18px_50px_-34px_rgba(15,23,42,0.22)] placeholder:text-slate-400 outline-none transition duration-300 ease-out focus:border-[#2f6fed]/40 focus:ring-4 focus:ring-[#2f6fed]/10"
+              className="w-full min-h-[260px] rounded-[1.5rem] border border-slate-200/80 bg-[#fffdf9] px-6 py-5 text-base leading-7 text-slate-900 shadow-[0_18px_50px_-34px_rgba(15,23,42,0.22)] placeholder:text-slate-400 outline-none transition duration-300 ease-out focus:border-[#2f6fed]/40 focus:ring-4 focus:ring-[#2f6fed]/10"
             />
 
             {error ? (
@@ -188,13 +188,13 @@ export default function Home() {
             </button>
           </div>
 
-          <section className="mt-14 rounded-[1.5rem] bg-[#f5f7ff] p-5 shadow-sm ring-1 ring-[#2f6fed]/10 sm:p-8">
+          <section className="mt-12 rounded-[1.5rem] bg-[#f4f6ff] p-5 shadow-sm ring-1 ring-[#2f6fed]/10 sm:mt-14 sm:p-8">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#2f6fed]">
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#2f6fed]">
                   The read
                 </p>
-                <h2 className="mt-2 text-xl font-semibold text-slate-950 sm:text-2xl">
+                <h2 className="mt-2 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
                   {isLoading
                     ? "Reading the room..."
                     : result
@@ -205,7 +205,7 @@ export default function Home() {
             </div>
 
             <div
-              className={`mt-5 space-y-5 transition-all duration-500 ease-out ${
+              className={`mt-6 space-y-6 transition-all duration-500 ease-out ${
                 result ? "opacity-100 translate-y-0" : "opacity-40 translate-y-3"
               }`}
             >
@@ -215,63 +215,63 @@ export default function Home() {
                   most likely to notice.
                 </p>
               ) : result ? (
-                <div className="space-y-6">
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl bg-white/75 px-4 py-3 ring-1 ring-slate-950/5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                <div className="space-y-7">
+                  <div className="grid gap-2.5 sm:grid-cols-3">
+                    <div className="rounded-full bg-white/70 px-4 py-3 ring-1 ring-slate-950/5">
+                      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                         Tone
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                      <p className="mt-0.5 text-sm font-medium text-slate-900">
                         {result.tone}
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-white/75 px-4 py-3 ring-1 ring-slate-950/5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    <div className="rounded-full bg-white/70 px-4 py-3 ring-1 ring-slate-950/5">
+                      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                         Confidence
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                      <p className="mt-0.5 text-sm font-medium text-slate-900">
                         {result.confidenceScore}/10
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-white/75 px-4 py-3 ring-1 ring-slate-950/5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    <div className="rounded-full bg-white/70 px-4 py-3 ring-1 ring-slate-950/5">
+                      <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-slate-400">
                         Clarity
                       </p>
-                      <p className="mt-1 text-sm font-semibold text-slate-900">
+                      <p className="mt-0.5 text-sm font-medium text-slate-900">
                         {result.clarityScore}/10
                       </p>
                     </div>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="rounded-[1.5rem] bg-[#fff7e8] p-5 shadow-sm ring-1 ring-[#f0c36a]/30 sm:p-6">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#a46a05]">
-                        What it gives off
+                  <div className="space-y-5">
+                    <div className="rounded-[1.6rem] bg-[#fff4df] p-6 shadow-[0_24px_60px_-50px_rgba(164,106,5,0.55)] ring-1 ring-[#efbd5b]/35 sm:p-8">
+                      <p className="text-sm font-semibold uppercase tracking-[0.16em] text-[#9b6508]">
+                        The vibe
                       </p>
-                      <p className="mt-3 text-2xl font-semibold leading-8 tracking-tight text-slate-950 sm:text-3xl sm:leading-10">
+                      <p className="mt-4 max-w-2xl text-[1.7rem] font-semibold leading-[1.12] tracking-tight text-slate-950 sm:text-[2.45rem]">
                         {result.emotionalInterpretation}
                       </p>
                     </div>
-                    <div className="rounded-[1.25rem] bg-white/70 p-5 text-sm leading-6 text-slate-600 ring-1 ring-slate-950/5">
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        How they may read it
+                    <div className="rounded-[1.35rem] bg-white/75 p-5 text-base leading-7 text-slate-600 ring-1 ring-slate-950/5 sm:p-6">
+                      <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+                        How this lands
                       </p>
-                      <p className="mt-2 text-slate-700">
+                      <p className="mt-3 text-slate-700">
                         {result.recipientLikelyPerception}
                       </p>
                     </div>
                   </div>
 
                   {!showRewrite ? (
-                    <div className="rounded-[1.5rem] border border-dashed border-[#2f6fed]/35 bg-white/65 p-5 text-center shadow-sm sm:p-6">
-                      <p className="text-sm font-medium leading-6 text-slate-700">
+                    <div className="rounded-[1.5rem] border border-dashed border-[#2f6fed]/35 bg-white/70 p-5 text-center shadow-sm sm:p-7">
+                      <p className="mx-auto max-w-md text-base font-medium leading-7 text-slate-700">
                         The damage report is in. Want the version with fewer
                         emotional shrapnel pieces?
                       </p>
                       <button
                         type="button"
                         onClick={() => setShowRewrite(true)}
-                        className="mt-4 inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-[#2f6fed] px-6 py-3 text-base font-semibold text-white shadow-[0_20px_45px_-30px_rgba(47,111,237,0.8)] transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-[#245bd1] hover:shadow-[0_24px_55px_-28px_rgba(47,111,237,0.95)] sm:w-auto"
+                        className="mt-5 inline-flex min-h-[54px] w-full items-center justify-center rounded-full bg-[#2f6fed] px-7 py-3 text-base font-semibold text-white shadow-[0_20px_45px_-30px_rgba(47,111,237,0.8)] outline-none transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-[#245bd1] hover:shadow-[0_24px_55px_-28px_rgba(47,111,237,0.95)] focus:ring-4 focus:ring-[#2f6fed]/20 sm:w-auto"
                       >
                         Fine. Fix my text.
                       </button>
@@ -286,17 +286,17 @@ export default function Home() {
                         : "max-h-0 translate-y-3 opacity-0 blur-sm"
                     }`}
                   >
-                    <div className="rounded-[1.5rem] bg-slate-950 p-5 text-white shadow-[0_18px_50px_-35px_rgba(15,23,42,0.5)] sm:p-6">
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-300">
+                    <div className="rounded-[1.6rem] bg-slate-950 p-6 text-white shadow-[0_22px_70px_-40px_rgba(15,23,42,0.75)] sm:p-8">
+                      <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
                         Send this instead
                       </p>
-                      <p className="mt-4 text-base leading-7 text-slate-50 sm:text-lg sm:leading-8">
+                      <p className="mt-5 text-lg leading-8 text-slate-50 sm:text-xl sm:leading-9">
                         {result.improvedRewrite}
                       </p>
                       <button
                         type="button"
                         onClick={handleCopyRewrite}
-                        className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-sm transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-100"
+                        className="mt-6 inline-flex min-h-[46px] items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-sm outline-none transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-100 focus:ring-4 focus:ring-white/20"
                       >
                         {rewriteCopied ? "Copied" : "Copy Rewrite"}
                       </button>
