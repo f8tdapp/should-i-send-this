@@ -379,8 +379,8 @@ export default function Home() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#f5efe4] text-slate-950 font-sans antialiased">
-      <main className="mx-auto flex min-h-screen max-w-3xl flex-col justify-center px-5 py-12 sm:px-8 sm:py-20">
+    <div className="min-h-screen bg-[#eee2cf] text-slate-950 font-sans antialiased">
+      <main className="mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-5 py-12 sm:px-8 sm:py-20">
         <div className="mb-6 text-center sm:text-left">
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-slate-500">
             should i send this?
@@ -473,8 +473,8 @@ export default function Home() {
                       </div>
                     ) : null}
 
-                    <div className="grid gap-2.5 sm:grid-cols-3">
-                      <div className="rounded-2xl bg-[#fffdf8]/75 px-4 py-3.5">
+                    <div className="grid gap-2 sm:grid-cols-3">
+                      <div className="rounded-2xl bg-[#fffdf8]/55 px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
                           Tone
                         </p>
@@ -482,7 +482,7 @@ export default function Home() {
                           {result.tone}
                         </p>
                       </div>
-                      <div className="rounded-2xl bg-[#fffdf8]/75 px-4 py-3.5">
+                      <div className="rounded-2xl bg-[#fffdf8]/55 px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
                           Confidence
                         </p>
@@ -490,7 +490,7 @@ export default function Home() {
                           {result.confidenceScore}/10
                         </p>
                       </div>
-                      <div className="rounded-2xl bg-[#fffdf8]/75 px-4 py-3.5">
+                      <div className="rounded-2xl bg-[#fffdf8]/55 px-4 py-3">
                         <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
                           Clarity
                         </p>
@@ -506,25 +506,25 @@ export default function Home() {
                       <p className="text-sm font-semibold uppercase tracking-[0.13em] text-[#9b6508]">
                         The vibe
                       </p>
-                      <p className="mt-5 max-w-2xl text-[1.75rem] font-semibold leading-[1.12] tracking-tight text-slate-950 sm:text-[2.55rem]">
+                      <p className="mt-5 max-w-3xl text-[1.55rem] font-semibold leading-[1.16] tracking-tight text-slate-950 sm:text-[2.15rem] sm:leading-[1.12]">
                         {result.emotionalInterpretation}
                       </p>
                     </div>
                     {socialMirror ? (
-                      <div className="rounded-[1.55rem] bg-[#fffdf8]/85 p-6 text-lg leading-8 text-slate-800 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.4)] ring-1 ring-slate-950/[0.04] sm:p-8 sm:text-xl sm:leading-9">
+                      <div className="rounded-[1.55rem] bg-[#fffdf8]/88 p-7 text-[1.15rem] leading-8 text-slate-800 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.4)] ring-1 ring-slate-950/[0.04] sm:p-8 sm:text-[1.35rem] sm:leading-9">
                         <p className="text-sm font-semibold uppercase tracking-[0.13em] text-[#2f6fed]">
                           The Subtext
                         </p>
-                        <p className="mt-4 max-w-2xl">
+                        <p className="mt-4 max-w-3xl">
                           {socialMirror.subtext}
                         </p>
                       </div>
                     ) : null}
-                    <div className="rounded-[1.55rem] bg-[#eef4f7] p-6 text-lg leading-8 text-slate-700 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.45)] ring-1 ring-[#8fb2c3]/20 sm:p-8 sm:text-xl sm:leading-9">
+                    <div className="rounded-[1.55rem] bg-[#e9f1f4] p-7 text-[1.15rem] leading-8 text-slate-700 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.45)] ring-1 ring-[#8fb2c3]/20 sm:p-8 sm:text-[1.35rem] sm:leading-9">
                       <p className="text-sm font-semibold uppercase tracking-[0.13em] text-[#4e7282]">
                         How this lands
                       </p>
-                      <p className="mt-4 max-w-2xl text-slate-800">
+                      <p className="mt-4 max-w-3xl text-slate-800">
                         {result.recipientLikelyPerception}
                       </p>
                     </div>
