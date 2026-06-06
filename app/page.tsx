@@ -524,7 +524,7 @@ export default function Home() {
               rows={10}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              placeholder="Hey, just checking if you're upset with me..."
+              placeholder="Paste the text you're about to send..."
               className="w-full min-h-[260px] rounded-[1.5rem] border border-slate-200/80 bg-[#fffdf9] px-6 py-5 text-base leading-7 text-slate-900 shadow-[0_18px_50px_-34px_rgba(15,23,42,0.22)] placeholder:text-slate-400 outline-none transition duration-300 ease-out focus:border-[#2f6fed]/40 focus:ring-4 focus:ring-[#2f6fed]/10"
             />
 
@@ -562,15 +562,13 @@ export default function Home() {
                     ? "Reading the emotional damage..."
                     : result
                       ? "The read is in"
-                      : "Your future regret goes here."}
+                      : "A tiny pause goes here."}
                 </h2>
               </div>
             </div>
 
             <div
-              className={`mt-6 space-y-6 transition-all duration-500 ease-out ${
-                result ? "opacity-100 translate-y-0" : "opacity-40 translate-y-3"
-              }`}
+              className="mt-6 space-y-6 transition-all duration-500 ease-out"
             >
               {isLoading ? (
                 <p className="text-sm leading-6 text-slate-600">
@@ -687,11 +685,31 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                <p className="text-sm leading-6 text-slate-600">
-                  Paste the text you&apos;re about to overthink for six hours.
-                  The read appears here. The fix stays locked until you ask for
-                  it.
-                </p>
+                <div className="relative overflow-hidden rounded-[1.65rem] bg-[#fbfcff] px-6 py-9 shadow-[0_22px_70px_-55px_rgba(63,86,132,0.55)] ring-1 ring-[#9aabc8]/22 sm:px-8 sm:py-10">
+                  <div
+                    aria-hidden="true"
+                    className="absolute right-6 top-6 h-14 w-14 rounded-full bg-[#eaf0ff] text-[#6c82ad] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] sm:right-8 sm:top-8"
+                  >
+                    <span className="absolute left-1/2 top-1/2 text-3xl font-semibold leading-none -translate-x-1/2 -translate-y-1/2">
+                      *
+                    </span>
+                    <span className="absolute right-3 top-3 h-1.5 w-1.5 rounded-full bg-[#b7c5df]" />
+                    <span className="absolute bottom-3 left-3 h-1 w-1 rounded-full bg-[#b7c5df]" />
+                  </div>
+                  <div className="max-w-[31rem] pr-14 sm:pr-20">
+                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[#6f84a8]">
+                      Pre-send moment
+                    </p>
+                    <h3 className="mt-4 text-2xl font-semibold leading-tight tracking-tight text-[#243149] sm:text-3xl">
+                      Before you send it, check it.
+                    </h3>
+                    <p className="mt-4 text-base leading-7 text-[#64748b] sm:text-lg sm:leading-8">
+                      Read it once like they&apos;ll read it. Sometimes tone
+                      travels badly, and a tiny pause can save an &apos;oops&apos;
+                      later.
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
           </section>
