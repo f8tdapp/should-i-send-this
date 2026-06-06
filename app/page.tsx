@@ -617,29 +617,29 @@ export default function Home() {
                   </div>
 
                   <div className="space-y-6">
-                    <div className="rounded-[1.7rem] bg-[#fff2d8] p-6 shadow-[0_28px_70px_-55px_rgba(164,106,5,0.65)] ring-1 ring-[#efbd5b]/35 sm:p-8">
+                    <div className="rounded-[1.7rem] bg-[#fff2d8] p-6 shadow-[0_28px_70px_-55px_rgba(164,106,5,0.65)] ring-1 ring-[#efbd5b]/35 sm:p-7">
                       <p className="text-sm font-semibold uppercase tracking-[0.13em] text-[#9b6508]">
                         The vibe
                       </p>
-                      <p className="mt-5 max-w-3xl text-[1.55rem] font-semibold leading-[1.16] tracking-tight text-slate-950 sm:text-[2.15rem] sm:leading-[1.12]">
+                      <p className="mt-4 max-w-[42rem] text-[1.42rem] font-semibold leading-[1.2] tracking-tight text-slate-950 sm:text-[1.9rem] sm:leading-[1.16]">
                         {result.emotionalInterpretation}
                       </p>
                     </div>
                     {socialMirror ? (
-                      <div className="rounded-[1.55rem] bg-[#fffdf8]/88 p-7 text-[1.15rem] leading-8 text-slate-800 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.4)] ring-1 ring-slate-950/[0.04] sm:p-8 sm:text-[1.35rem] sm:leading-9">
+                      <div className="rounded-[1.55rem] bg-[#fffdf8]/88 p-6 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.4)] ring-1 ring-slate-950/[0.04] sm:p-7">
                         <p className="text-sm font-semibold uppercase tracking-[0.13em] text-[#2f6fed]">
                           The Subtext
                         </p>
-                        <p className="mt-4 max-w-3xl">
+                        <p className="mt-4 max-w-[38rem] text-[1.28rem] font-medium leading-[1.42] tracking-tight text-slate-900 sm:text-[1.58rem] sm:leading-[1.34]">
                           {socialMirror.subtext}
                         </p>
                       </div>
                     ) : null}
-                    <div className="rounded-[1.55rem] bg-[#e9f1f4] p-7 text-[1.15rem] leading-8 text-slate-700 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.45)] ring-1 ring-[#8fb2c3]/20 sm:p-8 sm:text-[1.35rem] sm:leading-9">
+                    <div className="rounded-[1.55rem] bg-[#e9f1f4] p-6 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.45)] ring-1 ring-[#8fb2c3]/20 sm:p-7">
                       <p className="text-sm font-semibold uppercase tracking-[0.13em] text-[#4e7282]">
                         How this lands
                       </p>
-                      <p className="mt-4 max-w-3xl text-slate-800">
+                      <p className="mt-4 max-w-[40rem] text-[1.12rem] font-medium leading-[1.58] text-slate-800 sm:text-[1.28rem] sm:leading-[1.55]">
                         {result.recipientLikelyPerception}
                       </p>
                     </div>
