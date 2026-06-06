@@ -379,7 +379,9 @@ export default function Home() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#f3eadb] text-slate-950 font-sans antialiased">
+    // This full-screen wrapper is the visible canvas behind the app card.
+    // Body/global background changes were previously masked by this layer.
+    <div className="min-h-screen bg-[var(--background)] text-slate-950 font-sans antialiased">
       <main className="mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-5 py-12 sm:px-8 sm:py-20">
         <div className="mb-6 text-center sm:text-left">
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-slate-500">

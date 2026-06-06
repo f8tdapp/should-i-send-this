@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 :root {
+  /*
+    True outer page canvas. app/page.tsx applies this token to its
+    min-h-screen route wrapper, which is the visible layer behind the app card.
+  */
   --background: #f3eadb;
   --foreground: #171717;
 }
