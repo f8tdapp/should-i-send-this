@@ -18,43 +18,88 @@ type SignaturePhrase = {
 
 const backgroundBubbles = [
   {
-    text: "k.",
-    className: "left-[4%] top-[14%] rotate-[-8deg] text-xl lg:text-2xl",
+    text: "oh no",
+    className: "left-[3%] top-[10%] rotate-[-8deg] text-xl lg:text-2xl",
   },
   {
-    text: "lol it's fine",
+    text: "why did I send that",
     className:
-      "right-[4%] top-[10%] max-w-[15rem] rotate-[7deg] text-xl lg:text-2xl [animation-delay:200ms]",
+      "right-[3%] top-[8%] max-w-[18rem] rotate-[7deg] text-xl lg:text-2xl [animation-delay:200ms]",
   },
   {
-    text: "u up?",
+    text: "too much?",
     className:
-      "left-[8%] top-[39%] rotate-[5deg] text-lg lg:text-xl [animation-delay:500ms]",
+      "left-[8%] top-[28%] rotate-[5deg] text-lg lg:text-xl [animation-delay:500ms]",
   },
   {
-    text: "whatever",
+    text: "what are they going to think?",
     className:
-      "right-[8%] top-[35%] rotate-[-6deg] text-lg lg:text-xl [animation-delay:700ms]",
+      "right-[5%] top-[28%] max-w-[19rem] rotate-[-6deg] text-lg lg:text-xl [animation-delay:700ms]",
   },
   {
-    text: "are you mad?",
+    text: "did I sound needy?",
     className:
-      "left-[3%] bottom-[24%] max-w-[15rem] rotate-[8deg] text-xl lg:text-2xl [animation-delay:1000ms]",
+      "left-[2%] bottom-[33%] max-w-[17rem] rotate-[8deg] text-xl lg:text-2xl [animation-delay:1000ms]",
   },
   {
-    text: "per my last email",
+    text: "please don't read that yet",
     className:
-      "right-[3%] bottom-[28%] max-w-[16rem] rotate-[-5deg] text-lg lg:text-xl [animation-delay:300ms]",
+      "right-[2%] bottom-[34%] max-w-[18rem] rotate-[-5deg] text-lg lg:text-xl [animation-delay:300ms]",
   },
   {
-    text: "no worries haha",
+    text: "do I double text?",
     className:
-      "left-[12%] bottom-[7%] max-w-[16rem] rotate-[-4deg] text-lg lg:text-xl [animation-delay:700ms]",
+      "left-[10%] bottom-[16%] max-w-[16rem] rotate-[-4deg] text-lg lg:text-xl [animation-delay:700ms]",
   },
   {
-    text: "sure.",
+    text: "they're typing...",
     className:
-      "right-[15%] bottom-[8%] rotate-[6deg] text-lg lg:text-xl [animation-delay:1000ms]",
+      "right-[11%] bottom-[15%] rotate-[6deg] text-lg lg:text-xl [animation-delay:1000ms]",
+  },
+  {
+    text: "should I delete it?",
+    className:
+      "left-[20%] top-[4%] max-w-[17rem] rotate-[4deg] text-lg lg:text-xl [animation-delay:1200ms]",
+  },
+  {
+    text: "that sounded insane",
+    className:
+      "right-[22%] top-[3%] max-w-[17rem] rotate-[-4deg] text-lg lg:text-xl [animation-delay:850ms]",
+  },
+  {
+    text: "I should not have said that",
+    className:
+      "left-[21%] bottom-[3%] max-w-[19rem] rotate-[5deg] text-lg lg:text-xl [animation-delay:150ms]",
+  },
+  {
+    text: "left on read",
+    className:
+      "right-[27%] bottom-[3%] rotate-[-7deg] text-xl lg:text-2xl [animation-delay:450ms]",
+  },
+  {
+    text: "I made it worse",
+    className:
+      "left-[1%] top-[53%] max-w-[15rem] rotate-[-6deg] text-lg lg:text-xl [animation-delay:1300ms]",
+  },
+  {
+    text: "send help",
+    className:
+      "right-[1%] top-[52%] rotate-[8deg] text-xl lg:text-2xl [animation-delay:1150ms]",
+  },
+  {
+    text: "not the lol",
+    className:
+      "left-[25%] top-[18%] hidden max-w-[14rem] rotate-[-3deg] text-lg xl:block [animation-delay:650ms]",
+  },
+  {
+    text: "this sounded better in my head",
+    className:
+      "right-[19%] top-[19%] hidden max-w-[20rem] rotate-[3deg] text-lg xl:block [animation-delay:950ms]",
+  },
+  {
+    text: "was that passive aggressive?",
+    className:
+      "left-[24%] bottom-[20%] hidden max-w-[20rem] rotate-[3deg] text-lg xl:block [animation-delay:1750ms]",
   },
 ];
 
@@ -436,14 +481,14 @@ export default function Home() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 overflow-hidden"
       >
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.34),rgba(130,158,229,0.18)_42%,rgba(255,206,229,0.22)_100%)]" />
-        <div className="absolute inset-x-[-12%] top-[-18%] h-72 rotate-[-3deg] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.42),rgba(255,255,255,0)_68%)] blur-2xl sm:h-96" />
-        <div className="absolute inset-x-[-10%] bottom-[-22%] h-80 rotate-[4deg] bg-[radial-gradient(ellipse_at_center,rgba(96,121,210,0.2),rgba(96,121,210,0)_70%)] blur-3xl sm:h-[28rem]" />
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.18),rgba(92,78,176,0.22)_42%,rgba(255,123,189,0.18)_100%)]" />
+        <div className="absolute inset-x-[-12%] top-[-18%] h-72 rotate-[-3deg] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.32),rgba(255,255,255,0)_68%)] blur-2xl sm:h-96" />
+        <div className="absolute inset-x-[-10%] bottom-[-22%] h-80 rotate-[4deg] bg-[radial-gradient(ellipse_at_center,rgba(72,48,150,0.24),rgba(72,48,150,0)_70%)] blur-3xl sm:h-[28rem]" />
 
         {backgroundBubbles.map((bubble) => (
           <span
             key={bubble.text}
-            className={`chat-wallpaper-bubble absolute hidden rounded-[1.65rem] border border-white/65 bg-white/48 px-5 py-3 font-semibold leading-tight text-slate-800/75 shadow-[0_22px_70px_-42px_rgba(31,41,96,0.68),inset_0_1px_0_rgba(255,255,255,0.58)] backdrop-blur-lg sm:block lg:px-6 lg:py-3.5 ${bubble.className}`}
+            className={`chat-wallpaper-bubble absolute hidden rounded-[1.8rem] border border-white/75 bg-white/62 px-6 py-3.5 font-semibold leading-tight text-slate-900/82 shadow-[0_24px_80px_-42px_rgba(18,24,70,0.78),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-xl md:block lg:px-7 lg:py-4 ${bubble.className}`}
           >
             {bubble.text}
           </span>
@@ -452,7 +497,7 @@ export default function Home() {
 
       <main className="relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-5 py-12 sm:px-8 sm:py-20">
         <div className="mb-6 text-center sm:text-left">
-          <p className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-slate-500">
+            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white/70">
             should i send this?
           </p>
         </div>
