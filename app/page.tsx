@@ -389,7 +389,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="rounded-[1.75rem] bg-[#fffdf8]/95 p-5 shadow-[0_32px_100px_-60px_rgba(15,23,42,0.34)] ring-1 ring-slate-950/5 backdrop-blur-xl sm:p-10">
+        <div className="rounded-[1.75rem] bg-[#fffefa]/98 p-5 shadow-[0_34px_110px_-58px_rgba(45,64,116,0.46),0_0_70px_-34px_rgba(132,112,255,0.34)] ring-1 ring-[#7185bd]/18 backdrop-blur-xl sm:p-10">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#2f6fed]">
               Honestly?

@@ -5,7 +5,7 @@
     True outer page canvas. app/page.tsx applies this token to its
     min-h-screen route wrapper, which is the visible layer behind the app card.
   */
-  --background: #dfe7f2;
+  --background: #ccd8ec;
   --foreground: #171717;
 }
 
@@ -18,7 +18,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #dfe7f2;
+    --background: #ccd8ec;
     --foreground: #171717;
   }
 }
