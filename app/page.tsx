@@ -16,6 +16,55 @@ type SignaturePhrase = {
   keywords: string[];
 };
 
+const backgroundBubbles = [
+  {
+    text: "k.",
+    className: "left-[4%] top-[14%] rotate-[-8deg] text-xl lg:text-2xl",
+  },
+  {
+    text: "lol it's fine",
+    className:
+      "right-[4%] top-[10%] max-w-[15rem] rotate-[7deg] text-xl lg:text-2xl [animation-delay:200ms]",
+  },
+  {
+    text: "u up?",
+    className:
+      "left-[8%] top-[39%] rotate-[5deg] text-lg lg:text-xl [animation-delay:500ms]",
+  },
+  {
+    text: "whatever",
+    className:
+      "right-[8%] top-[35%] rotate-[-6deg] text-lg lg:text-xl [animation-delay:700ms]",
+  },
+  {
+    text: "are you mad?",
+    className:
+      "left-[3%] bottom-[24%] max-w-[15rem] rotate-[8deg] text-xl lg:text-2xl [animation-delay:1000ms]",
+  },
+  {
+    text: "per my last email",
+    className:
+      "right-[3%] bottom-[28%] max-w-[16rem] rotate-[-5deg] text-lg lg:text-xl [animation-delay:300ms]",
+  },
+  {
+    text: "no worries haha",
+    className:
+      "left-[12%] bottom-[7%] max-w-[16rem] rotate-[-4deg] text-lg lg:text-xl [animation-delay:700ms]",
+  },
+  {
+    text: "sure.",
+    className:
+      "right-[15%] bottom-[8%] rotate-[6deg] text-lg lg:text-xl [animation-delay:1000ms]",
+  },
+];
+
+const loadingMessages = [
+  "Reading the emotional damage...",
+  "Checking for hidden panic...",
+  "Consulting the group chat...",
+  "Measuring the 'lol' risk...",
+];
+
 const signaturePhrases: SignaturePhrase[] = [
   {
     text: 'You are absolutely not "lol"-ing right now.',
@@ -377,19 +426,38 @@ export default function Home() {
         subtext: getSubtext(result, message),
       }
     : null;
+  const loadingMessage = loadingMessages[message.length % loadingMessages.length];
 
   return (
     // This full-screen wrapper is the visible canvas behind the app card.
     // Body/global background changes were previously masked by this layer.
-    <div className="min-h-screen bg-[var(--background)] text-slate-950 font-sans antialiased">
-      <main className="mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-5 py-12 sm:px-8 sm:py-20">
+    <div className="relative min-h-screen overflow-hidden bg-[var(--background)] text-slate-950 font-sans antialiased">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.34),rgba(130,158,229,0.18)_42%,rgba(255,206,229,0.22)_100%)]" />
+        <div className="absolute inset-x-[-12%] top-[-18%] h-72 rotate-[-3deg] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.42),rgba(255,255,255,0)_68%)] blur-2xl sm:h-96" />
+        <div className="absolute inset-x-[-10%] bottom-[-22%] h-80 rotate-[4deg] bg-[radial-gradient(ellipse_at_center,rgba(96,121,210,0.2),rgba(96,121,210,0)_70%)] blur-3xl sm:h-[28rem]" />
+
+        {backgroundBubbles.map((bubble) => (
+          <span
+            key={bubble.text}
+            className={`chat-wallpaper-bubble absolute hidden rounded-[1.65rem] border border-white/65 bg-white/48 px-5 py-3 font-semibold leading-tight text-slate-800/75 shadow-[0_22px_70px_-42px_rgba(31,41,96,0.68),inset_0_1px_0_rgba(255,255,255,0.58)] backdrop-blur-lg sm:block lg:px-6 lg:py-3.5 ${bubble.className}`}
+          >
+            {bubble.text}
+          </span>
+        ))}
+      </div>
+
+      <main className="relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-5 py-12 sm:px-8 sm:py-20">
         <div className="mb-6 text-center sm:text-left">
           <p className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-slate-500">
             should i send this?
           </p>
         </div>
 
-        <div className="rounded-[1.75rem] bg-[#fffefa]/98 p-5 shadow-[0_34px_110px_-58px_rgba(45,64,116,0.46),0_0_70px_-34px_rgba(132,112,255,0.34)] ring-1 ring-[#7185bd]/18 backdrop-blur-xl sm:p-10">
+        <div className="app-card-enter rounded-[1.75rem] bg-[#fffefa]/98 p-5 shadow-[0_34px_110px_-58px_rgba(45,64,116,0.46),0_0_70px_-34px_rgba(132,112,255,0.34)] ring-1 ring-[#7185bd]/18 backdrop-blur-xl transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_38px_120px_-58px_rgba(45,64,116,0.52),0_0_82px_-34px_rgba(132,112,255,0.42)] sm:p-10">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#2f6fed]">
               Honestly?
@@ -428,9 +496,9 @@ export default function Home() {
               className="inline-flex min-h-[54px] w-full items-center justify-center gap-3 rounded-full bg-slate-950 px-8 py-4 text-base font-semibold text-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 disabled:cursor-not-allowed disabled:bg-slate-500 disabled:shadow-none"
             >
               {isLoading ? (
-                <span className="inline-flex items-center gap-3">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                  Analyzing...
+                  <span className="inline-flex items-center gap-3">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                  {loadingMessage}
                 </span>
               ) : (
                 "Analyze"
@@ -446,10 +514,10 @@ export default function Home() {
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
                   {isLoading
-                    ? "Reading the room..."
+                    ? "Reading the emotional damage..."
                     : result
                       ? "The read is in"
-                      : "Nothing analyzed yet"}
+                      : "Your future regret goes here."}
                 </h2>
               </div>
             </div>
@@ -461,8 +529,8 @@ export default function Home() {
             >
               {isLoading ? (
                 <p className="text-sm leading-6 text-slate-600">
-                  Checking the tone, the subtext, and the part your recipient is
-                  most likely to notice.
+                  Consulting the group chat, scanning the subtext, and checking
+                  whether that punctuation is doing too much.
                 </p>
               ) : result ? (
                 <div className="space-y-8">
@@ -575,8 +643,9 @@ export default function Home() {
                 </div>
               ) : (
                 <p className="text-sm leading-6 text-slate-600">
-                  Once you paste a message and tap Analyze, this card will show
-                  the read first. The fix stays locked until you ask for it.
+                  Paste the text you&apos;re about to overthink for six hours.
+                  The read appears here. The fix stays locked until you ask for
+                  it.
                 </p>
               )}
             </div>

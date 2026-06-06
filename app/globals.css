@@ -5,7 +5,7 @@
     True outer page canvas. app/page.tsx applies this token to its
     min-h-screen route wrapper, which is the visible layer behind the app card.
   */
-  --background: #ccd8ec;
+  --background: #b4c3e2;
   --foreground: #171717;
 }
 
@@ -18,7 +18,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #ccd8ec;
+    --background: #b4c3e2;
     --foreground: #171717;
   }
 }
@@ -27,4 +27,49 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.app-card-enter {
+  animation: app-card-enter 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.chat-wallpaper-bubble {
+  animation: chat-wallpaper-float 8s ease-in-out infinite alternate;
+}
+
+.chat-wallpaper-bubble:nth-of-type(2n) {
+  animation-duration: 9.5s;
+}
+
+.chat-wallpaper-bubble:nth-of-type(3n) {
+  animation-duration: 11s;
+}
+
+@keyframes app-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes chat-wallpaper-float {
+  from {
+    transform: translate3d(0, 0, 0) rotate(var(--bubble-rotate, 0deg));
+  }
+
+  to {
+    transform: translate3d(0, -12px, 0) rotate(var(--bubble-rotate, 0deg));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-card-enter,
+  .chat-wallpaper-bubble {
+    animation: none;
+  }
 }
