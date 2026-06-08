@@ -529,6 +529,20 @@ export default function Home() {
     }
   };
 
+  const handleClearText = () => {
+    setMessage("");
+    setResult(null);
+    setSocialMirror(null);
+    setError("");
+    setRewriteCopied(false);
+    setShowRewrite(false);
+
+    if (copyTimeoutRef.current) {
+      clearTimeout(copyTimeoutRef.current);
+      copyTimeoutRef.current = null;
+    }
+  };
+
   const handleCopyRewrite = async () => {
     if (!result?.improvedRewrite) return;
 
@@ -576,8 +590,8 @@ export default function Home() {
 
       <main className="relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-5 py-10 sm:px-8 sm:py-16">
         <div className="app-card-enter rounded-[1.75rem] bg-[#fffefa]/98 p-5 shadow-[0_34px_110px_-58px_rgba(45,64,116,0.46),0_0_70px_-34px_rgba(132,112,255,0.34)] ring-1 ring-[#7185bd]/18 backdrop-blur-xl transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_38px_120px_-58px_rgba(45,64,116,0.52),0_0_82px_-34px_rgba(132,112,255,0.42)] sm:p-10">
-          <div className="inline-flex max-w-full items-center gap-3">
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-[#fff2d8] shadow-[0_16px_38px_-28px_rgba(15,23,42,0.8)]">
+          <div className="inline-flex max-w-full items-start gap-3">
+            <div className="relative mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-[#fff2d8] shadow-[0_16px_38px_-28px_rgba(15,23,42,0.8)]">
               <span className="text-base font-black leading-none tracking-[-0.04em]">
                 T
               </span>
@@ -588,26 +602,23 @@ export default function Home() {
             </div>
             <div className="min-w-0">
               <p className="text-[1.05rem] font-black leading-none tracking-[-0.035em] text-slate-950 sm:text-[1.18rem]">
-                Text<span className="text-[#2f6fed]">Panic</span>
+                Text<span className="text-[#2f6fed]/90">Panic</span>
               </p>
-              <p className="mt-1.5 max-w-[22rem] truncate text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:text-xs">
+              <p className="mt-1 max-w-[12.5rem] text-[0.72rem] font-medium leading-[1.35] tracking-[0.01em] text-slate-500/72 sm:max-w-[19rem] sm:text-[0.78rem]">
                 For messages written during emotional turbulence.
               </p>
             </div>
           </div>
 
-          <div className="mt-8 max-w-3xl sm:mt-9">
-            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#2f6fed] sm:text-sm">
-              Before you hit send...
-            </p>
-            <h1 className="mt-4 text-3xl font-semibold leading-[1.08] tracking-tight text-slate-950 sm:text-[2.85rem] sm:leading-[1.04]">
+          <div className="mt-7 max-w-3xl sm:mt-8">
+            <h1 className="text-3xl font-semibold leading-[1.08] tracking-tight text-slate-950 sm:text-[2.85rem] sm:leading-[1.04]">
               Paste your text.
               <br />
               We&apos;ll tell you if it lands or crashes.
             </h1>
           </div>
 
-          <div className="mt-7 space-y-5 sm:mt-9 sm:space-y-6">
+          <div className="mt-6 space-y-5 sm:mt-8 sm:space-y-6">
             <label htmlFor="message" className="sr-only">
               Message input
             </label>
@@ -620,26 +631,23 @@ export default function Home() {
               placeholder="Paste the text you're spiraling over..."
               className="w-full min-h-[260px] rounded-[1.5rem] border border-slate-200/80 bg-[#fffdf9] px-6 py-5 text-base leading-7 text-slate-900 shadow-[0_18px_50px_-34px_rgba(15,23,42,0.22)] placeholder:text-slate-400 outline-none transition duration-300 ease-out focus:border-[#2f6fed]/40 focus:ring-4 focus:ring-[#2f6fed]/10"
             />
-            <div className="flex flex-col gap-2 px-1 text-xs font-medium text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-              <p>Keep it tight. The spiral can still be implied.</p>
-              <div className="flex items-center gap-3">
-                {isAtCharacterLimit ? (
-                  <span className="text-[#9b6508]">
-                    That&apos;s enough panic for one read.
-                  </span>
-                ) : null}
-                <span
-                  className={`tabular-nums transition-colors ${
-                    isAtCharacterLimit
-                      ? "font-semibold text-[#9b6508]"
-                      : isNearCharacterLimit
-                        ? "font-semibold text-[#2f6fed]"
-                        : "text-slate-400"
-                  }`}
-                >
-                  {messageLength} / {MESSAGE_CHARACTER_LIMIT}
+            <div className="flex items-center justify-end gap-3 px-1 text-xs font-medium text-slate-500">
+              {isAtCharacterLimit ? (
+                <span className="text-[#9b6508]">
+                  That&apos;s enough panic for one read.
                 </span>
-              </div>
+              ) : null}
+              <span
+                className={`tabular-nums transition-colors ${
+                  isAtCharacterLimit
+                    ? "font-semibold text-[#9b6508]"
+                    : isNearCharacterLimit
+                      ? "font-semibold text-[#2f6fed]"
+                      : "text-slate-400"
+                }`}
+              >
+                {messageLength} / {MESSAGE_CHARACTER_LIMIT}
+              </span>
             </div>
 
             {error ? (
@@ -648,41 +656,46 @@ export default function Home() {
               </p>
             ) : null}
 
-            <button
-              type="button"
-              onClick={handleAnalyze}
-              disabled={!canAnalyze}
-              className="inline-flex min-h-[54px] w-full items-center justify-center gap-3 rounded-full bg-slate-950 px-8 py-4 text-base font-semibold text-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 disabled:cursor-not-allowed disabled:bg-slate-500 disabled:shadow-none"
-            >
-              {isLoading ? (
-                  <span className="inline-flex items-center gap-3">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                  {loadingMessage}
-                </span>
-              ) : (
-                "Read my text"
-              )}
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              {messageLength > 0 ? (
+                <button
+                  type="button"
+                  onClick={handleClearText}
+                  disabled={isLoading}
+                  className="inline-flex min-h-[54px] items-center justify-center rounded-full bg-[#eaf0ff] px-6 py-3 text-base font-semibold text-[#2f4c86] shadow-[0_16px_36px_-30px_rgba(47,111,237,0.6)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#dfe8ff] hover:text-[#17346f] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                >
+                  Clear text
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleAnalyze}
+                disabled={!canAnalyze}
+                className="inline-flex min-h-[54px] flex-1 items-center justify-center gap-3 rounded-full bg-slate-950 px-8 py-4 text-base font-semibold text-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 disabled:cursor-not-allowed disabled:bg-slate-500 disabled:shadow-none"
+              >
+                {isLoading ? (
+                    <span className="inline-flex items-center gap-3">
+                      <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                    {loadingMessage}
+                  </span>
+                ) : (
+                  "Read my text"
+                )}
+              </button>
+            </div>
           </div>
 
           <section className="mt-12 rounded-[1.5rem] bg-[#f6f3eb] p-5 shadow-sm ring-1 ring-slate-950/[0.04] sm:mt-14 sm:p-8">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#2f6fed]">
-                  The read
+                  THE READ
                 </p>
-                <h2 className="mt-2 text-2xl font-semibold leading-tight text-slate-950 sm:text-3xl">
-                  {isLoading
-                    ? "Reading the emotional damage..."
-                    : result
-                      ? "The read is in"
-                      : "A tiny pause goes here."}
-                </h2>
               </div>
             </div>
 
             <div
-              className="mt-6 space-y-6 transition-all duration-500 ease-out"
+              className="mt-4 space-y-6 transition-all duration-500 ease-out sm:mt-5"
             >
               {isLoading ? (
                 <p className="text-sm leading-6 text-slate-600">
@@ -695,7 +708,7 @@ export default function Home() {
                     {socialMirror ? (
                       <div className="inline-flex max-w-full rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-[#fff2d8] shadow-[0_18px_45px_-34px_rgba(15,23,42,0.8)]">
                         <span className="truncate">
-                          Read Severity: {socialMirror.severity}
+                          {socialMirror.severity}
                         </span>
                       </div>
                     ) : null}
@@ -766,9 +779,9 @@ export default function Home() {
                       <button
                         type="button"
                         onClick={() => setShowRewrite(true)}
-                        className="mt-5 inline-flex min-h-[54px] w-full items-center justify-center rounded-full bg-[#2f6fed] px-7 py-3 text-base font-semibold text-white shadow-[0_20px_45px_-30px_rgba(47,111,237,0.8)] outline-none transition duration-300 ease-out hover:-translate-y-0.5 hover:bg-[#245bd1] hover:shadow-[0_24px_55px_-28px_rgba(47,111,237,0.95)] focus:ring-4 focus:ring-[#2f6fed]/20 sm:w-auto"
+                        className="mt-6 inline-flex min-h-[56px] w-full items-center justify-center rounded-full bg-[#2f6fed] px-8 py-3 text-base font-semibold text-white shadow-[0_22px_50px_-28px_rgba(47,111,237,0.9)] outline-none transition duration-300 ease-out hover:-translate-y-1 hover:bg-[#245bd1] hover:shadow-[0_28px_60px_-26px_rgba(47,111,237,1)] active:translate-y-0 focus:ring-4 focus:ring-[#2f6fed]/20 sm:w-auto"
                       >
-                        Fine. Fix my text.
+                        Okay. Save me.
                       </button>
                     </div>
                   ) : null}
