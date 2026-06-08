@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type AnalysisResult = {
   tone: string;
@@ -454,8 +454,10 @@ export default function Home() {
   const [error, setError] = useState("");
   const [rewriteCopied, setRewriteCopied] = useState(false);
   const [showRewrite, setShowRewrite] = useState(false);
+  const [isRevealingRewrite, setIsRevealingRewrite] = useState(false);
   const [socialMirror, setSocialMirror] = useState<SocialMirror | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSubtextRef = useRef<string | null>(null);
   const messageLength = message.length;
   const isMessageEmpty = message.trim().length === 0;
@@ -467,11 +469,17 @@ export default function Home() {
   const handleAnalyze = async () => {
     if (isLoading) return;
 
+    if (revealTimeoutRef.current) {
+      clearTimeout(revealTimeoutRef.current);
+      revealTimeoutRef.current = null;
+    }
+
     setResult(null);
     setSocialMirror(null);
     setError("");
     setRewriteCopied(false);
     setShowRewrite(false);
+    setIsRevealingRewrite(false);
 
     if (isMessageEmpty) {
       setError("Paste a message before analyzing.");
@@ -536,11 +544,37 @@ export default function Home() {
     setError("");
     setRewriteCopied(false);
     setShowRewrite(false);
+    setIsRevealingRewrite(false);
 
     if (copyTimeoutRef.current) {
       clearTimeout(copyTimeoutRef.current);
       copyTimeoutRef.current = null;
     }
+
+    if (revealTimeoutRef.current) {
+      clearTimeout(revealTimeoutRef.current);
+      revealTimeoutRef.current = null;
+    }
+  };
+
+  const handleRevealRewrite = () => {
+    if (isRevealingRewrite || showRewrite) return;
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) {
+      setShowRewrite(true);
+      return;
+    }
+
+    setIsRevealingRewrite(true);
+    revealTimeoutRef.current = setTimeout(() => {
+      setShowRewrite(true);
+      setIsRevealingRewrite(false);
+      revealTimeoutRef.current = null;
+    }, 650);
   };
 
   const handleCopyRewrite = async () => {
@@ -563,6 +597,18 @@ export default function Home() {
       );
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        clearTimeout(copyTimeoutRef.current);
+      }
+
+      if (revealTimeoutRef.current) {
+        clearTimeout(revealTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const loadingMessage = loadingMessages[message.length % loadingMessages.length];
 
@@ -610,11 +656,11 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="mt-7 max-w-3xl sm:mt-8">
+          <div className="mt-7 max-w-[46rem] sm:mt-8">
             <h1 className="text-3xl font-semibold leading-[1.08] tracking-tight text-slate-950 sm:text-[2.85rem] sm:leading-[1.04]">
               Paste your text.
               <br />
-              We&apos;ll tell you if it lands or crashes.
+              We&apos;ll tell you what people hear.
             </h1>
           </div>
 
@@ -629,7 +675,7 @@ export default function Home() {
               value={message}
               onChange={(event) => setMessage(event.target.value)}
               placeholder="Paste the text you're spiraling over..."
-              className="w-full min-h-[260px] rounded-[1.5rem] border border-slate-200/80 bg-[#fffdf9] px-6 py-5 text-base leading-7 text-slate-900 shadow-[0_18px_50px_-34px_rgba(15,23,42,0.22)] placeholder:text-slate-400 outline-none transition duration-300 ease-out focus:border-[#2f6fed]/40 focus:ring-4 focus:ring-[#2f6fed]/10"
+              className="w-full min-h-[260px] rounded-[1.5rem] border border-[#b9c7db]/70 bg-[#f4f7fb] px-6 py-5 text-base leading-7 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.88),inset_0_18px_42px_-36px_rgba(70,91,128,0.5),0_20px_56px_-38px_rgba(15,23,42,0.28)] placeholder:text-slate-500/78 outline-none transition duration-300 ease-out hover:border-[#9fb2cc]/85 hover:bg-[#f7f9fc] focus:border-[#2f6fed]/55 focus:bg-[#fbfcff] focus:ring-4 focus:ring-[#2f6fed]/14"
             />
             <div className="flex items-center justify-end gap-3 px-1 text-xs font-medium text-slate-500">
               {isAtCharacterLimit ? (
@@ -742,8 +788,8 @@ export default function Home() {
                   </div>
 
                   <div className="space-y-4 sm:space-y-5">
-                    <div className="rounded-[1.55rem] bg-[#fff2d8] p-6 shadow-[0_24px_64px_-54px_rgba(164,106,5,0.58)] ring-1 ring-[#efbd5b]/35 sm:p-7">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9b6508] sm:text-sm">
+                    <div className="rounded-[1.55rem] bg-[#ffd982] p-6 shadow-[0_24px_64px_-52px_rgba(164,106,5,0.72)] ring-1 ring-[#d99a1c]/45 sm:p-7">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7b4d03] sm:text-sm">
                         THE VIBE
                       </p>
                       <p className="mt-4 max-w-[39rem] text-[1.22rem] font-semibold leading-[1.38] tracking-tight text-slate-950 sm:text-[1.42rem] sm:leading-[1.34]">
@@ -751,20 +797,20 @@ export default function Home() {
                       </p>
                     </div>
                     {socialMirror ? (
-                      <div className="rounded-[1.55rem] bg-[#fffdf8]/88 p-6 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.34)] ring-1 ring-slate-950/[0.04] sm:p-7">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2f6fed] sm:text-sm">
+                      <div className="rounded-[1.55rem] bg-[#ded2ff] p-6 shadow-[0_22px_60px_-52px_rgba(72,52,124,0.58)] ring-1 ring-[#9f8add]/42 sm:p-7">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#584191] sm:text-sm">
                           THE SUBTEXT
                         </p>
-                        <p className="mt-4 max-w-[39rem] text-[1.22rem] font-semibold leading-[1.38] tracking-tight text-slate-900 sm:text-[1.42rem] sm:leading-[1.34]">
+                        <p className="mt-4 max-w-[39rem] text-[1.22rem] font-semibold leading-[1.38] tracking-tight text-[#211b32] sm:text-[1.42rem] sm:leading-[1.34]">
                           {socialMirror.subtext}
                         </p>
                       </div>
                     ) : null}
-                    <div className="rounded-[1.55rem] bg-[#e9f1f4] p-6 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.36)] ring-1 ring-[#8fb2c3]/20 sm:p-7">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#4e7282] sm:text-sm">
+                    <div className="rounded-[1.55rem] bg-[#cfdde5] p-6 shadow-[0_22px_60px_-52px_rgba(45,74,92,0.54)] ring-1 ring-[#7899aa]/36 sm:p-7">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#3d5d6d] sm:text-sm">
                         HOW THIS LANDS
                       </p>
-                      <p className="mt-4 max-w-[39rem] text-[1.22rem] font-semibold leading-[1.38] tracking-tight text-slate-800 sm:text-[1.42rem] sm:leading-[1.34]">
+                      <p className="mt-4 max-w-[39rem] text-[1.22rem] font-semibold leading-[1.38] tracking-tight text-[#233642] sm:text-[1.42rem] sm:leading-[1.34]">
                         {result.recipientLikelyPerception}
                       </p>
                     </div>
@@ -773,28 +819,39 @@ export default function Home() {
                   {!showRewrite ? (
                     <div className="rounded-[1.5rem] border border-dashed border-[#2f6fed]/30 bg-[#fffdf8]/75 p-6 text-center shadow-sm sm:p-7">
                       <p className="mx-auto max-w-md text-base font-medium leading-7 text-slate-700">
-                        The damage report is in. Want the version with fewer
-                        emotional shrapnel pieces?
+                        Need the less chaotic version?
                       </p>
                       <button
                         type="button"
-                        onClick={() => setShowRewrite(true)}
-                        className="mt-6 inline-flex min-h-[56px] w-full items-center justify-center rounded-full bg-[#2f6fed] px-8 py-3 text-base font-semibold text-white shadow-[0_22px_50px_-28px_rgba(47,111,237,0.9)] outline-none transition duration-300 ease-out hover:-translate-y-1 hover:bg-[#245bd1] hover:shadow-[0_28px_60px_-26px_rgba(47,111,237,1)] active:translate-y-0 focus:ring-4 focus:ring-[#2f6fed]/20 sm:w-auto"
+                        onClick={handleRevealRewrite}
+                        disabled={isRevealingRewrite}
+                        className="mt-6 inline-flex min-h-[56px] w-full items-center justify-center rounded-full bg-[#2f6fed] px-8 py-3 text-base font-semibold text-white shadow-[0_22px_50px_-28px_rgba(47,111,237,0.9)] outline-none transition duration-300 ease-out hover:-translate-y-1 hover:bg-[#245bd1] hover:shadow-[0_28px_60px_-26px_rgba(47,111,237,1)] active:translate-y-0 active:scale-[0.98] disabled:cursor-wait disabled:bg-[#2a63d5] disabled:shadow-[0_18px_42px_-30px_rgba(47,111,237,0.82)] focus:ring-4 focus:ring-[#2f6fed]/20 motion-reduce:transition-none sm:w-auto"
                       >
-                        Okay. Save me.
+                        {isRevealingRewrite ? (
+                          <span className="inline-flex items-center justify-center gap-2 text-center leading-snug">
+                            Making this less emotionally expensive
+                            <span className="inline-flex gap-1" aria-hidden="true">
+                              <span className="rewrite-loading-dot" />
+                              <span className="rewrite-loading-dot [animation-delay:140ms]" />
+                              <span className="rewrite-loading-dot [animation-delay:280ms]" />
+                            </span>
+                          </span>
+                        ) : (
+                          "Show me the better version."
+                        )}
                       </button>
                     </div>
                   ) : null}
 
                   <div
                     aria-hidden={!showRewrite}
-                    className={`overflow-hidden transition-all duration-700 ease-out ${
+                    className={`overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
                       showRewrite
                         ? "max-h-[520px] translate-y-0 opacity-100 blur-0"
-                        : "max-h-0 translate-y-3 opacity-0 blur-sm"
+                        : "max-h-0 translate-y-5 opacity-0 blur-md"
                     }`}
                   >
-                    <div className="rounded-[1.6rem] bg-slate-950 p-6 text-white shadow-[0_22px_70px_-40px_rgba(15,23,42,0.75)] sm:p-8">
+                    <div className="rounded-[1.6rem] bg-slate-950 p-6 text-white shadow-[0_22px_70px_-40px_rgba(15,23,42,0.75)] transition duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none sm:p-8">
                       <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
                         Send this instead
                       </p>
