@@ -13,8 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Should I Send This?",
-  description: "Paste your message and find out how it actually sounds.",
+  metadataBase: new URL("https://textpanic.com"),
+  title: "TextPanic | Before you send that text",
+  description:
+    "TextPanic helps anxious texters check the tone, subtext, and damage potential of a message before they send it.",
 };
 
 export default function RootLayout({

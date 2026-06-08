@@ -564,17 +564,17 @@ export default function Home() {
       <main className="relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-5 py-12 sm:px-8 sm:py-20">
         <div className="mb-6 text-center sm:text-left">
             <p className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white/70">
-            should i send this?
+            textpanic.com
           </p>
         </div>
 
         <div className="app-card-enter rounded-[1.75rem] bg-[#fffefa]/98 p-5 shadow-[0_34px_110px_-58px_rgba(45,64,116,0.46),0_0_70px_-34px_rgba(132,112,255,0.34)] ring-1 ring-[#7185bd]/18 backdrop-blur-xl transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_38px_120px_-58px_rgba(45,64,116,0.52),0_0_82px_-34px_rgba(132,112,255,0.42)] sm:p-10">
           <div className="max-w-2xl">
             <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#2f6fed]">
-              Honestly?
+              Before you send that text...
             </p>
             <h1 className="mt-4 text-5xl font-semibold leading-[0.98] tracking-tight text-slate-950 sm:text-6xl">
-              Before you hit send...
+              TextPanic
             </h1>
             <p className="mt-5 max-w-lg text-lg leading-8 text-slate-600 sm:text-xl">
               You think this sounds chill. Let&apos;s check.
@@ -764,7 +764,7 @@ export default function Home() {
                   </div>
                   <div className="max-w-[31rem] pr-14 sm:pr-20">
                     <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[#6f84a8]">
-                      Pre-send moment
+                      TextPanic check
                     </p>
                     <h3 className="mt-4 text-2xl font-semibold leading-tight tracking-tight text-[#243149] sm:text-3xl">
                       Before you send it, check it.
