@@ -13,6 +13,8 @@ const client = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
+const MESSAGE_CHARACTER_LIMIT = 750;
+
 function inferDemoContext(message: string) {
   const lowerMessage = message.toLowerCase();
 
@@ -247,6 +249,16 @@ export async function POST(request: Request) {
       status: 400,
       headers: { "Content-Type": "application/json" },
     });
+  }
+
+  if (message.length > MESSAGE_CHARACTER_LIMIT) {
+    return new Response(
+      JSON.stringify({ error: "That's enough panic for one read." }),
+      {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
   }
 
   if (!client) {

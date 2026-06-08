@@ -22,90 +22,92 @@ type SocialMirror = {
   subtext: string;
 };
 
+const MESSAGE_CHARACTER_LIMIT = 750;
+
 const backgroundBubbles = [
   {
     text: "oh no",
-    className: "left-[3%] top-[10%] rotate-[-8deg] text-xl lg:text-2xl",
+    className: "left-[1%] top-[8%] rotate-[-8deg] text-base lg:text-lg",
   },
   {
     text: "why did I send that",
     className:
-      "right-[3%] top-[8%] max-w-[18rem] rotate-[7deg] text-xl lg:text-2xl [animation-delay:200ms]",
+      "right-[1%] top-[7%] max-w-[15rem] rotate-[7deg] text-base lg:text-lg [animation-delay:200ms]",
   },
   {
     text: "too much?",
     className:
-      "left-[8%] top-[28%] rotate-[5deg] text-lg lg:text-xl [animation-delay:500ms]",
+      "left-[2%] top-[31%] rotate-[5deg] text-sm lg:text-base [animation-delay:500ms]",
   },
   {
     text: "what are they going to think?",
     className:
-      "right-[5%] top-[28%] max-w-[19rem] rotate-[-6deg] text-lg lg:text-xl [animation-delay:700ms]",
+      "right-[1%] top-[31%] max-w-[15rem] rotate-[-6deg] text-sm lg:text-base [animation-delay:700ms]",
   },
   {
     text: "did I sound needy?",
     className:
-      "left-[2%] bottom-[33%] max-w-[17rem] rotate-[8deg] text-xl lg:text-2xl [animation-delay:1000ms]",
+      "left-[0%] bottom-[31%] max-w-[14rem] rotate-[8deg] text-base lg:text-lg [animation-delay:1000ms]",
   },
   {
     text: "please don't read that yet",
     className:
-      "right-[2%] bottom-[34%] max-w-[18rem] rotate-[-5deg] text-lg lg:text-xl [animation-delay:300ms]",
+      "right-[0%] bottom-[31%] max-w-[15rem] rotate-[-5deg] text-sm lg:text-base [animation-delay:300ms]",
   },
   {
     text: "do I double text?",
     className:
-      "left-[10%] bottom-[16%] max-w-[16rem] rotate-[-4deg] text-lg lg:text-xl [animation-delay:700ms]",
+      "left-[5%] bottom-[13%] max-w-[13rem] rotate-[-4deg] text-sm lg:text-base [animation-delay:700ms]",
   },
   {
     text: "they're typing...",
     className:
-      "right-[11%] bottom-[15%] rotate-[6deg] text-lg lg:text-xl [animation-delay:1000ms]",
+      "right-[6%] bottom-[13%] rotate-[6deg] text-sm lg:text-base [animation-delay:1000ms]",
   },
   {
     text: "should I delete it?",
     className:
-      "left-[20%] top-[4%] max-w-[17rem] rotate-[4deg] text-lg lg:text-xl [animation-delay:1200ms]",
+      "left-[16%] top-[2%] max-w-[14rem] rotate-[4deg] text-sm lg:text-base [animation-delay:1200ms]",
   },
   {
     text: "that sounded insane",
     className:
-      "right-[22%] top-[3%] max-w-[17rem] rotate-[-4deg] text-lg lg:text-xl [animation-delay:850ms]",
+      "right-[17%] top-[2%] max-w-[14rem] rotate-[-4deg] text-sm lg:text-base [animation-delay:850ms]",
   },
   {
     text: "I should not have said that",
     className:
-      "left-[21%] bottom-[3%] max-w-[19rem] rotate-[5deg] text-lg lg:text-xl [animation-delay:150ms]",
+      "left-[16%] bottom-[2%] max-w-[15rem] rotate-[5deg] text-sm lg:text-base [animation-delay:150ms]",
   },
   {
     text: "left on read",
     className:
-      "right-[27%] bottom-[3%] rotate-[-7deg] text-xl lg:text-2xl [animation-delay:450ms]",
+      "right-[20%] bottom-[2%] rotate-[-7deg] text-base lg:text-lg [animation-delay:450ms]",
   },
   {
     text: "I made it worse",
     className:
-      "left-[1%] top-[53%] max-w-[15rem] rotate-[-6deg] text-lg lg:text-xl [animation-delay:1300ms]",
+      "left-[0%] top-[58%] max-w-[12rem] rotate-[-6deg] text-sm lg:text-base [animation-delay:1300ms]",
   },
   {
     text: "send help",
     className:
-      "right-[1%] top-[52%] rotate-[8deg] text-xl lg:text-2xl [animation-delay:1150ms]",
+      "right-[0%] top-[58%] rotate-[8deg] text-base lg:text-lg [animation-delay:1150ms]",
   },
   {
     text: "not the lol",
     className:
-      "left-[25%] top-[18%] hidden max-w-[14rem] rotate-[-3deg] text-lg xl:block [animation-delay:650ms]",
+      "left-[18%] top-[17%] hidden max-w-[12rem] rotate-[-3deg] text-sm xl:block [animation-delay:650ms]",
   },
   {
     text: "this sounded better in my head",
     className:
-      "right-[19%] top-[19%] hidden max-w-[20rem] rotate-[3deg] text-lg xl:block [animation-delay:950ms]",
+      "right-[14%] top-[17%] hidden max-w-[16rem] rotate-[3deg] text-sm xl:block [animation-delay:950ms]",
   },
   {
     text: "was that passive aggressive?",
     className:
-      "left-[24%] bottom-[20%] hidden max-w-[20rem] rotate-[3deg] text-lg xl:block [animation-delay:1750ms]",
+      "left-[16%] bottom-[17%] hidden max-w-[16rem] rotate-[3deg] text-sm xl:block [animation-delay:1750ms]",
   },
 ];
 
@@ -455,6 +457,12 @@ export default function Home() {
   const [socialMirror, setSocialMirror] = useState<SocialMirror | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSubtextRef = useRef<string | null>(null);
+  const messageLength = message.length;
+  const isMessageEmpty = message.trim().length === 0;
+  const isOverCharacterLimit = messageLength > MESSAGE_CHARACTER_LIMIT;
+  const isNearCharacterLimit = messageLength >= MESSAGE_CHARACTER_LIMIT * 0.85;
+  const isAtCharacterLimit = messageLength >= MESSAGE_CHARACTER_LIMIT;
+  const canAnalyze = !isLoading && !isMessageEmpty && !isOverCharacterLimit;
 
   const handleAnalyze = async () => {
     if (isLoading) return;
@@ -465,8 +473,13 @@ export default function Home() {
     setRewriteCopied(false);
     setShowRewrite(false);
 
-    if (!message.trim()) {
+    if (isMessageEmpty) {
       setError("Paste a message before analyzing.");
+      return;
+    }
+
+    if (isOverCharacterLimit) {
+      setError("That's enough panic for one read.");
       return;
     }
 
@@ -554,45 +567,80 @@ export default function Home() {
         {backgroundBubbles.map((bubble) => (
           <span
             key={bubble.text}
-            className={`chat-wallpaper-bubble absolute hidden rounded-[1.8rem] border border-white/75 bg-white/62 px-6 py-3.5 font-semibold leading-tight text-slate-900/82 shadow-[0_24px_80px_-42px_rgba(18,24,70,0.78),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-xl md:block lg:px-7 lg:py-4 ${bubble.className}`}
+            className={`chat-wallpaper-bubble absolute hidden rounded-[1.5rem] border border-white/55 bg-white/48 px-4 py-2.5 font-semibold leading-tight text-slate-900/68 shadow-[0_20px_62px_-46px_rgba(18,24,70,0.7),inset_0_1px_0_rgba(255,255,255,0.62)] backdrop-blur-xl md:block lg:px-5 lg:py-3 ${bubble.className}`}
           >
             {bubble.text}
           </span>
         ))}
       </div>
 
-      <main className="relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-5 py-12 sm:px-8 sm:py-20">
-        <div className="mb-6 text-center sm:text-left">
-            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.35em] text-white/70">
-            textpanic.com
-          </p>
-        </div>
-
+      <main className="relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-5 py-10 sm:px-8 sm:py-16">
         <div className="app-card-enter rounded-[1.75rem] bg-[#fffefa]/98 p-5 shadow-[0_34px_110px_-58px_rgba(45,64,116,0.46),0_0_70px_-34px_rgba(132,112,255,0.34)] ring-1 ring-[#7185bd]/18 backdrop-blur-xl transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_38px_120px_-58px_rgba(45,64,116,0.52),0_0_82px_-34px_rgba(132,112,255,0.42)] sm:p-10">
-          <div className="max-w-2xl">
-            <p className="text-sm font-semibold uppercase tracking-[0.28em] text-[#2f6fed]">
-              Before you send that text...
-            </p>
-            <h1 className="mt-4 text-5xl font-semibold leading-[0.98] tracking-tight text-slate-950 sm:text-6xl">
-              TextPanic
-            </h1>
-            <p className="mt-5 max-w-lg text-lg leading-8 text-slate-600 sm:text-xl">
-              You think this sounds chill. Let&apos;s check.
-            </p>
+          <div className="inline-flex max-w-full items-center gap-3">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-[#fff2d8] shadow-[0_16px_38px_-28px_rgba(15,23,42,0.8)]">
+              <span className="text-base font-black leading-none tracking-[-0.04em]">
+                T
+              </span>
+              <span
+                aria-hidden="true"
+                className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#fffefa] bg-[#2f6fed]"
+              />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[1.05rem] font-black leading-none tracking-[-0.035em] text-slate-950 sm:text-[1.18rem]">
+                Text<span className="text-[#2f6fed]">Panic</span>
+              </p>
+              <p className="mt-1.5 max-w-[22rem] truncate text-[0.72rem] font-semibold uppercase tracking-[0.12em] text-slate-500 sm:text-xs">
+                For messages written during emotional turbulence.
+              </p>
+            </div>
           </div>
 
-          <div className="mt-11 space-y-5 sm:mt-12 sm:space-y-6">
+          <div className="mt-8 max-w-3xl sm:mt-9">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#2f6fed] sm:text-sm">
+              Before you hit send...
+            </p>
+            <h1 className="mt-4 text-3xl font-semibold leading-[1.08] tracking-tight text-slate-950 sm:text-[2.85rem] sm:leading-[1.04]">
+              Paste your text.
+              <br />
+              We&apos;ll tell you if it lands or crashes.
+            </h1>
+          </div>
+
+          <div className="mt-7 space-y-5 sm:mt-9 sm:space-y-6">
             <label htmlFor="message" className="sr-only">
               Message input
             </label>
             <textarea
               id="message"
               rows={10}
+              maxLength={MESSAGE_CHARACTER_LIMIT}
               value={message}
               onChange={(event) => setMessage(event.target.value)}
-              placeholder="Paste the text you're about to send..."
+              placeholder="Paste the text you're spiraling over..."
               className="w-full min-h-[260px] rounded-[1.5rem] border border-slate-200/80 bg-[#fffdf9] px-6 py-5 text-base leading-7 text-slate-900 shadow-[0_18px_50px_-34px_rgba(15,23,42,0.22)] placeholder:text-slate-400 outline-none transition duration-300 ease-out focus:border-[#2f6fed]/40 focus:ring-4 focus:ring-[#2f6fed]/10"
             />
+            <div className="flex flex-col gap-2 px-1 text-xs font-medium text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+              <p>Keep it tight. The spiral can still be implied.</p>
+              <div className="flex items-center gap-3">
+                {isAtCharacterLimit ? (
+                  <span className="text-[#9b6508]">
+                    That&apos;s enough panic for one read.
+                  </span>
+                ) : null}
+                <span
+                  className={`tabular-nums transition-colors ${
+                    isAtCharacterLimit
+                      ? "font-semibold text-[#9b6508]"
+                      : isNearCharacterLimit
+                        ? "font-semibold text-[#2f6fed]"
+                        : "text-slate-400"
+                  }`}
+                >
+                  {messageLength} / {MESSAGE_CHARACTER_LIMIT}
+                </span>
+              </div>
+            </div>
 
             {error ? (
               <p className="rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
@@ -603,7 +651,7 @@ export default function Home() {
             <button
               type="button"
               onClick={handleAnalyze}
-              disabled={isLoading}
+              disabled={!canAnalyze}
               className="inline-flex min-h-[54px] w-full items-center justify-center gap-3 rounded-full bg-slate-950 px-8 py-4 text-base font-semibold text-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 disabled:cursor-not-allowed disabled:bg-slate-500 disabled:shadow-none"
             >
               {isLoading ? (
@@ -612,7 +660,7 @@ export default function Home() {
                   {loadingMessage}
                 </span>
               ) : (
-                "Analyze"
+                "Read my text"
               )}
             </button>
           </div>
@@ -680,30 +728,30 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="space-y-6">
-                    <div className="rounded-[1.7rem] bg-[#fff2d8] p-6 shadow-[0_28px_70px_-55px_rgba(164,106,5,0.65)] ring-1 ring-[#efbd5b]/35 sm:p-7">
-                      <p className="text-sm font-semibold uppercase tracking-[0.13em] text-[#9b6508]">
-                        The vibe
+                  <div className="space-y-4 sm:space-y-5">
+                    <div className="rounded-[1.55rem] bg-[#fff2d8] p-6 shadow-[0_24px_64px_-54px_rgba(164,106,5,0.58)] ring-1 ring-[#efbd5b]/35 sm:p-7">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#9b6508] sm:text-sm">
+                        THE VIBE
                       </p>
-                      <p className="mt-4 max-w-[42rem] text-[1.42rem] font-semibold leading-[1.2] tracking-tight text-slate-950 sm:text-[1.9rem] sm:leading-[1.16]">
+                      <p className="mt-4 max-w-[39rem] text-[1.22rem] font-semibold leading-[1.38] tracking-tight text-slate-950 sm:text-[1.42rem] sm:leading-[1.34]">
                         {result.emotionalInterpretation}
                       </p>
                     </div>
                     {socialMirror ? (
-                      <div className="rounded-[1.55rem] bg-[#fffdf8]/88 p-6 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.4)] ring-1 ring-slate-950/[0.04] sm:p-7">
-                        <p className="text-sm font-semibold uppercase tracking-[0.13em] text-[#2f6fed]">
-                          The Subtext
+                      <div className="rounded-[1.55rem] bg-[#fffdf8]/88 p-6 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.34)] ring-1 ring-slate-950/[0.04] sm:p-7">
+                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#2f6fed] sm:text-sm">
+                          THE SUBTEXT
                         </p>
-                        <p className="mt-4 max-w-[38rem] text-[1.28rem] font-medium leading-[1.42] tracking-tight text-slate-900 sm:text-[1.58rem] sm:leading-[1.34]">
+                        <p className="mt-4 max-w-[39rem] text-[1.22rem] font-semibold leading-[1.38] tracking-tight text-slate-900 sm:text-[1.42rem] sm:leading-[1.34]">
                           {socialMirror.subtext}
                         </p>
                       </div>
                     ) : null}
-                    <div className="rounded-[1.55rem] bg-[#e9f1f4] p-6 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.45)] ring-1 ring-[#8fb2c3]/20 sm:p-7">
-                      <p className="text-sm font-semibold uppercase tracking-[0.13em] text-[#4e7282]">
-                        How this lands
+                    <div className="rounded-[1.55rem] bg-[#e9f1f4] p-6 shadow-[0_22px_60px_-55px_rgba(15,23,42,0.36)] ring-1 ring-[#8fb2c3]/20 sm:p-7">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#4e7282] sm:text-sm">
+                        HOW THIS LANDS
                       </p>
-                      <p className="mt-4 max-w-[40rem] text-[1.12rem] font-medium leading-[1.58] text-slate-800 sm:text-[1.28rem] sm:leading-[1.55]">
+                      <p className="mt-4 max-w-[39rem] text-[1.22rem] font-semibold leading-[1.38] tracking-tight text-slate-800 sm:text-[1.42rem] sm:leading-[1.34]">
                         {result.recipientLikelyPerception}
                       </p>
                     </div>
@@ -767,12 +815,11 @@ export default function Home() {
                       TextPanic check
                     </p>
                     <h3 className="mt-4 text-2xl font-semibold leading-tight tracking-tight text-[#243149] sm:text-3xl">
-                      Before you send it, check it.
+                      No panic analyzed yet.
                     </h3>
                     <p className="mt-4 text-base leading-7 text-[#64748b] sm:text-lg sm:leading-8">
-                      Read it once like they&apos;ll read it. Sometimes tone
-                      travels badly, and a tiny pause can save an &apos;oops&apos;
-                      later.
+                      Paste a message to get the read. The fix stays locked
+                      until you ask for it.
                     </p>
                   </div>
                 </div>
