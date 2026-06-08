@@ -12,8 +12,14 @@ type AnalysisResult = {
 };
 
 type SignaturePhrase = {
-  text: string;
-  keywords: string[];
+  name: string;
+  phrases: string[];
+  messagePatterns: RegExp[];
+};
+
+type SocialMirror = {
+  severity: string;
+  subtext: string;
 };
 
 const backgroundBubbles = [
@@ -112,165 +118,147 @@ const loadingMessages = [
 
 const signaturePhrases: SignaturePhrase[] = [
   {
-    text: 'You are absolutely not "lol"-ing right now.',
-    keywords: ["lol", "haha", "lmao"],
+    name: "fake-casual",
+    phrases: [
+      "You're trying to sound casual, but the anxiety is holding a microphone.",
+      "The joke is doing unpaid emotional labor.",
+      "That 'lol' is not hiding as much as you think.",
+      "The message says chill. The subtext has tabs open.",
+      "This is breezy in the way a paper bag is breezy in a storm.",
+    ],
+    messagePatterns: [
+      /\b(lol|haha|lmao)\b/i,
+      /\b(no worries|all good|it's fine|its fine)\b/i,
+      /\b(just checking|quick question)\b/i,
+    ],
   },
   {
-    text: "This has the emotional warmth of a folding chair.",
-    keywords: ["k.", "k", "ok.", "okay."],
+    name: "cold-short",
+    phrases: [
+      "This has the emotional warmth of a folding chair.",
+      "This is technically a reply and emotionally a locked door.",
+      "Tiny message. Very large silence.",
+      "This is cold enough to make them reread the last five texts.",
+    ],
+    messagePatterns: [/^\s*(k|ok|okay|sure)\.?\s*$/i],
   },
   {
-    text: "This text was drafted by anxiety and approved by panic.",
-    keywords: ["mad at me", "ignoring me", "are we okay", "checking"],
+    name: "anxious",
+    phrases: [
+      "You're asking for clarity, but the panic is sitting in the passenger seat.",
+      "This reads like you typed it, deleted it twice, then sent the brave version.",
+      "You're trying to check in without admitting you've already spiraled.",
+      "This text was drafted by anxiety and approved by panic.",
+      "You can almost hear the overthinking.",
+    ],
+    messagePatterns: [
+      /\b(mad at me|upset with me|ignoring me|are we okay|are we good)\b/i,
+      /\b(where were you|what are you doing|haven't heard|reply)\b/i,
+      /\b(checking|check in|just wanted)\b/i,
+    ],
   },
   {
-    text: 'You do not, in fact, mean "whatever."',
-    keywords: ["whatever"],
+    name: "dismissive",
+    phrases: [
+      "You're saying one word, but sending a whole courtroom transcript.",
+      "You do not, in fact, mean 'whatever.'",
+      "The sentence is short. The resentment has luggage.",
+      "This is pretending not to care while absolutely caring.",
+      "Polite wording. Violent undertones.",
+    ],
+    messagePatterns: [/\b(k|ok|okay|fine|whatever|sure)\.?\b/i],
   },
   {
-    text: "This is trying to sound casual while wearing a tiny stress suit.",
-    keywords: ["just checking", "no worries", "all good"],
+    name: "workplace",
+    phrases: [
+      "This is polite on paper and deeply tired underneath.",
+      "You're trying to stay professional while gently shaking the table.",
+      "This is less 'just following up' and more 'please stop making me chase this.'",
+      "This is wearing a blazer, but the sleeves are full of tension.",
+      "Professional on the surface. Shoes-on-the-carpet underneath.",
+    ],
+    messagePatterns: [
+      /\b(per my last email|following up|follow up|as discussed|as mentioned)\b/i,
+      /\b(manager|boss|client|meeting|deadline|email|regards)\b/i,
+    ],
   },
   {
-    text: "The message says chill. The subtext is doing push-ups.",
-    keywords: ["chill", "fine", "lol"],
+    name: "angry",
+    phrases: [
+      "You're not just asking a question. You're arriving with evidence.",
+      "This is frustration wearing shoes indoors.",
+      "You want answers, but the message is bringing a torch.",
+      "The feeling is valid. The delivery has its hazards on.",
+      "This has a point, but it is hiding behind the heat.",
+    ],
+    messagePatterns: [
+      /\b(angry|mad|annoyed|ridiculous|done|hate|sucks)\b/i,
+      /\b(why would you|what did i do|where were you|explain yourself)\b/i,
+    ],
   },
   {
-    text: "This is a soft launch for a much bigger feeling.",
-    keywords: ["maybe", "wondering", "just wanted"],
+    name: "overexplaining",
+    phrases: [
+      "This brought receipts, but nobody asked for the whole binder.",
+      "Somewhere in here is a really good message.",
+      "This is overexplaining because silence feels illegal right now.",
+      "The point is good. It just took the scenic route.",
+    ],
+    messagePatterns: [/\b(because|also|another thing|to be clear|what i meant)\b/i],
   },
-  {
-    text: "You are asking a question, but emotionally you already have a spreadsheet.",
-    keywords: ["why", "what did i do", "are you"],
-  },
-  {
-    text: "This is not a text. This is a temperature check with Wi-Fi.",
-    keywords: ["checking", "check in", "are we"],
-  },
-  {
-    text: "This sounds like you want reassurance but packed it in bubble wrap.",
-    keywords: ["just", "maybe", "if you want"],
-  },
-  {
-    text: "This is emotionally expensive for a message this short.",
-    keywords: ["k", "fine", "sure", "whatever"],
-  },
-  {
-    text: "This is passive aggression in a clean outfit.",
-    keywords: ["per my last email", "as stated", "as mentioned"],
-  },
-  {
-    text: "This message is smiling with its teeth clenched.",
-    keywords: ["no worries", "all good", "fine"],
-  },
-  {
-    text: "This sounds like you are one follow-up away from becoming a calendar invite.",
-    keywords: ["follow up", "following up", "per my last email"],
-  },
-  {
-    text: "This is technically polite and spiritually furious.",
-    keywords: ["per my last email", "as discussed", "regards"],
-  },
-  {
-    text: "This is trying very hard to be the bigger person and is sweating.",
-    keywords: ["i understand", "no worries", "it's fine"],
-  },
-  {
-    text: "This has the energy of someone typing, deleting, and typing again.",
-    keywords: ["maybe", "just", "sorry", "wondering"],
-  },
-  {
-    text: "This is a tiny message carrying a full emotional suitcase.",
-    keywords: ["k", "ok", "fine", "sure"],
-  },
-  {
-    text: "This sounds like a boundary trying to introduce itself.",
-    keywords: ["can't", "need", "stop", "not okay"],
-  },
-  {
-    text: "This is the text version of pretending not to care while absolutely caring.",
-    keywords: ["whatever", "do what you want", "it's cool"],
-  },
-  {
-    text: "This is not rude yet, but it is looking at rude from across the room.",
-    keywords: ["fine", "sure", "okay then"],
-  },
-  {
-    text: "This is frustration with no forwarding address.",
-    keywords: ["sucks", "hate", "annoyed", "ridiculous"],
-  },
-  {
-    text: "This message has a point, but it is hiding behind the attitude.",
-    keywords: ["whatever", "done", "ridiculous"],
-  },
-  {
-    text: "This is a valid feeling in a slightly dangerous outfit.",
-    keywords: ["angry", "mad", "sucks", "hate"],
-  },
-  {
-    text: "This is giving less 'quick question' and more 'please answer before I spiral.'",
-    keywords: ["quick question", "just checking", "are you ignoring"],
-  },
-  {
-    text: "This is overexplaining because silence feels illegal right now.",
-    keywords: ["because", "i just mean", "what i meant"],
-  },
-  {
-    text: "This message brought receipts, but nobody asked for the whole binder.",
-    keywords: ["because", "also", "another thing", "to be clear"],
-  },
-  {
-    text: "This is avoidance wearing a helpful little hat.",
-    keywords: ["maybe later", "we'll see", "not sure"],
-  },
-  {
-    text: "This is mixed signals with decent punctuation.",
-    keywords: ["miss you", "but", "i don't know"],
-  },
-  {
-    text: "This is trying to be low-maintenance while needing maintenance immediately.",
-    keywords: ["no pressure", "whenever", "if you want"],
-  },
-  {
-    text: "This is a confrontation wearing slippers.",
-    keywords: ["can we talk", "we need to talk", "not okay"],
-  },
-  {
-    text: "This is a little too polished for someone who is not mad.",
-    keywords: ["regards", "best", "per my last email"],
-  },
-  {
-    text: "This is a cry for clarity pretending to be a casual ping.",
-    keywords: ["hey", "just checking", "are we good"],
-  },
-  {
-    text: "This message is doing emotional gymnastics to avoid saying the simple thing.",
-    keywords: ["i guess", "maybe", "sort of"],
-  },
-  {
-    text: "This is neediness trying to pass as logistics.",
-    keywords: ["when can", "haven't heard", "reply"],
-  },
-  {
-    text: "This is cold enough to make the other person start rereading the chat history.",
-    keywords: ["k", "ok", "sure"],
-  },
-  {
-    text: "This is honest, but it arrives holding a tiny hammer.",
-    keywords: ["truth", "honestly", "sucks", "ridiculous"],
-  },
-  {
-    text: "This sounds less chill than you think it does.",
-    keywords: ["chill", "lol", "whatever", "no worries"],
-  },
-  {
-    text: "This is a reasonable request with a dramatic little shadow.",
-    keywords: ["can you", "could you", "please"],
-  },
-  {
-    text: "This message is not wrong. It is just arriving without a seatbelt.",
-    keywords: ["angry", "mad", "done", "hate"],
-  },
+];
+
+const rotatingSubtextLines = [
+  "This reads like a breakup drafted in a Tesco car park.",
+  "Confident words. Nervous energy.",
+  "You're saying 'fine.' The message is not.",
+  "Somewhere between heartfelt and hostage note.",
+  "This one could use a softer landing.",
+  "Emotionally available. Structurally chaotic.",
+  "Like a hug delivered by email.",
+  "There's warmth in here. Buried deep, but there.",
+  "This feels accidentally honest.",
+  "A brave amount of punctuation.",
+  "You can almost hear the overthinking.",
+  "This lands harder than you think.",
+  "Polite wording. Violent undertones.",
+  "Honestly? Better than most people communicate.",
+  "Reads like you typed it while pacing.",
+  "This has 'sent too quickly' energy.",
+  "Somewhere in here is a really good message.",
+  "Not cold. Just... aggressively efficient.",
+  "This feels one edit away from clarity.",
+  "There's a real person in this one.",
+  "The sentence is calm. The room is not.",
+  "A little less edge and this could actually land.",
+  "This is trying to be casual in formal shoes.",
+  "Soft intent, pointy delivery.",
+  "The honesty is there. It just needs better lighting.",
+  "This is not dramatic. It is dramatic-adjacent.",
+  "A clean thought wearing a messy coat.",
+  "This message wants to be brave, but keeps checking the exits.",
+  "Readable, but emotionally double-parked.",
+  "The tone says composed. The commas disagree.",
+  "This could be kind if it stopped flinching.",
+  "A small message carrying a suspiciously large backpack.",
+  "This is clearer than it is comfortable.",
+  "Almost graceful. Currently wearing boots indoors.",
+  "There's a good point here trying not to make eye contact.",
+  "This is what happens when sincerity meets bad timing.",
+  "Warm underneath, chilly at the edges.",
+  "This has the energy of a sigh with spellcheck.",
+  "The message is doing its best. Its best needs a nap.",
+  "Good instinct. Slightly haunted execution.",
+  "This is a lot of feeling for one small text box.",
+  "You are closer to direct than you think.",
+  "This reads honest, but not quite ready.",
+  "A gentle thought with sharp elbows.",
+  "This has emotional weather.",
+  "Not a disaster. More of a wobbly entrance.",
+  "This is the text equivalent of standing in the doorway.",
+  "The feeling is right. The landing gear is questionable.",
+  "A tiny edit could make this much easier to receive.",
+  "There is care in here, even if it arrived late.",
 ];
 
 const defaultAnalysisResult: AnalysisResult = {
@@ -327,23 +315,40 @@ function getAnalysisText(result: AnalysisResult, message: string) {
     .toLowerCase();
 }
 
-function getSignaturePhrase(result: AnalysisResult, message: string) {
-  const analysisText = getAnalysisText(result, message);
+function matchesAnyPattern(text: string, patterns: RegExp[] = []) {
+  return patterns.some((pattern) => pattern.test(text));
+}
 
-  return signaturePhrases.find((phrase) =>
-    phrase.keywords.some((keyword) => analysisText.includes(keyword)),
-  )?.text;
+function selectRandomLine(lines: string[], previousLine: string | null) {
+  if (lines.length === 0) return "";
+  if (lines.length === 1) return lines[0];
+
+  const availableLines = previousLine
+    ? lines.filter((line) => line !== previousLine)
+    : lines;
+
+  return availableLines[Math.floor(Math.random() * availableLines.length)];
+}
+
+function getSignaturePhrases(result: AnalysisResult, message: string) {
+  const messageText = message.toLowerCase();
+  const matchedCategories = signaturePhrases.filter((phrase) =>
+    matchesAnyPattern(messageText, phrase.messagePatterns),
+  );
+
+  return matchedCategories.flatMap((phrase) => phrase.phrases);
 }
 
 function getReadSeverity(result: AnalysisResult, message: string) {
+  const messageText = message.toLowerCase();
   const analysisText = getAnalysisText(result, message);
   const lowScores = result.confidenceScore <= 5 || result.clarityScore <= 5;
 
-  if (analysisText.includes("lol") && /panic|anxiety|spiral|ignoring/.test(analysisText)) {
+  if (/\b(lol|haha|lmao)\b/i.test(messageText) && /panic|anxiety|spiral|ignoring/.test(analysisText)) {
     return "One LOL Away From A Breakdown";
   }
 
-  if (/passive|per my last email|whatever|fine|sure|k\./.test(analysisText)) {
+  if (/\b(per my last email|whatever|fine|sure)\b/i.test(messageText) || /^\s*(k|ok|okay)\.?\s*$/i.test(messageText)) {
     return "Passive Aggressive Lite";
   }
 
@@ -366,26 +371,78 @@ function getReadSeverity(result: AnalysisResult, message: string) {
   return "Mostly Fine";
 }
 
-function getSubtext(result: AnalysisResult, message: string) {
-  const signaturePhrase = getSignaturePhrase(result, message);
+function getSubtext(
+  result: AnalysisResult,
+  message: string,
+  previousSubtext: string | null,
+) {
+  const matchingPhrases = getSignaturePhrases(result, message);
 
-  if (signaturePhrase) return signaturePhrase;
-
-  const analysisText = getAnalysisText(result, message);
-
-  if (/sorry|apolog/.test(analysisText)) {
-    return "You are trying to repair something without making the apology a whole production.";
+  if (matchingPhrases.length > 0) {
+    return selectRandomLine(matchingPhrases, previousSubtext);
   }
 
-  if (/work|job|email|manager|boss/.test(analysisText)) {
-    return "You want to stay professional, but the inside voice is already pacing.";
+  const analysisText = getAnalysisText(result, message);
+  const subtextCandidates: string[] = [];
+
+  if (/sorry|apolog/.test(analysisText)) {
+    subtextCandidates.push(
+      "You are trying to repair something without making the apology a whole production.",
+      "This wants to make things right without turning into a speech.",
+    );
+  }
+
+  if (/work|job|email|manager|boss|professional/.test(analysisText)) {
+    subtextCandidates.push(
+      "You want to stay professional, but the inside voice is already pacing.",
+      "Professional on the surface. Shoes-on-the-carpet underneath.",
+    );
   }
 
   if (/date|dating|relationship|miss you/.test(analysisText)) {
-    return "You want connection, but you are trying not to look like you want connection.";
+    subtextCandidates.push(
+      "You want connection, but you are trying not to look like you want connection.",
+      "This is reaching out while pretending its arm is not extended.",
+    );
   }
 
-  return "The message is saying one thing, but the emotional subtitles are doing extra work.";
+  if (/cold|clipped|blunt|short/.test(analysisText)) {
+    subtextCandidates.push(
+      "Not cold exactly. Just arriving without a blanket.",
+      "This is concise in a way that might make someone nervous.",
+      "The message is brief. The read may not be.",
+    );
+  }
+
+  if (/clear|honest|direct|readable/.test(analysisText)) {
+    subtextCandidates.push(
+      "The point is there. It just needs a little better lighting.",
+      "This is close to clear. It could land softer.",
+      "There's a real message in here, and it is almost ready.",
+    );
+  }
+
+  if (/anxious|panic|spiral|reassurance|needy/.test(analysisText)) {
+    subtextCandidates.push(
+      "This wants reassurance without putting a sign on it.",
+      "The check-in is doing a lot of emotional lifting.",
+      "You are asking gently, but the worry is not whispering.",
+    );
+  }
+
+  if (/angry|frustrated|furious|loaded|defensive/.test(analysisText)) {
+    subtextCandidates.push(
+      "The feeling is fair. The landing is a little sharp.",
+      "This has heat, and some of it is useful.",
+      "You're making a point. The point is carrying matches.",
+    );
+  }
+
+  if (subtextCandidates.length === 0) {
+    subtextCandidates.push(...rotatingSubtextLines);
+  }
+
+  return selectRandomLine(subtextCandidates, previousSubtext);
 }
 
 export default function Home() {
@@ -395,12 +452,15 @@ export default function Home() {
   const [error, setError] = useState("");
   const [rewriteCopied, setRewriteCopied] = useState(false);
   const [showRewrite, setShowRewrite] = useState(false);
+  const [socialMirror, setSocialMirror] = useState<SocialMirror | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSubtextRef = useRef<string | null>(null);
 
   const handleAnalyze = async () => {
     if (isLoading) return;
 
     setResult(null);
+    setSocialMirror(null);
     setError("");
     setRewriteCopied(false);
     setShowRewrite(false);
@@ -430,7 +490,19 @@ export default function Home() {
         throw new Error(data?.error || "Analysis failed. Please try again.");
       }
 
-      setResult(normalizeAnalysisResult(data));
+      const normalizedResult = normalizeAnalysisResult(data);
+      const nextSubtext = getSubtext(
+        normalizedResult,
+        message,
+        lastSubtextRef.current,
+      );
+
+      lastSubtextRef.current = nextSubtext;
+      setResult(normalizedResult);
+      setSocialMirror({
+        severity: getReadSeverity(normalizedResult, message),
+        subtext: nextSubtext,
+      });
       setShowRewrite(false);
       setRewriteCopied(false);
     } catch (error) {
@@ -465,12 +537,6 @@ export default function Home() {
     }
   };
 
-  const socialMirror = result
-    ? {
-        severity: getReadSeverity(result, message),
-        subtext: getSubtext(result, message),
-      }
-    : null;
   const loadingMessage = loadingMessages[message.length % loadingMessages.length];
 
   return (
