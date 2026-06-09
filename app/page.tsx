@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { captureTextPanicEvent } from "./lib/analytics";
 
 type AnalysisResult = {
   tone: string;
@@ -447,6 +448,14 @@ function getSubtext(
   return selectRandomLine(subtextCandidates, previousSubtext);
 }
 
+function detectLanguageForAnalytics(message: string) {
+  if (/[^\u0000-\u007f]/.test(message)) {
+    return "non_english_possible";
+  }
+
+  return "english_possible";
+}
+
 export default function Home() {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -517,15 +526,21 @@ export default function Home() {
         message,
         lastSubtextRef.current,
       );
+      const severity = getReadSeverity(normalizedResult, message);
 
       lastSubtextRef.current = nextSubtext;
       setResult(normalizedResult);
       setSocialMirror({
-        severity: getReadSeverity(normalizedResult, message),
+        severity,
         subtext: nextSubtext,
       });
       setShowRewrite(false);
       setRewriteCopied(false);
+      captureTextPanicEvent("text_analyzed", {
+        character_count: message.trim().length,
+        severity,
+        detected_language: detectLanguageForAnalytics(message),
+      });
     } catch (error) {
       setError(
         error instanceof Error
@@ -560,12 +575,18 @@ export default function Home() {
   const handleRevealRewrite = () => {
     if (isRevealingRewrite || showRewrite) return;
 
+    const rewriteEventProperties = {
+      character_count: message.trim().length,
+      severity: socialMirror?.severity,
+      detected_language: detectLanguageForAnalytics(message),
+    };
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
 
     if (prefersReducedMotion) {
       setShowRewrite(true);
+      captureTextPanicEvent("rewrite_revealed", rewriteEventProperties);
       return;
     }
 
@@ -574,6 +595,7 @@ export default function Home() {
       setShowRewrite(true);
       setIsRevealingRewrite(false);
       revealTimeoutRef.current = null;
+      captureTextPanicEvent("rewrite_revealed", rewriteEventProperties);
     }, 650);
   };
 
@@ -583,6 +605,11 @@ export default function Home() {
     try {
       await navigator.clipboard.writeText(result.improvedRewrite);
       setRewriteCopied(true);
+      captureTextPanicEvent("rewrite_copied", {
+        character_count: message.trim().length,
+        severity: socialMirror?.severity,
+        detected_language: detectLanguageForAnalytics(message),
+      });
 
       if (copyTimeoutRef.current) {
         clearTimeout(copyTimeoutRef.current);

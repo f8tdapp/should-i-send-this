@@ -1,4 +1,6 @@
 import OpenAI from "openai";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
 
 type AnalysisResult = {
   tone: string;
@@ -14,6 +16,100 @@ const client = process.env.OPENAI_API_KEY
   : null;
 
 const MESSAGE_CHARACTER_LIMIT = 750;
+const OPENAI_TIMEOUT_MS = 20_000;
+const RATE_LIMITED_MESSAGE =
+  "Okay. Deep breath. You've analyzed a lot of texts today. Try again later.";
+const TIMEOUT_MESSAGE =
+  "The read is taking too long. The text can wait. Try again in a moment.";
+const GENERIC_ERROR_MESSAGE =
+  "TextPanic hit a weird little snag. Try again in a moment.";
+
+const redis =
+  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+    ? new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      })
+    : null;
+
+const dailyRateLimit = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(5, "1 d"),
+      prefix: "textpanic:analyze:daily",
+    })
+  : null;
+
+const burstRateLimit = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(2, "30 s"),
+      prefix: "textpanic:analyze:burst",
+    })
+  : null;
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+function getRequestIp(request: Request) {
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const firstForwardedIp = forwardedFor?.split(",")[0]?.trim();
+
+  return firstForwardedIp || "anonymous";
+}
+
+function validateMessage(body: unknown) {
+  const message =
+    body && typeof body === "object" && "message" in body
+      ? (body as { message?: unknown }).message
+      : undefined;
+
+  if (typeof message !== "string") {
+    return {
+      error: "Paste a message first. TextPanic needs something to read.",
+    };
+  }
+
+  const trimmedMessage = message.trim();
+
+  if (trimmedMessage.length === 0) {
+    return {
+      error: "Paste a message first. TextPanic needs something to read.",
+    };
+  }
+
+  if (trimmedMessage.length > MESSAGE_CHARACTER_LIMIT) {
+    return { error: "That's enough panic for one read." };
+  }
+
+  return { message: trimmedMessage };
+}
+
+async function checkRateLimit(ip: string) {
+  if (!dailyRateLimit || !burstRateLimit) {
+    if (process.env.NODE_ENV === "development") {
+      console.warn(
+        "Analyze: Upstash env vars are not configured. Rate limiting is disabled.",
+      );
+    }
+
+    return { success: true };
+  }
+
+  const [dailyLimit, burstLimit] = await Promise.all([
+    dailyRateLimit.limit(ip),
+    burstRateLimit.limit(ip),
+  ]);
+
+  return {
+    success: dailyLimit.success && burstLimit.success,
+    reset: Math.max(dailyLimit.reset, burstLimit.reset),
+  };
+}
 
 function inferDemoContext(message: string) {
   const lowerMessage = message.toLowerCase();
@@ -233,43 +329,36 @@ export async function POST(request: Request) {
     body = await request.json();
   } catch (err) {
     console.error("Analyze: invalid JSON body", err);
-    return new Response(JSON.stringify({ error: "Invalid request body." }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  const message =
-    body && typeof body === "object" && "message" in body
-      ? (body as { message?: unknown }).message
-      : undefined;
-
-  if (typeof message !== "string" || message.trim().length === 0) {
-    return new Response(JSON.stringify({ error: "Message is required." }), {
-      status: 400,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  if (message.length > MESSAGE_CHARACTER_LIMIT) {
-    return new Response(
-      JSON.stringify({ error: "That's enough panic for one read." }),
-      {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      },
+    return jsonResponse(
+      { error: "That request came through sideways. Try pasting it again." },
+      400,
     );
+  }
+
+  const validatedMessage = validateMessage(body);
+
+  if ("error" in validatedMessage) {
+    return jsonResponse({ error: validatedMessage.error }, 400);
+  }
+
+  const message = validatedMessage.message;
+  const rateLimit = await checkRateLimit(getRequestIp(request));
+
+  if (!rateLimit.success) {
+    return jsonResponse({ error: RATE_LIMITED_MESSAGE }, 429);
   }
 
   if (!client) {
     console.error(
       "Analyze: OPENAI_API_KEY is not configured. Returning demo analysis fallback.",
     );
-    return new Response(JSON.stringify(createDemoAnalysis(message)), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse(createDemoAnalysis(message));
   }
+
+  const abortController = new AbortController();
+  const timeout = setTimeout(() => {
+    abortController.abort();
+  }, OPENAI_TIMEOUT_MS);
 
   try {
     const prompt = `You are "TextPanic", the user's brutally honest friend reading their texts before they hit send.
@@ -358,12 +447,14 @@ English examples of the desired voice. These show attitude, not language require
   improvedRewrite: "I'm really frustrated with work right now. I need to figure out what's actually fixable, because this is wearing me down."
 
 Message:
-${message.trim()}`;
+${message}`;
 
     const resp = await client.responses.create({
       model: "gpt-4.1-mini",
       input: prompt,
       max_output_tokens: 500,
+    }, {
+      signal: abortController.signal,
     });
 
     // Extract text from response output. Use output_text when available
@@ -386,12 +477,8 @@ ${message.trim()}`;
     if (!cleaned) {
       console.error(
         "Analyze: empty response from OpenAI. Returning demo analysis fallback.",
-        resp,
       );
-      return new Response(JSON.stringify(createDemoAnalysis(message)), {
-        status: 200,
-        headers: { "Content-Type": "application/json" },
-      });
+      return jsonResponse(createDemoAnalysis(message));
     }
 
     let analysis = createDemoAnalysis(message);
@@ -400,7 +487,7 @@ ${message.trim()}`;
     } catch (err) {
       console.error(
         "Analyze: failed to parse JSON from OpenAI response. Returning demo analysis fallback.",
-        { err, cleaned },
+        err,
       );
       analysis = createDemoAnalysis(message);
     }
@@ -409,25 +496,20 @@ ${message.trim()}`;
       console.log("Analyze: normalized API response", analysis);
     }
 
-    return new Response(JSON.stringify(analysis), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse(analysis);
   } catch (error) {
+    if (abortController.signal.aborted) {
+      console.error("Analyze route OpenAI request timed out.");
+      return jsonResponse({ error: TIMEOUT_MESSAGE }, 504);
+    }
+
     console.error(
-      "Analyze route OpenAI request failed. Returning demo analysis fallback.",
+      "Analyze route OpenAI request failed.",
       error,
     );
 
-    const analysis = createDemoAnalysis(message);
-
-    if (process.env.NODE_ENV === "development") {
-      console.log("Analyze: fallback API response", analysis);
-    }
-
-    return new Response(JSON.stringify(analysis), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: GENERIC_ERROR_MESSAGE }, 502);
+  } finally {
+    clearTimeout(timeout);
   }
 }
