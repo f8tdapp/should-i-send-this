@@ -19,6 +19,8 @@ const MESSAGE_CHARACTER_LIMIT = 750;
 const OPENAI_TIMEOUT_MS = 20_000;
 const RATE_LIMITED_MESSAGE =
   "Okay. Deep breath. You've analyzed a lot of texts today. Try again later.";
+const BURST_RATE_LIMITED_MESSAGE =
+  "Tiny pause. TextPanic needs a second before the next read.";
 const TIMEOUT_MESSAGE =
   "The read is taking too long. The text can wait. Try again in a moment.";
 const GENERIC_ERROR_MESSAGE =
@@ -43,7 +45,7 @@ const dailyRateLimit = redis
 const burstRateLimit = redis
   ? new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(2, "30 s"),
+      limiter: Ratelimit.slidingWindow(3, "30 s"),
       prefix: "textpanic:analyze:burst",
     })
   : null;
@@ -105,8 +107,24 @@ async function checkRateLimit(ip: string) {
     burstRateLimit.limit(ip),
   ]);
 
+  if (!dailyLimit.success) {
+    return {
+      success: false,
+      code: "daily_limit_exceeded",
+      reset: dailyLimit.reset,
+    };
+  }
+
+  if (!burstLimit.success) {
+    return {
+      success: false,
+      code: "burst_limit_exceeded",
+      reset: burstLimit.reset,
+    };
+  }
+
   return {
-    success: dailyLimit.success && burstLimit.success,
+    success: true,
     reset: Math.max(dailyLimit.reset, burstLimit.reset),
   };
 }
@@ -345,7 +363,16 @@ export async function POST(request: Request) {
   const rateLimit = await checkRateLimit(getRequestIp(request));
 
   if (!rateLimit.success) {
-    return jsonResponse({ error: RATE_LIMITED_MESSAGE }, 429);
+    return jsonResponse(
+      {
+        error:
+          rateLimit.code === "burst_limit_exceeded"
+            ? BURST_RATE_LIMITED_MESSAGE
+            : RATE_LIMITED_MESSAGE,
+        code: rateLimit.code,
+      },
+      429,
+    );
   }
 
   if (!client) {
