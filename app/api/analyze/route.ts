@@ -92,13 +92,12 @@ function validateMessage(body: unknown) {
 }
 
 async function checkRateLimit(ip: string) {
-  if (!dailyRateLimit || !burstRateLimit) {
-    if (process.env.NODE_ENV === "development") {
-      console.warn(
-        "Analyze: Upstash env vars are not configured. Rate limiting is disabled.",
-      );
-    }
+  // Local development only: avoids stale Upstash counters blocking manual testing.
+  if (process.env.NODE_ENV === "development") {
+    return { success: true };
+  }
 
+  if (!dailyRateLimit || !burstRateLimit) {
     return { success: true };
   }
 

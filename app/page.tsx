@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
+import { toPng } from "html-to-image";
 import { captureTextPanicEvent } from "./lib/analytics";
 
 type AnalysisResult = {
@@ -113,10 +114,10 @@ const backgroundBubbles = [
 ];
 
 const loadingMessages = [
-  "Reading the emotional damage...",
-  "Checking for hidden panic...",
-  "Consulting the group chat...",
-  "Measuring the 'lol' risk...",
+  "Reading between the lines...",
+  "Checking the emotional weather...",
+  "Locating the hidden subtext...",
+  "Measuring panic levels...",
 ];
 
 const signaturePhrases: SignaturePhrase[] = [
@@ -456,17 +457,132 @@ function detectLanguageForAnalytics(message: string) {
   return "english_possible";
 }
 
+function getSafeAnalyticsProperties(message: string, severity?: string) {
+  return {
+    character_count: message.trim().length,
+    severity,
+    detected_language: detectLanguageForAnalytics(message),
+  };
+}
+
+function formatAnalysisForClipboard(
+  result: AnalysisResult,
+  socialMirror: SocialMirror,
+) {
+  return [
+    "TextPanic",
+    socialMirror.severity,
+    "",
+    "THE VIBE",
+    result.emotionalInterpretation,
+    "",
+    "THE SUBTEXT",
+    socialMirror.subtext,
+    "",
+    "HOW THIS LANDS",
+    result.recipientLikelyPerception,
+    "",
+    "textpanic.com",
+  ].join("\n");
+}
+
+function ShareCard({
+  result,
+  socialMirror,
+  cardRef,
+}: {
+  result: AnalysisResult;
+  socialMirror: SocialMirror;
+  cardRef?: RefObject<HTMLDivElement | null>;
+}) {
+  return (
+    <div
+      ref={cardRef}
+      className="relative overflow-hidden rounded-[1.75rem] bg-[#fffefa] p-6 text-slate-950 shadow-[0_26px_86px_-54px_rgba(15,23,42,0.46)] ring-1 ring-[#7185bd]/18 sm:p-8"
+    >
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(47,111,237,0.14),transparent_34%),linear-gradient(145deg,rgba(255,217,130,0.2),rgba(222,210,255,0.22)_58%,rgba(207,221,229,0.28))]"
+      />
+      <div className="relative">
+        <div className="flex items-start justify-between gap-4">
+          <div className="inline-flex items-start gap-3">
+            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-[#fff2d8] shadow-[0_16px_38px_-28px_rgba(15,23,42,0.8)]">
+              <span className="text-base font-black leading-none tracking-[-0.04em]">
+                T
+              </span>
+              <span
+                aria-hidden="true"
+                className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#fffefa] bg-[#2f6fed]"
+              />
+            </div>
+            <div>
+              <p className="text-[1.02rem] font-black leading-none tracking-[-0.035em]">
+                Text<span className="text-[#2f6fed]/90">Panic</span>
+              </p>
+              <p className="mt-1 text-[0.68rem] font-medium leading-tight text-slate-500/75">
+                The read, minus the spiral.
+              </p>
+            </div>
+          </div>
+          <div className="max-w-[12rem] rounded-full bg-slate-950 px-3 py-1.5 text-right text-xs font-semibold leading-tight text-[#fff2d8] shadow-[0_18px_45px_-34px_rgba(15,23,42,0.8)]">
+            {socialMirror.severity}
+          </div>
+        </div>
+
+        <div className="mt-7 space-y-4">
+          <div className="rounded-[1.35rem] bg-[#ffd982] p-5 ring-1 ring-[#d99a1c]/35">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#7b4d03]">
+              THE VIBE
+            </p>
+            <p className="mt-3 text-[1.05rem] font-semibold leading-[1.38] tracking-tight">
+              {result.emotionalInterpretation}
+            </p>
+          </div>
+          <div className="rounded-[1.35rem] bg-[#ded2ff] p-5 ring-1 ring-[#9f8add]/36">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#584191]">
+              THE SUBTEXT
+            </p>
+            <p className="mt-3 text-[1.05rem] font-semibold leading-[1.38] tracking-tight text-[#211b32]">
+              {socialMirror.subtext}
+            </p>
+          </div>
+          <div className="rounded-[1.35rem] bg-[#cfdde5] p-5 ring-1 ring-[#7899aa]/32">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#3d5d6d]">
+              HOW THIS LANDS
+            </p>
+            <p className="mt-3 text-[1.05rem] font-semibold leading-[1.38] tracking-tight text-[#233642]">
+              {result.recipientLikelyPerception}
+            </p>
+          </div>
+        </div>
+
+        <p className="mt-6 text-right text-xs font-semibold tracking-[0.12em] text-slate-400">
+          textpanic.com
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState("");
   const [rewriteCopied, setRewriteCopied] = useState(false);
+  const [analysisCopied, setAnalysisCopied] = useState(false);
+  const [isDownloadingShareCard, setIsDownloadingShareCard] = useState(false);
+  const [showSharePreview, setShowSharePreview] = useState(false);
   const [showRewrite, setShowRewrite] = useState(false);
   const [isRevealingRewrite, setIsRevealingRewrite] = useState(false);
   const [socialMirror, setSocialMirror] = useState<SocialMirror | null>(null);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const analysisCopyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const shareCardRef = useRef<HTMLDivElement | null>(null);
   const lastSubtextRef = useRef<string | null>(null);
   const messageLength = message.length;
   const isMessageEmpty = message.trim().length === 0;
@@ -487,6 +603,8 @@ export default function Home() {
     setSocialMirror(null);
     setError("");
     setRewriteCopied(false);
+    setAnalysisCopied(false);
+    setShowSharePreview(false);
     setShowRewrite(false);
     setIsRevealingRewrite(false);
 
@@ -536,10 +654,10 @@ export default function Home() {
       });
       setShowRewrite(false);
       setRewriteCopied(false);
+      setAnalysisCopied(false);
+      setShowSharePreview(false);
       captureTextPanicEvent("text_analyzed", {
-        character_count: message.trim().length,
-        severity,
-        detected_language: detectLanguageForAnalytics(message),
+        ...getSafeAnalyticsProperties(message, severity),
       });
     } catch (error) {
       setError(
@@ -558,12 +676,19 @@ export default function Home() {
     setSocialMirror(null);
     setError("");
     setRewriteCopied(false);
+    setAnalysisCopied(false);
+    setShowSharePreview(false);
     setShowRewrite(false);
     setIsRevealingRewrite(false);
 
     if (copyTimeoutRef.current) {
       clearTimeout(copyTimeoutRef.current);
       copyTimeoutRef.current = null;
+    }
+
+    if (analysisCopyTimeoutRef.current) {
+      clearTimeout(analysisCopyTimeoutRef.current);
+      analysisCopyTimeoutRef.current = null;
     }
 
     if (revealTimeoutRef.current) {
@@ -576,9 +701,7 @@ export default function Home() {
     if (isRevealingRewrite || showRewrite) return;
 
     const rewriteEventProperties = {
-      character_count: message.trim().length,
-      severity: socialMirror?.severity,
-      detected_language: detectLanguageForAnalytics(message),
+      ...getSafeAnalyticsProperties(message, socialMirror?.severity),
     };
     const prefersReducedMotion = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
@@ -606,9 +729,7 @@ export default function Home() {
       await navigator.clipboard.writeText(result.improvedRewrite);
       setRewriteCopied(true);
       captureTextPanicEvent("rewrite_copied", {
-        character_count: message.trim().length,
-        severity: socialMirror?.severity,
-        detected_language: detectLanguageForAnalytics(message),
+        ...getSafeAnalyticsProperties(message, socialMirror?.severity),
       });
 
       if (copyTimeoutRef.current) {
@@ -625,10 +746,83 @@ export default function Home() {
     }
   };
 
+  const handleCopyAnalysis = async () => {
+    if (!result || !socialMirror) return;
+
+    try {
+      await navigator.clipboard.writeText(
+        formatAnalysisForClipboard(result, socialMirror),
+      );
+      setAnalysisCopied(true);
+      captureTextPanicEvent("result_copied", {
+        ...getSafeAnalyticsProperties(message, socialMirror.severity),
+      });
+
+      if (analysisCopyTimeoutRef.current) {
+        clearTimeout(analysisCopyTimeoutRef.current);
+      }
+
+      analysisCopyTimeoutRef.current = setTimeout(() => {
+        setAnalysisCopied(false);
+      }, 1600);
+    } catch {
+      setError(
+        "Copy did not work in this browser. The read is still right there.",
+      );
+    }
+  };
+
+  const handleDownloadShareCard = async () => {
+    if (!shareCardRef.current || !socialMirror) return;
+
+    setIsDownloadingShareCard(true);
+    setError("");
+
+    try {
+      const dataUrl = await toPng(shareCardRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+      });
+      const link = document.createElement("a");
+      link.download = "textpanic-read.png";
+      link.href = dataUrl;
+      link.click();
+      captureTextPanicEvent("share_card_downloaded", {
+        ...getSafeAnalyticsProperties(message, socialMirror.severity),
+      });
+    } catch (error) {
+      console.error("Share card download failed.", error);
+      setError(
+        "The share card refused to become a PNG. Very dramatic. Try again.",
+      );
+      captureTextPanicEvent("share_card_download_failed", {
+        ...getSafeAnalyticsProperties(message, socialMirror.severity),
+      });
+    } finally {
+      setIsDownloadingShareCard(false);
+    }
+  };
+
+  const handleToggleSharePreview = () => {
+    const nextShowSharePreview = !showSharePreview;
+
+    setShowSharePreview(nextShowSharePreview);
+
+    if (nextShowSharePreview) {
+      captureTextPanicEvent("share_card_preview_opened", {
+        ...getSafeAnalyticsProperties(message, socialMirror?.severity),
+      });
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (copyTimeoutRef.current) {
         clearTimeout(copyTimeoutRef.current);
+      }
+
+      if (analysisCopyTimeoutRef.current) {
+        clearTimeout(analysisCopyTimeoutRef.current);
       }
 
       if (revealTimeoutRef.current) {
@@ -697,6 +891,7 @@ export default function Home() {
             </label>
             <textarea
               id="message"
+              aria-label="Message to analyze"
               rows={10}
               maxLength={MESSAGE_CHARACTER_LIMIT}
               value={message}
@@ -733,18 +928,20 @@ export default function Home() {
               {messageLength > 0 ? (
                 <button
                   type="button"
+                  aria-label="Clear text"
                   onClick={handleClearText}
                   disabled={isLoading}
-                  className="inline-flex min-h-[54px] items-center justify-center rounded-full bg-[#eaf0ff] px-6 py-3 text-base font-semibold text-[#2f4c86] shadow-[0_16px_36px_-30px_rgba(47,111,237,0.6)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#dfe8ff] hover:text-[#17346f] disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                  className="inline-flex min-h-[54px] items-center justify-center rounded-full bg-[#eaf0ff] px-6 py-3 text-base font-semibold text-[#2f4c86] shadow-[0_16px_36px_-30px_rgba(47,111,237,0.6)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#dfe8ff] hover:text-[#17346f] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2f6fed]/16 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                   Clear text
                 </button>
               ) : null}
               <button
                 type="button"
+                aria-label="Read my text"
                 onClick={handleAnalyze}
                 disabled={!canAnalyze}
-                className="inline-flex min-h-[54px] flex-1 items-center justify-center gap-3 rounded-full bg-slate-950 px-8 py-4 text-base font-semibold text-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 disabled:cursor-not-allowed disabled:bg-slate-500 disabled:shadow-none"
+                className="inline-flex min-h-[54px] flex-1 items-center justify-center gap-3 rounded-full bg-slate-950 px-8 py-4 text-base font-semibold text-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950/20 disabled:cursor-not-allowed disabled:bg-slate-500 disabled:shadow-none"
               >
                 {isLoading ? (
                     <span className="inline-flex items-center gap-3">
@@ -771,10 +968,16 @@ export default function Home() {
               className="mt-4 space-y-6 transition-all duration-500 ease-out sm:mt-5"
             >
               {isLoading ? (
-                <p className="text-sm leading-6 text-slate-600">
-                  Consulting the group chat, scanning the subtext, and checking
-                  whether that punctuation is doing too much.
-                </p>
+                <div className="rounded-[1.35rem] bg-[#fbfcff] px-5 py-6 shadow-sm ring-1 ring-[#9aabc8]/18">
+                  <div className="inline-flex items-center gap-3 text-sm font-semibold leading-6 text-slate-700">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#2f6fed]/25 border-t-[#2f6fed]" />
+                    {loadingMessage}
+                  </div>
+                  <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
+                    TextPanic is reading the room. Quietly. Judgementally.
+                    Usefully.
+                  </p>
+                </div>
               ) : result ? (
                 <div className="space-y-8">
                   <div className="space-y-4">
@@ -843,6 +1046,81 @@ export default function Home() {
                     </div>
                   </div>
 
+                  {socialMirror ? (
+                    <div className="space-y-3 rounded-[1.55rem] bg-[#fffdf8]/75 p-4 shadow-sm ring-1 ring-slate-950/[0.04] sm:p-5">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                            Share the read
+                          </p>
+                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                            No original text included. Just the emotional
+                            weather report.
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+                          <button
+                            type="button"
+                            aria-label="Copy this analysis"
+                            onClick={handleCopyAnalysis}
+                            className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#eaf0ff] px-5 py-2.5 text-sm font-semibold text-[#2f4c86] shadow-[0_16px_36px_-30px_rgba(47,111,237,0.6)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#dfe8ff] hover:text-[#17346f] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2f6fed]/16"
+                          >
+                            {analysisCopied ? "Copied" : "Copy this analysis"}
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Download share card"
+                            onClick={handleDownloadShareCard}
+                            disabled={isDownloadingShareCard}
+                            className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_18px_44px_-32px_rgba(15,23,42,0.7)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950/20 disabled:cursor-wait disabled:bg-slate-500 disabled:shadow-none"
+                          >
+                            {isDownloadingShareCard
+                              ? "Making the card..."
+                              : "Download share card"}
+                          </button>
+                          <button
+                            type="button"
+                            aria-label={
+                              showSharePreview
+                                ? "Hide share card preview"
+                                : "Preview share card"
+                            }
+                            onClick={handleToggleSharePreview}
+                            aria-expanded={showSharePreview}
+                            className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#fffefa] px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm ring-1 ring-slate-950/[0.08] transition duration-200 ease-out hover:-translate-y-0.5 hover:text-slate-950 hover:ring-[#2f6fed]/24 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2f6fed]/12"
+                          >
+                            {showSharePreview
+                              ? "Hide share card"
+                              : "Preview share card"}
+                          </button>
+                        </div>
+                      </div>
+
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none fixed left-[-10000px] top-0 w-[720px]"
+                      >
+                        <ShareCard
+                          result={result}
+                          socialMirror={socialMirror}
+                          cardRef={shareCardRef}
+                        />
+                      </div>
+
+                      {showSharePreview ? (
+                        <div className="rounded-[1.35rem] bg-[#f6f3eb] p-3 ring-1 ring-slate-950/[0.04] sm:p-4">
+                          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
+                            Share card preview
+                          </p>
+                          <ShareCard
+                            result={result}
+                            socialMirror={socialMirror}
+                          />
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
+
                   {!showRewrite ? (
                     <div className="rounded-[1.5rem] border border-dashed border-[#2f6fed]/30 bg-[#fffdf8]/75 p-6 text-center shadow-sm sm:p-7">
                       <p className="mx-auto max-w-md text-base font-medium leading-7 text-slate-700">
@@ -850,9 +1128,10 @@ export default function Home() {
                       </p>
                       <button
                         type="button"
+                        aria-label="Show me the better version"
                         onClick={handleRevealRewrite}
                         disabled={isRevealingRewrite}
-                        className="mt-6 inline-flex min-h-[56px] w-full items-center justify-center rounded-full bg-[#2f6fed] px-8 py-3 text-base font-semibold text-white shadow-[0_22px_50px_-28px_rgba(47,111,237,0.9)] outline-none transition duration-300 ease-out hover:-translate-y-1 hover:bg-[#245bd1] hover:shadow-[0_28px_60px_-26px_rgba(47,111,237,1)] active:translate-y-0 active:scale-[0.98] disabled:cursor-wait disabled:bg-[#2a63d5] disabled:shadow-[0_18px_42px_-30px_rgba(47,111,237,0.82)] focus:ring-4 focus:ring-[#2f6fed]/20 motion-reduce:transition-none sm:w-auto"
+                        className="mt-6 inline-flex min-h-[56px] w-full items-center justify-center rounded-full bg-[#2f6fed] px-8 py-3 text-base font-semibold text-white shadow-[0_22px_50px_-28px_rgba(47,111,237,0.9)] outline-none transition duration-300 ease-out hover:-translate-y-1 hover:bg-[#245bd1] hover:shadow-[0_28px_60px_-26px_rgba(47,111,237,1)] active:translate-y-0 active:scale-[0.98] focus-visible:ring-4 focus-visible:ring-[#2f6fed]/20 disabled:cursor-wait disabled:bg-[#2a63d5] disabled:shadow-[0_18px_42px_-30px_rgba(47,111,237,0.82)] motion-reduce:transition-none sm:w-auto"
                       >
                         {isRevealingRewrite ? (
                           <span className="inline-flex items-center justify-center gap-2 text-center leading-snug">
@@ -887,8 +1166,9 @@ export default function Home() {
                       </p>
                       <button
                         type="button"
+                        aria-label="Copy rewrite"
                         onClick={handleCopyRewrite}
-                        className="mt-6 inline-flex min-h-[46px] items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-sm outline-none transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-100 focus:ring-4 focus:ring-white/20"
+                        className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-sm outline-none transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-100 focus-visible:ring-4 focus-visible:ring-white/20"
                       >
                         {rewriteCopied ? "Copied" : "Copy Rewrite"}
                       </button>

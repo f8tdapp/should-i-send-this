@@ -2,7 +2,14 @@
 
 import posthog from "posthog-js";
 
-type TextPanicEvent = "text_analyzed" | "rewrite_revealed" | "rewrite_copied";
+type TextPanicEvent =
+  | "text_analyzed"
+  | "rewrite_revealed"
+  | "rewrite_copied"
+  | "result_copied"
+  | "share_card_downloaded"
+  | "share_card_download_failed"
+  | "share_card_preview_opened";
 
 type TextPanicEventProperties = {
   character_count?: number;
@@ -38,4 +45,3 @@ export function captureTextPanicEvent(
 ) {
   getPostHog()?.capture(event, properties);
 }
-
