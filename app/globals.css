@@ -33,18 +33,6 @@ body {
   animation: app-card-enter 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.chat-wallpaper-bubble {
-  animation: chat-wallpaper-float 8s ease-in-out infinite alternate;
-}
-
-.chat-wallpaper-bubble:nth-of-type(2n) {
-  animation-duration: 9.5s;
-}
-
-.chat-wallpaper-bubble:nth-of-type(3n) {
-  animation-duration: 11s;
-}
-
 .rewrite-loading-dot {
   width: 0.28rem;
   height: 0.28rem;
@@ -52,6 +40,14 @@ body {
   background: currentColor;
   opacity: 0.42;
   animation: rewrite-loading-dot 900ms ease-in-out infinite;
+}
+
+.result-card-enter {
+  animation: result-card-enter 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.guided-read-card {
+  transform-origin: center top;
 }
 
 @keyframes app-card-enter {
@@ -80,19 +76,21 @@ body {
   }
 }
 
-@keyframes chat-wallpaper-float {
+@keyframes result-card-enter {
   from {
-    transform: translate3d(0, 0, 0) rotate(var(--bubble-rotate, 0deg));
+    opacity: 0;
+    transform: translateY(10px) scale(0.992);
   }
 
   to {
-    transform: translate3d(0, -12px, 0) rotate(var(--bubble-rotate, 0deg));
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .app-card-enter,
-  .chat-wallpaper-bubble,
+  .result-card-enter,
   .rewrite-loading-dot {
     animation: none;
   }

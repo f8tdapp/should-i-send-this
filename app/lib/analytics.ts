@@ -3,6 +3,7 @@
 import posthog from "posthog-js";
 
 type TextPanicEvent =
+  | "example_selected"
   | "text_analyzed"
   | "rewrite_revealed"
   | "rewrite_copied"
@@ -13,6 +14,7 @@ type TextPanicEvent =
 
 type TextPanicEventProperties = {
   character_count?: number;
+  example_type?: string;
   severity?: string;
   detected_language?: string;
 };

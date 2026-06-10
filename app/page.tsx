@@ -8,10 +8,35 @@ type AnalysisResult = {
   tone: string;
   confidenceScore: number;
   clarityScore: number;
+  communicationIntelligenceScore: number;
+  communicationFramework: {
+    perceptionGap: string;
+    emotionalPressure: string;
+    confidenceSignal: string;
+    hiddenSubtext: string;
+    communicationClarity: string;
+  };
   emotionalInterpretation: string;
+  perceptionGap: string;
+  intentVsImpact: {
+    youMeant: string;
+    theyMayHear: string;
+  };
+  mostRevealingLine: {
+    quote: string;
+    explanation: string;
+  };
   recipientLikelyPerception: string;
   improvedRewrite: string;
 };
+
+type InsightCardId =
+  | "communication"
+  | "landing"
+  | "perception"
+  | "intent"
+  | "revealing"
+  | "subtext";
 
 type SignaturePhrase = {
   name: string;
@@ -26,109 +51,25 @@ type SocialMirror = {
 
 const MESSAGE_CHARACTER_LIMIT = 750;
 
-const backgroundBubbles = [
-  {
-    text: "oh no",
-    className: "left-[1%] top-[8%] rotate-[-8deg] text-base lg:text-lg",
-  },
-  {
-    text: "why did I send that",
-    className:
-      "right-[1%] top-[7%] max-w-[15rem] rotate-[7deg] text-base lg:text-lg [animation-delay:200ms]",
-  },
-  {
-    text: "too much?",
-    className:
-      "left-[2%] top-[31%] rotate-[5deg] text-sm lg:text-base [animation-delay:500ms]",
-  },
-  {
-    text: "what are they going to think?",
-    className:
-      "right-[1%] top-[31%] max-w-[15rem] rotate-[-6deg] text-sm lg:text-base [animation-delay:700ms]",
-  },
-  {
-    text: "did I sound needy?",
-    className:
-      "left-[0%] bottom-[31%] max-w-[14rem] rotate-[8deg] text-base lg:text-lg [animation-delay:1000ms]",
-  },
-  {
-    text: "please don't read that yet",
-    className:
-      "right-[0%] bottom-[31%] max-w-[15rem] rotate-[-5deg] text-sm lg:text-base [animation-delay:300ms]",
-  },
-  {
-    text: "do I double text?",
-    className:
-      "left-[5%] bottom-[13%] max-w-[13rem] rotate-[-4deg] text-sm lg:text-base [animation-delay:700ms]",
-  },
-  {
-    text: "they're typing...",
-    className:
-      "right-[6%] bottom-[13%] rotate-[6deg] text-sm lg:text-base [animation-delay:1000ms]",
-  },
-  {
-    text: "should I delete it?",
-    className:
-      "left-[16%] top-[2%] max-w-[14rem] rotate-[4deg] text-sm lg:text-base [animation-delay:1200ms]",
-  },
-  {
-    text: "that sounded insane",
-    className:
-      "right-[17%] top-[2%] max-w-[14rem] rotate-[-4deg] text-sm lg:text-base [animation-delay:850ms]",
-  },
-  {
-    text: "I should not have said that",
-    className:
-      "left-[16%] bottom-[2%] max-w-[15rem] rotate-[5deg] text-sm lg:text-base [animation-delay:150ms]",
-  },
-  {
-    text: "left on read",
-    className:
-      "right-[20%] bottom-[2%] rotate-[-7deg] text-base lg:text-lg [animation-delay:450ms]",
-  },
-  {
-    text: "I made it worse",
-    className:
-      "left-[0%] top-[58%] max-w-[12rem] rotate-[-6deg] text-sm lg:text-base [animation-delay:1300ms]",
-  },
-  {
-    text: "send help",
-    className:
-      "right-[0%] top-[58%] rotate-[8deg] text-base lg:text-lg [animation-delay:1150ms]",
-  },
-  {
-    text: "not the lol",
-    className:
-      "left-[18%] top-[17%] hidden max-w-[12rem] rotate-[-3deg] text-sm xl:block [animation-delay:650ms]",
-  },
-  {
-    text: "this sounded better in my head",
-    className:
-      "right-[14%] top-[17%] hidden max-w-[16rem] rotate-[3deg] text-sm xl:block [animation-delay:950ms]",
-  },
-  {
-    text: "was that passive aggressive?",
-    className:
-      "left-[16%] bottom-[17%] hidden max-w-[16rem] rotate-[3deg] text-sm xl:block [animation-delay:1750ms]",
-  },
-];
-
 const loadingMessages = [
-  "Reading between the lines...",
-  "Checking the emotional weather...",
-  "Locating the hidden subtext...",
-  "Measuring panic levels...",
+  "Reading the communication impact...",
+  "Checking perception and clarity...",
+  "Identifying hidden subtext...",
+  "Interpreting emotional subtext...",
+  "Measuring emotional pressure...",
+  "Looking for hidden tension...",
+  "Separating confidence from overexplaining...",
+  "Reading how this might land...",
 ];
 
 const signaturePhrases: SignaturePhrase[] = [
   {
     name: "fake-casual",
     phrases: [
-      "You're trying to sound casual, but the anxiety is holding a microphone.",
-      "The joke is doing unpaid emotional labor.",
-      "That 'lol' is not hiding as much as you think.",
-      "The message says chill. The subtext has tabs open.",
-      "This is breezy in the way a paper bag is breezy in a storm.",
+      "The casual phrasing softens the message, but the emotional ask is still visible.",
+      "The light tone lowers the pressure, though it may also make the real point less direct.",
+      "The message sounds casual on the surface and more invested underneath.",
+      "The wording is relaxed, but the recipient may still sense a need for reassurance.",
     ],
     messagePatterns: [
       /\b(lol|haha|lmao)\b/i,
@@ -139,21 +80,19 @@ const signaturePhrases: SignaturePhrase[] = [
   {
     name: "cold-short",
     phrases: [
-      "This has the emotional warmth of a folding chair.",
-      "This is technically a reply and emotionally a locked door.",
-      "Tiny message. Very large silence.",
-      "This is cold enough to make them reread the last five texts.",
+      "This is clear, but the low context may read as distance.",
+      "The brevity gives the recipient very little emotional information.",
+      "This may be efficient, but it can also feel closed off.",
     ],
     messagePatterns: [/^\s*(k|ok|okay|sure)\.?\s*$/i],
   },
   {
     name: "anxious",
     phrases: [
-      "You're asking for clarity, but the panic is sitting in the passenger seat.",
-      "This reads like you typed it, deleted it twice, then sent the brave version.",
-      "You're trying to check in without admitting you've already spiraled.",
-      "This text was drafted by anxiety and approved by panic.",
-      "You can almost hear the overthinking.",
+      "This asks for clarity, but the emotional pressure is easy to notice.",
+      "The message is reaching for reassurance while trying to stay light.",
+      "The intent is connection, but the recipient may hear uncertainty.",
+      "The core ask would land more cleanly with a little more directness.",
     ],
     messagePatterns: [
       /\b(mad at me|upset with me|ignoring me|are we okay|are we good)\b/i,
@@ -164,22 +103,20 @@ const signaturePhrases: SignaturePhrase[] = [
   {
     name: "dismissive",
     phrases: [
-      "You're saying one word, but sending a whole courtroom transcript.",
-      "You do not, in fact, mean 'whatever.'",
-      "The sentence is short. The resentment has luggage.",
-      "This is pretending not to care while absolutely caring.",
-      "Polite wording. Violent undertones.",
+      "The wording sounds detached, but the impact may carry frustration.",
+      "This may read as disengaged rather than resolved.",
+      "The sentence is short, but the recipient may infer more tension than you intend.",
+      "This wording creates a wider perception gap than it may look like.",
     ],
     messagePatterns: [/\b(k|ok|okay|fine|whatever|sure)\.?\b/i],
   },
   {
     name: "workplace",
     phrases: [
-      "This is polite on paper and deeply tired underneath.",
-      "You're trying to stay professional while gently shaking the table.",
-      "This is less 'just following up' and more 'please stop making me chase this.'",
-      "This is wearing a blazer, but the sleeves are full of tension.",
-      "Professional on the surface. Shoes-on-the-carpet underneath.",
+      "This is professional, with some visible pressure underneath.",
+      "The message keeps the work moving, but tone may affect how it is received.",
+      "This is clear as a task update, with a possible edge around follow-through.",
+      "The professional frame helps, but the recipient may still sense tension.",
     ],
     messagePatterns: [
       /\b(per my last email|following up|follow up|as discussed|as mentioned)\b/i,
@@ -189,11 +126,10 @@ const signaturePhrases: SignaturePhrase[] = [
   {
     name: "angry",
     phrases: [
-      "You're not just asking a question. You're arriving with evidence.",
-      "This is frustration wearing shoes indoors.",
-      "You want answers, but the message is bringing a torch.",
-      "The feeling is valid. The delivery has its hazards on.",
-      "This has a point, but it is hiding behind the heat.",
+      "The concern may be valid, but the emotional pressure is leading.",
+      "The point is present, but the tone may raise defensiveness.",
+      "This communicates urgency, though it may need a clearer request.",
+      "The message would land better if the issue and the ask were separated.",
     ],
     messagePatterns: [
       /\b(angry|mad|annoyed|ridiculous|done|hate|sucks)\b/i,
@@ -203,73 +139,50 @@ const signaturePhrases: SignaturePhrase[] = [
   {
     name: "overexplaining",
     phrases: [
-      "This brought receipts, but nobody asked for the whole binder.",
-      "Somewhere in here is a really good message.",
-      "This is overexplaining because silence feels illegal right now.",
-      "The point is good. It just took the scenic route.",
+      "The main point is here, but extra context may dilute it.",
+      "This would feel stronger if the clearest sentence came earlier.",
+      "The explanation is thoughtful, but it may ask the recipient to do extra sorting.",
+      "The point is useful; it just needs a more direct path.",
     ],
     messagePatterns: [/\b(because|also|another thing|to be clear|what i meant)\b/i],
   },
 ];
 
 const rotatingSubtextLines = [
-  "This reads like a breakup drafted in a Tesco car park.",
-  "Confident words. Nervous energy.",
-  "You're saying 'fine.' The message is not.",
-  "Somewhere between heartfelt and hostage note.",
-  "This one could use a softer landing.",
-  "Emotionally available. Structurally chaotic.",
-  "Like a hug delivered by email.",
-  "There's warmth in here. Buried deep, but there.",
-  "This feels accidentally honest.",
-  "A brave amount of punctuation.",
-  "You can almost hear the overthinking.",
-  "This lands harder than you think.",
-  "Polite wording. Violent undertones.",
-  "Honestly? Better than most people communicate.",
-  "Reads like you typed it while pacing.",
-  "This has 'sent too quickly' energy.",
-  "Somewhere in here is a really good message.",
-  "Not cold. Just... aggressively efficient.",
-  "This feels one edit away from clarity.",
-  "There's a real person in this one.",
-  "The sentence is calm. The room is not.",
-  "A little less edge and this could actually land.",
-  "This is trying to be casual in formal shoes.",
-  "Soft intent, pointy delivery.",
-  "The honesty is there. It just needs better lighting.",
-  "This is not dramatic. It is dramatic-adjacent.",
-  "A clean thought wearing a messy coat.",
-  "This message wants to be brave, but keeps checking the exits.",
-  "Readable, but emotionally double-parked.",
-  "The tone says composed. The commas disagree.",
-  "This could be kind if it stopped flinching.",
-  "A small message carrying a suspiciously large backpack.",
-  "This is clearer than it is comfortable.",
-  "Almost graceful. Currently wearing boots indoors.",
-  "There's a good point here trying not to make eye contact.",
-  "This is what happens when sincerity meets bad timing.",
-  "Warm underneath, chilly at the edges.",
-  "This has the energy of a sigh with spellcheck.",
-  "The message is doing its best. Its best needs a nap.",
-  "Good instinct. Slightly haunted execution.",
-  "This is a lot of feeling for one small text box.",
-  "You are closer to direct than you think.",
-  "This reads honest, but not quite ready.",
-  "A gentle thought with sharp elbows.",
-  "This has emotional weather.",
-  "Not a disaster. More of a wobbly entrance.",
-  "This is the text equivalent of standing in the doorway.",
-  "The feeling is right. The landing gear is questionable.",
-  "A tiny edit could make this much easier to receive.",
-  "There is care in here, even if it arrived late.",
+  "The intent is understandable, but the impact could be clearer.",
+  "This is close to clear; the recipient may need a little more context.",
+  "The message has care in it, but the delivery could be easier to receive.",
+  "The strongest version would make the ask more direct.",
+  "The tone is mostly steady, with a little room to reduce pressure.",
+  "This is readable, but the perception gap could be smaller.",
+  "The emotional signal is present; clarity will help it land.",
+  "The message would benefit from one cleaner center of gravity.",
+  "There is a useful point here, and it can be easier to receive.",
+  "The recipient may hear more tension than the sender intends.",
 ];
 
 const defaultAnalysisResult: AnalysisResult = {
   tone: "Unknown",
   confidenceScore: 0,
   clarityScore: 0,
+  communicationIntelligenceScore: 0,
+  communicationFramework: {
+    perceptionGap: "No perception gap was provided.",
+    emotionalPressure: "No emotional pressure read was provided.",
+    confidenceSignal: "No confidence signal was provided.",
+    hiddenSubtext: "No hidden subtext was provided.",
+    communicationClarity: "No clarity read was provided.",
+  },
   emotionalInterpretation: "No emotional interpretation was provided.",
+  perceptionGap: "No perception gap was provided.",
+  intentVsImpact: {
+    youMeant: "No intent was provided.",
+    theyMayHear: "No impact was provided.",
+  },
+  mostRevealingLine: {
+    quote: "No revealing line was provided.",
+    explanation: "No explanation was provided.",
+  },
   recipientLikelyPerception: "No recipient perception was provided.",
   improvedRewrite: "No rewrite suggestion was provided.",
 };
@@ -278,6 +191,21 @@ function normalizeAnalysisResult(value: unknown): AnalysisResult {
   if (!value || typeof value !== "object") return defaultAnalysisResult;
 
   const result = value as Record<string, unknown>;
+  const intentVsImpact =
+    result.intentVsImpact &&
+    typeof result.intentVsImpact === "object"
+      ? (result.intentVsImpact as Record<string, unknown>)
+      : null;
+  const mostRevealingLine =
+    result.mostRevealingLine &&
+    typeof result.mostRevealingLine === "object"
+      ? (result.mostRevealingLine as Record<string, unknown>)
+      : null;
+  const communicationFramework =
+    result.communicationFramework &&
+    typeof result.communicationFramework === "object"
+      ? (result.communicationFramework as Record<string, unknown>)
+      : null;
 
   return {
     tone:
@@ -292,10 +220,60 @@ function normalizeAnalysisResult(value: unknown): AnalysisResult {
       typeof result.clarityScore === "number"
         ? result.clarityScore
         : defaultAnalysisResult.clarityScore,
+    communicationIntelligenceScore:
+      typeof result.communicationIntelligenceScore === "number"
+        ? Math.max(0, Math.min(100, Math.round(result.communicationIntelligenceScore)))
+        : defaultAnalysisResult.communicationIntelligenceScore,
+    communicationFramework: {
+      perceptionGap:
+        typeof communicationFramework?.perceptionGap === "string"
+          ? communicationFramework.perceptionGap
+          : defaultAnalysisResult.communicationFramework.perceptionGap,
+      emotionalPressure:
+        typeof communicationFramework?.emotionalPressure === "string"
+          ? communicationFramework.emotionalPressure
+          : defaultAnalysisResult.communicationFramework.emotionalPressure,
+      confidenceSignal:
+        typeof communicationFramework?.confidenceSignal === "string"
+          ? communicationFramework.confidenceSignal
+          : defaultAnalysisResult.communicationFramework.confidenceSignal,
+      hiddenSubtext:
+        typeof communicationFramework?.hiddenSubtext === "string"
+          ? communicationFramework.hiddenSubtext
+          : defaultAnalysisResult.communicationFramework.hiddenSubtext,
+      communicationClarity:
+        typeof communicationFramework?.communicationClarity === "string"
+          ? communicationFramework.communicationClarity
+          : defaultAnalysisResult.communicationFramework.communicationClarity,
+    },
     emotionalInterpretation:
       typeof result.emotionalInterpretation === "string"
         ? result.emotionalInterpretation
         : defaultAnalysisResult.emotionalInterpretation,
+    perceptionGap:
+      typeof result.perceptionGap === "string"
+        ? result.perceptionGap
+        : defaultAnalysisResult.perceptionGap,
+    intentVsImpact: {
+      youMeant:
+        typeof intentVsImpact?.youMeant === "string"
+          ? intentVsImpact.youMeant
+          : defaultAnalysisResult.intentVsImpact.youMeant,
+      theyMayHear:
+        typeof intentVsImpact?.theyMayHear === "string"
+          ? intentVsImpact.theyMayHear
+          : defaultAnalysisResult.intentVsImpact.theyMayHear,
+    },
+    mostRevealingLine: {
+      quote:
+        typeof mostRevealingLine?.quote === "string"
+          ? mostRevealingLine.quote
+          : defaultAnalysisResult.mostRevealingLine.quote,
+      explanation:
+        typeof mostRevealingLine?.explanation === "string"
+          ? mostRevealingLine.explanation
+          : defaultAnalysisResult.mostRevealingLine.explanation,
+    },
     recipientLikelyPerception:
       typeof result.recipientLikelyPerception === "string"
         ? result.recipientLikelyPerception
@@ -311,7 +289,18 @@ function getAnalysisText(result: AnalysisResult, message: string) {
   return [
     message,
     result.tone,
+    result.communicationIntelligenceScore,
+    result.communicationFramework.perceptionGap,
+    result.communicationFramework.emotionalPressure,
+    result.communicationFramework.confidenceSignal,
+    result.communicationFramework.hiddenSubtext,
+    result.communicationFramework.communicationClarity,
     result.emotionalInterpretation,
+    result.perceptionGap,
+    result.intentVsImpact.youMeant,
+    result.intentVsImpact.theyMayHear,
+    result.mostRevealingLine.quote,
+    result.mostRevealingLine.explanation,
     result.recipientLikelyPerception,
     result.improvedRewrite,
   ]
@@ -348,31 +337,47 @@ function getReadSeverity(result: AnalysisResult, message: string) {
   const analysisText = getAnalysisText(result, message);
   const lowScores = result.confidenceScore <= 5 || result.clarityScore <= 5;
 
-  if (/\b(lol|haha|lmao)\b/i.test(messageText) && /panic|anxiety|spiral|ignoring/.test(analysisText)) {
-    return "One LOL Away From A Breakdown";
+  if (
+    /calm|healthy|grounded|steady|emotionally safe/.test(analysisText) &&
+    result.confidenceScore >= 8 &&
+    result.clarityScore >= 8
+  ) {
+    return "Calm";
   }
 
-  if (/\b(per my last email|whatever|fine|sure)\b/i.test(messageText) || /^\s*(k|ok|okay)\.?\s*$/i.test(messageText)) {
-    return "Passive Aggressive Lite";
+  if (/confident|direct|clear and kind|clear, kind/.test(analysisText)) {
+    return "Confident";
   }
 
-  if (/anxious|anxiety|panic|spiral|reassurance|needy/.test(analysisText)) {
-    return "Drafted By Anxiety";
+  if (/overexplaining|too much detail|scenic route/.test(analysisText)) {
+    return "Overexplaining";
   }
 
-  if (/angry|frustrated|furious|mad|sucks|hate|loaded/.test(analysisText)) {
+  if (/\b(per my last email|whatever|fine|sure|no worries)\b/i.test(messageText)) {
+    return "Defensive";
+  }
+
+  if (/^\s*(k|ok|okay)\.?\s*$/i.test(messageText) || /cold|clipped|detached|distant/.test(analysisText)) {
+    return "Detached";
+  }
+
+  if (/reassurance|uncertainty|indirect|softening|emotional pressure/.test(analysisText)) {
+    return "Emotionally Pressured";
+  }
+
+  if (/angry|frustrated|furious|mad|sucks|hate|loaded|heat|escalation/.test(analysisText)) {
     return "Emotionally Loaded";
   }
 
-  if (/expensive|overexplaining|defensive|cold/.test(analysisText) || lowScores) {
-    return "Emotionally Expensive";
+  if (/thoughtful|repair|sorry|apolog/.test(analysisText)) {
+    return "Thoughtful";
   }
 
-  if (result.confidenceScore <= 7 || result.clarityScore <= 7) {
-    return "Slightly Concerning";
+  if (lowScores || result.confidenceScore <= 7 || result.clarityScore <= 7) {
+    return "Unclear";
   }
 
-  return "Mostly Fine";
+  return "Thoughtful";
 }
 
 function getSubtext(
@@ -391,54 +396,62 @@ function getSubtext(
 
   if (/sorry|apolog/.test(analysisText)) {
     subtextCandidates.push(
-      "You are trying to repair something without making the apology a whole production.",
-      "This wants to make things right without turning into a speech.",
+      "The message is oriented toward repair; naming impact clearly will help.",
+      "The intent is repair, and the strongest version keeps responsibility visible.",
     );
   }
 
   if (/work|job|email|manager|boss|professional/.test(analysisText)) {
     subtextCandidates.push(
-      "You want to stay professional, but the inside voice is already pacing.",
-      "Professional on the surface. Shoes-on-the-carpet underneath.",
+      "The work context benefits from a clear ask and a steady tone.",
+      "The professional frame helps, but perception still depends on how much pressure is visible.",
     );
   }
 
   if (/date|dating|relationship|miss you/.test(analysisText)) {
     subtextCandidates.push(
-      "You want connection, but you are trying not to look like you want connection.",
-      "This is reaching out while pretending its arm is not extended.",
+      "The message is asking for connection; clarity will make it easier to answer.",
+      "The recipient may respond better if the emotional ask is stated plainly.",
     );
   }
 
   if (/cold|clipped|blunt|short/.test(analysisText)) {
     subtextCandidates.push(
-      "Not cold exactly. Just arriving without a blanket.",
-      "This is concise in a way that might make someone nervous.",
-      "The message is brief. The read may not be.",
+      "The message is concise, but the recipient may need more relational context.",
+      "Short can be clear, but it can also leave room for unintended distance.",
+      "The message is brief; the impact may be broader than the words.",
     );
   }
 
   if (/clear|honest|direct|readable/.test(analysisText)) {
     subtextCandidates.push(
-      "The point is there. It just needs a little better lighting.",
-      "This is close to clear. It could land softer.",
-      "There's a real message in here, and it is almost ready.",
+      "The core point is there; a little more alignment would help it land.",
+      "This is close to clear and could become easier to receive.",
+      "The message has a usable center; the impact depends on tone.",
     );
   }
 
-  if (/anxious|panic|spiral|reassurance|needy/.test(analysisText)) {
+  if (/calm|confident|healthy|grounded|steady|respectful|emotionally safe/.test(analysisText)) {
     subtextCandidates.push(
-      "This wants reassurance without putting a sign on it.",
-      "The check-in is doing a lot of emotional lifting.",
-      "You are asking gently, but the worry is not whispering.",
+      "This sounds steady; the intent and likely perception are closely aligned.",
+      "The message already communicates with clarity and respect.",
+      "This is likely easier to receive than it may feel while drafting.",
+    );
+  }
+
+  if (/uncertain|reassurance|emotional pressure|indirect/.test(analysisText)) {
+    subtextCandidates.push(
+      "This asks for reassurance indirectly; a clearer ask would reduce pressure.",
+      "The check-in carries more emotional weight than the wording suggests.",
+      "The message is gentle, but the underlying need is still visible.",
     );
   }
 
   if (/angry|frustrated|furious|loaded|defensive/.test(analysisText)) {
     subtextCandidates.push(
-      "The feeling is fair. The landing is a little sharp.",
-      "This has heat, and some of it is useful.",
-      "You're making a point. The point is carrying matches.",
+      "The concern may be valid, but the tone may make it harder to receive.",
+      "The emotional pressure is visible; a clearer request would help.",
+      "The point will land better if it is separated from the intensity.",
     );
   }
 
@@ -470,16 +483,25 @@ function formatAnalysisForClipboard(
   socialMirror: SocialMirror,
 ) {
   return [
-    "TextPanic",
-    socialMirror.severity,
+    "BetweenLines AI",
+    `Communication Intelligence: ${result.communicationIntelligenceScore}/100`,
+    `Signal: ${socialMirror.severity}`,
     "",
-    "THE VIBE",
+    "BETWEEN THE LINES",
     result.emotionalInterpretation,
     "",
-    "THE SUBTEXT",
-    socialMirror.subtext,
+    "PERCEPTION GAP",
+    result.perceptionGap,
     "",
-    "HOW THIS LANDS",
+    "INTENT VS IMPACT",
+    `You meant: ${result.intentVsImpact.youMeant}`,
+    `They may hear: ${result.intentVsImpact.theyMayHear}`,
+    "",
+    "MOST REVEALING LINE",
+    `"${result.mostRevealingLine.quote}"`,
+    result.mostRevealingLine.explanation,
+    "",
+    "HOW THIS MIGHT LAND",
     result.recipientLikelyPerception,
     "",
     "textpanic.com",
@@ -518,10 +540,10 @@ function ShareCard({
             </div>
             <div>
               <p className="text-[1.02rem] font-black leading-none tracking-[-0.035em]">
-                Text<span className="text-[#2f6fed]/90">Panic</span>
+                BetweenLines<span className="text-[#2f6fed]/90"> AI</span>
               </p>
               <p className="mt-1 text-[0.68rem] font-medium leading-tight text-slate-500/75">
-                The read, minus the spiral.
+                Communication Intelligence for Modern Messaging.
               </p>
             </div>
           </div>
@@ -530,26 +552,69 @@ function ShareCard({
           </div>
         </div>
 
-        <div className="mt-7 space-y-4">
+        <div className="mt-7 space-y-3">
           <div className="rounded-[1.35rem] bg-[#ffd982] p-5 ring-1 ring-[#d99a1c]/35">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#7b4d03]">
-              THE VIBE
+              BETWEEN THE LINES
             </p>
             <p className="mt-3 text-[1.05rem] font-semibold leading-[1.38] tracking-tight">
               {result.emotionalInterpretation}
             </p>
           </div>
-          <div className="rounded-[1.35rem] bg-[#ded2ff] p-5 ring-1 ring-[#9f8add]/36">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#584191]">
-              THE SUBTEXT
+          <div className="rounded-[1.35rem] bg-[#eaf0ff] p-5 ring-1 ring-[#8aa7e6]/35">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#2f4c86]">
+              COMMUNICATION INTELLIGENCE
             </p>
-            <p className="mt-3 text-[1.05rem] font-semibold leading-[1.38] tracking-tight text-[#211b32]">
-              {socialMirror.subtext}
+            <p className="mt-2 text-[2rem] font-semibold leading-none tracking-tight text-[#17346f]">
+              {result.communicationIntelligenceScore}
+              <span className="text-base text-[#5f76a6]">/100</span>
             </p>
           </div>
           <div className="rounded-[1.35rem] bg-[#cfdde5] p-5 ring-1 ring-[#7899aa]/32">
             <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#3d5d6d]">
-              HOW THIS LANDS
+              PERCEPTION GAP
+            </p>
+            <p className="mt-3 text-[1rem] font-semibold leading-[1.38] tracking-tight text-[#233642]">
+              {result.perceptionGap}
+            </p>
+          </div>
+          <div className="rounded-[1.35rem] bg-[#fffefa] p-5 ring-1 ring-[#d6cdae]/55">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#806f3d]">
+              INTENT VS IMPACT
+            </p>
+            <div className="mt-3 grid gap-3 text-[#2c2618] sm:grid-cols-2">
+              <div>
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.13em] text-[#9a8858]">
+                  You meant
+                </p>
+                <p className="mt-1 text-[0.95rem] font-semibold leading-[1.36] tracking-tight">
+                  {result.intentVsImpact.youMeant}
+                </p>
+              </div>
+              <div>
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.13em] text-[#9a8858]">
+                  They may hear
+                </p>
+                <p className="mt-1 text-[0.95rem] font-semibold leading-[1.36] tracking-tight">
+                  {result.intentVsImpact.theyMayHear}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="rounded-[1.35rem] bg-[#ded2ff] p-5 ring-1 ring-[#9f8add]/36">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#584191]">
+              MOST REVEALING LINE
+            </p>
+            <p className="mt-3 text-[1.02rem] font-semibold leading-[1.35] tracking-tight text-[#211b32]">
+              &ldquo;{result.mostRevealingLine.quote}&rdquo;
+            </p>
+            <p className="mt-2 text-[0.92rem] font-medium leading-[1.45] text-[#4f426d]">
+              {result.mostRevealingLine.explanation}
+            </p>
+          </div>
+          <div className="rounded-[1.35rem] bg-[#cfdde5] p-5 ring-1 ring-[#7899aa]/32">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#3d5d6d]">
+              HOW THIS MIGHT LAND
             </p>
             <p className="mt-3 text-[1.05rem] font-semibold leading-[1.38] tracking-tight text-[#233642]">
               {result.recipientLikelyPerception}
@@ -577,6 +642,8 @@ export default function Home() {
   const [showRewrite, setShowRewrite] = useState(false);
   const [isRevealingRewrite, setIsRevealingRewrite] = useState(false);
   const [socialMirror, setSocialMirror] = useState<SocialMirror | null>(null);
+  const [activeInsightCardId, setActiveInsightCardId] =
+    useState<InsightCardId>("communication");
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const analysisCopyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -607,6 +674,7 @@ export default function Home() {
     setShowSharePreview(false);
     setShowRewrite(false);
     setIsRevealingRewrite(false);
+    setActiveInsightCardId("communication");
 
     if (isMessageEmpty) {
       setError("Paste a message before analyzing.");
@@ -614,7 +682,7 @@ export default function Home() {
     }
 
     if (isOverCharacterLimit) {
-      setError("That's enough panic for one read.");
+      setError("That's enough text for one interpretation.");
       return;
     }
 
@@ -656,6 +724,7 @@ export default function Home() {
       setRewriteCopied(false);
       setAnalysisCopied(false);
       setShowSharePreview(false);
+      setActiveInsightCardId("communication");
       captureTextPanicEvent("text_analyzed", {
         ...getSafeAnalyticsProperties(message, severity),
       });
@@ -680,6 +749,7 @@ export default function Home() {
     setShowSharePreview(false);
     setShowRewrite(false);
     setIsRevealingRewrite(false);
+    setActiveInsightCardId("communication");
 
     if (copyTimeoutRef.current) {
       clearTimeout(copyTimeoutRef.current);
@@ -832,6 +902,137 @@ export default function Home() {
   }, []);
 
   const loadingMessage = loadingMessages[message.length % loadingMessages.length];
+  const exampleUseCases = [
+    "Should I send this to my ex?",
+    "Does this sound passive aggressive?",
+    "Am I overexplaining?",
+    "Why does this feel emotionally loaded?",
+  ];
+  const insightCards = result
+    ? [
+        {
+          id: "communication" as const,
+          title: "Between the Lines",
+          activeClassName:
+            "bg-[#ffd982] text-slate-950 ring-[#d99a1c]/42 shadow-[0_28px_70px_-48px_rgba(164,106,5,0.72)]",
+          inactiveClassName:
+            "bg-[#f4c96f] text-[#4d3303] ring-[#d99a1c]/34 shadow-[0_18px_42px_-38px_rgba(164,106,5,0.46)]",
+          content: (
+            <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <p className="max-w-[39rem] text-[1.24rem] font-semibold leading-[1.36] tracking-tight sm:text-[1.48rem] sm:leading-[1.32]">
+                {result.emotionalInterpretation}
+              </p>
+              <div className="w-fit shrink-0 rounded-2xl bg-[#fffefa]/70 px-3.5 py-2.5 text-[#17346f] ring-1 ring-[#d99a1c]/22 sm:text-right">
+                <p className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-[#7b4d03]/75">
+                  Intelligence
+                </p>
+                <p className="mt-1 text-2xl font-semibold leading-none tracking-tight">
+                  {result.communicationIntelligenceScore}
+                  <span className="text-sm text-[#5f76a6]">/100</span>
+                </p>
+              </div>
+            </div>
+          ),
+        },
+        {
+          id: "landing" as const,
+          title: "How This Might Land",
+          activeClassName:
+            "bg-[#cfdde5] text-[#233642] ring-[#7899aa]/34 shadow-[0_24px_58px_-50px_rgba(45,74,92,0.54)]",
+          inactiveClassName:
+            "bg-[#bfd0da] text-[#233642] ring-[#7899aa]/28 shadow-[0_18px_42px_-38px_rgba(45,74,92,0.38)]",
+          content: (
+            <p className="mt-3 max-w-[39rem] text-[1.14rem] font-semibold leading-[1.4] tracking-tight sm:text-[1.3rem] sm:leading-[1.34]">
+              {result.recipientLikelyPerception}
+            </p>
+          ),
+        },
+        {
+          id: "perception" as const,
+          title: "Perception Gap",
+          activeClassName:
+            "bg-[#fbfcff] text-[#243149] ring-[#9aabc8]/24 shadow-[0_22px_50px_-48px_rgba(63,86,132,0.46)]",
+          inactiveClassName:
+            "bg-[#eef3fb] text-[#243149] ring-[#9aabc8]/22 shadow-[0_16px_38px_-36px_rgba(63,86,132,0.34)]",
+          content: (
+            <p className="mt-3 max-w-[39rem] text-sm font-semibold leading-6 tracking-tight sm:text-base">
+              {result.perceptionGap}
+            </p>
+          ),
+        },
+        {
+          id: "intent" as const,
+          title: "Intent vs Impact",
+          activeClassName:
+            "bg-[#fffefa] text-[#2c2618] ring-[#c8b884]/32 shadow-[0_20px_46px_-48px_rgba(94,78,32,0.42)]",
+          inactiveClassName:
+            "bg-[#f5f0df] text-[#2c2618] ring-[#c8b884]/28 shadow-[0_16px_38px_-36px_rgba(94,78,32,0.32)]",
+          content: (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.13em] text-[#9a8858]">
+                  You meant
+                </p>
+                <p className="mt-1.5 max-w-[39rem] text-sm font-semibold leading-6 tracking-tight sm:text-base">
+                  {result.intentVsImpact.youMeant}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.13em] text-[#9a8858]">
+                  They may hear
+                </p>
+                <p className="mt-1.5 max-w-[39rem] text-sm font-semibold leading-6 tracking-tight sm:text-base">
+                  {result.intentVsImpact.theyMayHear}
+                </p>
+              </div>
+            </div>
+          ),
+        },
+        {
+          id: "revealing" as const,
+          title: "Most Revealing Line",
+          activeClassName:
+            "bg-[#ded2ff] text-[#211b32] ring-[#9f8add]/32 shadow-[0_18px_42px_-46px_rgba(72,52,124,0.48)]",
+          inactiveClassName:
+            "bg-[#d1c3f5] text-[#211b32] ring-[#9f8add]/28 shadow-[0_16px_38px_-36px_rgba(72,52,124,0.34)]",
+          content: (
+            <>
+              <p className="mt-3 max-w-[39rem] text-[1.06rem] font-semibold leading-[1.35] tracking-tight sm:text-[1.14rem]">
+                &ldquo;{result.mostRevealingLine.quote}&rdquo;
+              </p>
+              <p className="mt-2 max-w-[39rem] text-sm font-medium leading-6 text-[#4f426d] sm:text-base">
+                {result.mostRevealingLine.explanation}
+              </p>
+            </>
+          ),
+        },
+        ...(socialMirror
+          ? [
+              {
+                id: "subtext" as const,
+                title: "Hidden Subtext",
+                activeClassName:
+                  "bg-[#fffdf8] text-slate-700 ring-slate-950/[0.06] shadow-[0_14px_34px_-40px_rgba(15,23,42,0.38)]",
+                inactiveClassName:
+                  "bg-[#f2eee2] text-slate-600 ring-slate-950/[0.05] shadow-[0_12px_30px_-36px_rgba(15,23,42,0.28)]",
+                content: (
+                  <p className="mt-2 max-w-[39rem] text-sm font-semibold leading-6 tracking-tight sm:text-base">
+                    {socialMirror.subtext}
+                  </p>
+                ),
+              },
+            ]
+          : []),
+      ]
+    : [];
+  const visibleInsightCards =
+    insightCards.length > 0
+      ? [
+          insightCards.find((card) => card.id === activeInsightCardId) ??
+            insightCards[0],
+          ...insightCards.filter((card) => card.id !== activeInsightCardId),
+        ]
+      : [];
 
   return (
     // This full-screen wrapper is the visible canvas behind the app card.
@@ -841,22 +1042,15 @@ export default function Home() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 overflow-hidden"
       >
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.18),rgba(92,78,176,0.22)_42%,rgba(255,123,189,0.18)_100%)]" />
-        <div className="absolute inset-x-[-12%] top-[-18%] h-72 rotate-[-3deg] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.32),rgba(255,255,255,0)_68%)] blur-2xl sm:h-96" />
-        <div className="absolute inset-x-[-10%] bottom-[-22%] h-80 rotate-[4deg] bg-[radial-gradient(ellipse_at_center,rgba(72,48,150,0.24),rgba(72,48,150,0)_70%)] blur-3xl sm:h-[28rem]" />
-
-        {backgroundBubbles.map((bubble) => (
-          <span
-            key={bubble.text}
-            className={`chat-wallpaper-bubble absolute hidden rounded-[1.5rem] border border-white/55 bg-white/48 px-4 py-2.5 font-semibold leading-tight text-slate-900/68 shadow-[0_20px_62px_-46px_rgba(18,24,70,0.7),inset_0_1px_0_rgba(255,255,255,0.62)] backdrop-blur-xl md:block lg:px-5 lg:py-3 ${bubble.className}`}
-          >
-            {bubble.text}
-          </span>
-        ))}
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.2),rgba(78,73,168,0.24)_38%,rgba(47,111,237,0.14)_66%,rgba(255,123,189,0.16)_100%)]" />
+        <div className="absolute inset-x-[-12%] top-[-20%] h-72 rotate-[-3deg] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.36),rgba(222,210,255,0.18)_48%,rgba(255,255,255,0)_70%)] blur-2xl sm:h-96" />
+        <div className="absolute inset-x-[-10%] bottom-[-24%] h-80 rotate-[4deg] bg-[radial-gradient(ellipse_at_center,rgba(72,48,150,0.22),rgba(47,111,237,0.12)_48%,rgba(72,48,150,0)_72%)] blur-3xl sm:h-[28rem]" />
+        <div className="absolute left-1/2 top-1/2 h-[35rem] w-[min(88vw,56rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,254,250,0.58),rgba(207,221,229,0.24)_40%,rgba(47,111,237,0.12)_62%,rgba(255,255,255,0)_78%)] blur-2xl" />
+        <div className="absolute left-1/2 top-[46%] h-[22rem] w-[min(68vw,38rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,217,130,0.14),rgba(222,210,255,0.1)_50%,rgba(255,255,255,0)_74%)] blur-xl" />
       </div>
 
-      <main className="relative z-10 mx-auto flex min-h-screen max-w-4xl flex-col justify-center px-5 py-10 sm:px-8 sm:py-16">
-        <div className="app-card-enter rounded-[1.75rem] bg-[#fffefa]/98 p-5 shadow-[0_34px_110px_-58px_rgba(45,64,116,0.46),0_0_70px_-34px_rgba(132,112,255,0.34)] ring-1 ring-[#7185bd]/18 backdrop-blur-xl transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_38px_120px_-58px_rgba(45,64,116,0.52),0_0_82px_-34px_rgba(132,112,255,0.42)] sm:p-10">
+      <main className="relative z-10 mx-auto flex min-h-screen max-w-[52rem] flex-col justify-center px-5 py-7 sm:px-8 sm:py-10">
+        <div className="app-card-enter rounded-[1.75rem] bg-[#fffefa]/98 p-4 shadow-[0_34px_110px_-58px_rgba(45,64,116,0.46),0_0_70px_-34px_rgba(132,112,255,0.34)] ring-1 ring-[#7185bd]/18 backdrop-blur-xl transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_38px_120px_-58px_rgba(45,64,116,0.52),0_0_82px_-34px_rgba(132,112,255,0.42)] sm:p-7 lg:p-8">
           <div className="inline-flex max-w-full items-start gap-3">
             <div className="relative mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-[#fff2d8] shadow-[0_16px_38px_-28px_rgba(15,23,42,0.8)]">
               <span className="text-base font-black leading-none tracking-[-0.04em]">
@@ -868,41 +1062,60 @@ export default function Home() {
               />
             </div>
             <div className="min-w-0">
-              <p className="text-[1.05rem] font-black leading-none tracking-[-0.035em] text-slate-950 sm:text-[1.18rem]">
-                Text<span className="text-[#2f6fed]/90">Panic</span>
+              <p className="text-[1.05rem] font-black leading-none tracking-[-0.03em] text-slate-950 sm:text-[1.16rem]">
+                BetweenLines<span className="text-[#2f6fed]/90"> AI</span>
               </p>
-              <p className="mt-1 max-w-[12.5rem] text-[0.72rem] font-medium leading-[1.35] tracking-[0.01em] text-slate-500/72 sm:max-w-[19rem] sm:text-[0.78rem]">
-                For messages written during emotional turbulence.
+              <p className="mt-1 max-w-[18rem] text-[0.72rem] font-medium leading-[1.35] text-slate-500/76 sm:max-w-none sm:text-[0.78rem]">
+                Communication Intelligence for Modern Messaging.
               </p>
             </div>
           </div>
 
-          <div className="mt-7 max-w-[46rem] sm:mt-8">
-            <h1 className="text-3xl font-semibold leading-[1.08] tracking-tight text-slate-950 sm:text-[2.85rem] sm:leading-[1.04]">
-              Paste your text.
-              <br />
-              We&apos;ll tell you what people hear.
+          <div className="mt-4 max-w-full sm:mt-5">
+            <h1 className="max-w-full text-[clamp(1.9rem,5.8vw,2.45rem)] font-semibold leading-[1.08] tracking-tight text-slate-950 [overflow-wrap:break-word] [text-wrap:balance] sm:leading-[1.06]">
+              See the gap between what you mean and what others may hear.
             </h1>
           </div>
 
-          <div className="mt-6 space-y-5 sm:mt-8 sm:space-y-6">
+          <div className="mt-4 space-y-3.5 sm:mt-5 sm:space-y-4">
             <label htmlFor="message" className="sr-only">
               Message input
             </label>
+            <div className="rounded-[1rem] bg-[#fbfcff]/48 px-3.5 py-2.5">
+              <p className="text-[0.66rem] font-semibold uppercase tracking-[0.15em] text-slate-400">
+                Thoughts people have before hitting send
+              </p>
+              <div className="mt-2 flex flex-wrap gap-x-1.5 gap-y-1">
+                {exampleUseCases.map((useCase) => (
+                  <span
+                    key={useCase}
+                    className="rounded-[0.9rem] bg-[#fffefa]/52 px-2.5 py-0.5 text-[0.72rem] font-medium leading-5 text-slate-500/90"
+                  >
+                    &ldquo;{useCase}&rdquo;
+                  </span>
+                ))}
+              </div>
+            </div>
             <textarea
               id="message"
               aria-label="Message to analyze"
               rows={10}
               maxLength={MESSAGE_CHARACTER_LIMIT}
               value={message}
-              onChange={(event) => setMessage(event.target.value)}
-              placeholder="Paste the text you're spiraling over..."
-              className="w-full min-h-[260px] rounded-[1.5rem] border border-[#b9c7db]/70 bg-[#f4f7fb] px-6 py-5 text-base leading-7 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.88),inset_0_18px_42px_-36px_rgba(70,91,128,0.5),0_20px_56px_-38px_rgba(15,23,42,0.28)] placeholder:text-slate-500/78 outline-none transition duration-300 ease-out hover:border-[#9fb2cc]/85 hover:bg-[#f7f9fc] focus:border-[#2f6fed]/55 focus:bg-[#fbfcff] focus:ring-4 focus:ring-[#2f6fed]/14"
+              onChange={(event) => {
+                setMessage(event.target.value);
+              }}
+              placeholder="Paste the message you want to understand..."
+              className="w-full min-h-[178px] rounded-[1.45rem] border border-[#b9c7db]/70 bg-[#f4f7fb] px-5 py-4 text-base leading-7 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.88),inset_0_18px_42px_-36px_rgba(70,91,128,0.5),0_18px_50px_-38px_rgba(15,23,42,0.28)] placeholder:text-slate-500/78 outline-none transition duration-300 ease-out hover:border-[#9fb2cc]/85 hover:bg-[#f7f9fc] focus:border-[#2f6fed]/55 focus:bg-[#fbfcff] focus:ring-4 focus:ring-[#2f6fed]/14 sm:min-h-[195px] sm:px-6 sm:py-4"
             />
+            <div className="-mt-0.5 inline-flex w-fit max-w-full items-center gap-2 rounded-full bg-[#eef5ff] px-4 py-2 text-sm font-semibold text-[#2f4c86] shadow-sm ring-1 ring-[#2f6fed]/16">
+              <span aria-hidden="true">&#128274;</span>
+              <span>We don&apos;t store or save your messages.</span>
+            </div>
             <div className="flex items-center justify-end gap-3 px-1 text-xs font-medium text-slate-500">
               {isAtCharacterLimit ? (
                 <span className="text-[#9b6508]">
-                  That&apos;s enough panic for one read.
+                  That&apos;s enough text for one interpretation.
                 </span>
               ) : null}
               <span
@@ -924,24 +1137,24 @@ export default function Home() {
               </p>
             ) : null}
 
-            <div className="flex flex-col gap-3 sm:flex-row">
+            <div className="flex flex-col gap-2.5 sm:flex-row">
               {messageLength > 0 ? (
                 <button
                   type="button"
                   aria-label="Clear text"
                   onClick={handleClearText}
                   disabled={isLoading}
-                  className="inline-flex min-h-[54px] items-center justify-center rounded-full bg-[#eaf0ff] px-6 py-3 text-base font-semibold text-[#2f4c86] shadow-[0_16px_36px_-30px_rgba(47,111,237,0.6)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#dfe8ff] hover:text-[#17346f] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2f6fed]/16 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                  className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-[#eaf0ff] px-6 py-3 text-base font-semibold text-[#2f4c86] shadow-[0_16px_36px_-30px_rgba(47,111,237,0.6)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#dfe8ff] hover:text-[#17346f] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2f6fed]/16 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                   Clear text
                 </button>
               ) : null}
               <button
                 type="button"
-                aria-label="Read my text"
+                aria-label="Interpret my message"
                 onClick={handleAnalyze}
                 disabled={!canAnalyze}
-                className="inline-flex min-h-[54px] flex-1 items-center justify-center gap-3 rounded-full bg-slate-950 px-8 py-4 text-base font-semibold text-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950/20 disabled:cursor-not-allowed disabled:bg-slate-500 disabled:shadow-none"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-3 rounded-full bg-slate-950 px-8 py-3.5 text-base font-semibold text-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950/20 disabled:cursor-not-allowed disabled:bg-slate-500 disabled:shadow-none"
               >
                 {isLoading ? (
                     <span className="inline-flex items-center gap-3">
@@ -949,23 +1162,23 @@ export default function Home() {
                     {loadingMessage}
                   </span>
                 ) : (
-                  "Read my text"
+                  "Interpret my message"
                 )}
               </button>
             </div>
           </div>
 
-          <section className="mt-12 rounded-[1.5rem] bg-[#f6f3eb] p-5 shadow-sm ring-1 ring-slate-950/[0.04] sm:mt-14 sm:p-8">
+          <section className="mt-9 rounded-[1.5rem] bg-[#f6f3eb] p-4 shadow-sm ring-1 ring-slate-950/[0.04] sm:mt-11 sm:p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#2f6fed]">
-                  THE READ
+                  BETWEEN THE LINES
                 </p>
               </div>
             </div>
 
             <div
-              className="mt-4 space-y-6 transition-all duration-500 ease-out sm:mt-5"
+              className="mt-4 space-y-5 transition-all duration-500 ease-out"
             >
               {isLoading ? (
                 <div className="rounded-[1.35rem] bg-[#fbfcff] px-5 py-6 shadow-sm ring-1 ring-[#9aabc8]/18">
@@ -974,76 +1187,83 @@ export default function Home() {
                     {loadingMessage}
                   </div>
                   <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
-                    TextPanic is reading the room. Quietly. Judgementally.
+                    BetweenLines AI is reading the communication impact. Privately. Carefully.
                     Usefully.
                   </p>
                 </div>
               ) : result ? (
-                <div className="space-y-8">
-                  <div className="space-y-4">
+                <div className="space-y-6">
+                  <div className="space-y-3">
                     {socialMirror ? (
-                      <div className="inline-flex max-w-full rounded-full bg-slate-950 px-4 py-2 text-sm font-semibold text-[#fff2d8] shadow-[0_18px_45px_-34px_rgba(15,23,42,0.8)]">
+                      <div className="inline-flex max-w-full rounded-full bg-slate-950 px-3.5 py-1.5 text-sm font-semibold text-[#fff2d8] shadow-[0_18px_45px_-36px_rgba(15,23,42,0.7)]">
                         <span className="truncate">
                           {socialMirror.severity}
                         </span>
                       </div>
                     ) : null}
 
-                    <div className="grid gap-2 sm:grid-cols-3">
-                      <div className="rounded-2xl bg-[#fffdf8]/55 px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
-                          Tone
-                        </p>
-                        <p className="mt-1 text-sm font-medium leading-5 text-slate-800">
-                          {result.tone}
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-[#fffdf8]/55 px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
-                          Confidence
-                        </p>
-                        <p className="mt-1 text-sm font-medium leading-5 text-slate-800">
+                    <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
+                      <span className="rounded-full bg-[#fffdf8]/62 px-3 py-1.5 ring-1 ring-slate-950/[0.04]">
+                        Signal: <span className="text-slate-700">{result.tone}</span>
+                      </span>
+                      <span className="rounded-full bg-[#fffdf8]/62 px-3 py-1.5 ring-1 ring-slate-950/[0.04]">
+                        Confidence signal:{" "}
+                        <span className="text-slate-700">
                           {result.confidenceScore}/10
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-[#fffdf8]/55 px-4 py-3">
-                        <p className="text-xs font-semibold uppercase tracking-[0.13em] text-slate-400">
-                          Clarity
-                        </p>
-                        <p className="mt-1 text-sm font-medium leading-5 text-slate-800">
+                        </span>
+                      </span>
+                      <span className="rounded-full bg-[#fffdf8]/62 px-3 py-1.5 ring-1 ring-slate-950/[0.04]">
+                        Clarity:{" "}
+                        <span className="text-slate-700">
                           {result.clarityScore}/10
-                        </p>
-                      </div>
+                        </span>
+                      </span>
                     </div>
                   </div>
 
-                  <div className="space-y-4 sm:space-y-5">
-                    <div className="rounded-[1.55rem] bg-[#ffd982] p-6 shadow-[0_24px_64px_-52px_rgba(164,106,5,0.72)] ring-1 ring-[#d99a1c]/45 sm:p-7">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#7b4d03] sm:text-sm">
-                        THE VIBE
-                      </p>
-                      <p className="mt-4 max-w-[39rem] text-[1.22rem] font-semibold leading-[1.38] tracking-tight text-slate-950 sm:text-[1.42rem] sm:leading-[1.34]">
-                        {result.emotionalInterpretation}
-                      </p>
-                    </div>
-                    {socialMirror ? (
-                      <div className="rounded-[1.55rem] bg-[#ded2ff] p-6 shadow-[0_22px_60px_-52px_rgba(72,52,124,0.58)] ring-1 ring-[#9f8add]/42 sm:p-7">
-                        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#584191] sm:text-sm">
-                          THE SUBTEXT
-                        </p>
-                        <p className="mt-4 max-w-[39rem] text-[1.22rem] font-semibold leading-[1.38] tracking-tight text-[#211b32] sm:text-[1.42rem] sm:leading-[1.34]">
-                          {socialMirror.subtext}
-                        </p>
-                      </div>
-                    ) : null}
-                    <div className="rounded-[1.55rem] bg-[#cfdde5] p-6 shadow-[0_22px_60px_-52px_rgba(45,74,92,0.54)] ring-1 ring-[#7899aa]/36 sm:p-7">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#3d5d6d] sm:text-sm">
-                        HOW THIS LANDS
-                      </p>
-                      <p className="mt-4 max-w-[39rem] text-[1.22rem] font-semibold leading-[1.38] tracking-tight text-[#233642] sm:text-[1.42rem] sm:leading-[1.34]">
-                        {result.recipientLikelyPerception}
-                      </p>
-                    </div>
+                  <div
+                    className="guided-read-deck rounded-[1.8rem] bg-[#fbfcff]/44 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_24px_70px_-58px_rgba(45,64,116,0.48)] ring-1 ring-white/45 sm:p-3"
+                    aria-label="Communication insight deck"
+                  >
+                    {visibleInsightCards.map((card, index) => {
+                      const isActive = card.id === activeInsightCardId;
+
+                      return (
+                        <button
+                          key={card.id}
+                          type="button"
+                          aria-label={
+                            isActive
+                              ? `${card.title} insight currently selected`
+                              : `Show ${card.title} insight`
+                          }
+                          aria-pressed={isActive}
+                          onClick={() => setActiveInsightCardId(card.id)}
+                          style={{ zIndex: isActive ? 50 : 40 - index }}
+                          className={`guided-read-card insight-deck-card result-card-enter relative block w-full rounded-[1.45rem] border-0 text-left outline-none ring-1 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:ring-4 focus-visible:ring-[#2f6fed]/26 ${
+                            isActive
+                              ? `${card.activeClassName} z-50 min-h-[230px] p-6 sm:min-h-[250px] sm:p-7`
+                              : `${card.inactiveClassName} -mt-2 min-h-[58px] px-5 py-4 hover:-translate-y-0.5 hover:shadow-[0_22px_48px_-38px_rgba(45,64,116,0.46)] sm:-mt-3`
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] sm:text-sm">
+                              {card.title}
+                            </p>
+                            {!isActive ? (
+                              <span className="shrink-0 rounded-full bg-white/50 px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] opacity-75">
+                                Tap
+                              </span>
+                            ) : null}
+                          </div>
+                          {isActive ? (
+                            <div className="insight-active-content">
+                              {card.content}
+                            </div>
+                          ) : null}
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {socialMirror ? (
@@ -1051,11 +1271,11 @@ export default function Home() {
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                            Share the read
+                            Share the interpretation
                           </p>
                           <p className="mt-1 text-sm leading-6 text-slate-600">
-                            No original text included. Just the emotional
-                            weather report.
+                            No original text included. Just the communication
+                            insight.
                           </p>
                         </div>
                         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
@@ -1122,20 +1342,30 @@ export default function Home() {
                   ) : null}
 
                   {!showRewrite ? (
-                    <div className="rounded-[1.5rem] border border-dashed border-[#2f6fed]/30 bg-[#fffdf8]/75 p-6 text-center shadow-sm sm:p-7">
-                      <p className="mx-auto max-w-md text-base font-medium leading-7 text-slate-700">
-                        Need the less chaotic version?
+                    <div className="relative overflow-hidden rounded-[1.45rem] bg-[#fffefa]/86 p-4 shadow-[0_18px_52px_-46px_rgba(45,64,116,0.42)] ring-1 ring-[#7185bd]/16 sm:p-5">
+                      <div
+                        aria-hidden="true"
+                        className="space-y-2.5 blur-[3px] transition duration-500"
+                      >
+                        <div className="h-3.5 w-24 rounded-full bg-slate-300/70" />
+                        <div className="h-4 w-[92%] rounded-full bg-slate-300/60" />
+                        <div className="h-4 w-[78%] rounded-full bg-slate-300/55" />
+                        <div className="h-4 w-[64%] rounded-full bg-slate-300/50" />
+                      </div>
+                      <p id="rewrite-preview-label" className="sr-only">
+                        A clearer rewrite is available. Activate the button to reveal it.
                       </p>
                       <button
                         type="button"
-                        aria-label="Show me the better version"
+                        aria-label="Show me a clearer version"
+                        aria-describedby="rewrite-preview-label"
                         onClick={handleRevealRewrite}
                         disabled={isRevealingRewrite}
-                        className="mt-6 inline-flex min-h-[56px] w-full items-center justify-center rounded-full bg-[#2f6fed] px-8 py-3 text-base font-semibold text-white shadow-[0_22px_50px_-28px_rgba(47,111,237,0.9)] outline-none transition duration-300 ease-out hover:-translate-y-1 hover:bg-[#245bd1] hover:shadow-[0_28px_60px_-26px_rgba(47,111,237,1)] active:translate-y-0 active:scale-[0.98] focus-visible:ring-4 focus-visible:ring-[#2f6fed]/20 disabled:cursor-wait disabled:bg-[#2a63d5] disabled:shadow-[0_18px_42px_-30px_rgba(47,111,237,0.82)] motion-reduce:transition-none sm:w-auto"
+                        className="absolute inset-x-4 top-1/2 inline-flex min-h-[52px] -translate-y-1/2 items-center justify-center rounded-full bg-[#2f6fed] px-7 py-3 text-base font-semibold text-white shadow-[0_18px_44px_-30px_rgba(47,111,237,0.82)] outline-none transition duration-300 ease-out hover:-translate-y-[52%] hover:bg-[#245bd1] active:-translate-y-1/2 active:scale-[0.98] focus-visible:ring-4 focus-visible:ring-[#2f6fed]/20 disabled:cursor-wait disabled:bg-[#2a63d5] motion-reduce:transition-none sm:left-1/2 sm:right-auto sm:w-auto sm:min-w-[17rem] sm:-translate-x-1/2"
                       >
                         {isRevealingRewrite ? (
                           <span className="inline-flex items-center justify-center gap-2 text-center leading-snug">
-                            Making this less emotionally expensive
+                            Making this clearer
                             <span className="inline-flex gap-1" aria-hidden="true">
                               <span className="rewrite-loading-dot" />
                               <span className="rewrite-loading-dot [animation-delay:140ms]" />
@@ -1143,7 +1373,7 @@ export default function Home() {
                             </span>
                           </span>
                         ) : (
-                          "Show me the better version."
+                          "Show me a clearer version"
                         )}
                       </button>
                     </div>
@@ -1157,18 +1387,18 @@ export default function Home() {
                         : "max-h-0 translate-y-5 opacity-0 blur-md"
                     }`}
                   >
-                    <div className="rounded-[1.6rem] bg-slate-950 p-6 text-white shadow-[0_22px_70px_-40px_rgba(15,23,42,0.75)] transition duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none sm:p-8">
-                      <p className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-300">
+                    <div className="rounded-[1.45rem] bg-[#fffefa] p-5 text-slate-950 shadow-[0_20px_60px_-46px_rgba(45,64,116,0.45)] ring-1 ring-[#7185bd]/18 transition duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none sm:p-6">
+                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
                         Send this instead
                       </p>
-                      <p className="mt-5 text-lg leading-8 text-slate-50 sm:text-xl sm:leading-9">
+                      <p className="mt-4 text-base leading-7 text-slate-800 sm:text-lg sm:leading-8">
                         {result.improvedRewrite}
                       </p>
                       <button
                         type="button"
                         aria-label="Copy rewrite"
                         onClick={handleCopyRewrite}
-                        className="mt-6 inline-flex min-h-[48px] items-center justify-center rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-slate-950 shadow-sm outline-none transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-100 focus-visible:ring-4 focus-visible:ring-white/20"
+                        className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-full bg-slate-950 px-5 py-2 text-sm font-semibold text-white shadow-[0_14px_34px_-28px_rgba(15,23,42,0.7)] outline-none transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 focus-visible:ring-4 focus-visible:ring-slate-950/20"
                       >
                         {rewriteCopied ? "Copied" : "Copy Rewrite"}
                       </button>
@@ -1189,13 +1419,13 @@ export default function Home() {
                   </div>
                   <div className="max-w-[31rem] pr-14 sm:pr-20">
                     <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[#6f84a8]">
-                      TextPanic check
+                      Communication check
                     </p>
                     <h3 className="mt-4 text-2xl font-semibold leading-tight tracking-tight text-[#243149] sm:text-3xl">
-                      No panic analyzed yet.
+                      No message interpreted yet.
                     </h3>
                     <p className="mt-4 text-base leading-7 text-[#64748b] sm:text-lg sm:leading-8">
-                      Paste a message to get the read. The fix stays locked
+                      Paste a message to understand its impact. The rewrite stays locked
                       until you ask for it.
                     </p>
                   </div>
@@ -1203,6 +1433,7 @@ export default function Home() {
               )}
             </div>
           </section>
+
         </div>
       </main>
     </div>

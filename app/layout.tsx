@@ -15,33 +15,33 @@ const geistMono = Geist_Mono({
 });
 
 const siteDescription =
-  "For messages written during emotional turbulence. Paste your text. We’ll tell you what people hear.";
+  "Communication Intelligence for Modern Messaging. Understand how your message lands before you send it.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://textpanic.com"),
-  title: "TextPanic",
+  title: "BetweenLines AI",
   description: siteDescription,
   alternates: {
     canonical: "https://textpanic.com",
   },
   openGraph: {
-    title: "TextPanic",
+    title: "BetweenLines AI",
     description: siteDescription,
     url: "https://textpanic.com",
-    siteName: "TextPanic",
+    siteName: "BetweenLines AI",
     type: "website",
     images: [
       {
         url: "/opengraph-image",
         width: 1200,
         height: 630,
-        alt: "TextPanic social preview",
+        alt: "BetweenLines AI social preview",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "TextPanic",
+    title: "BetweenLines AI",
     description: siteDescription,
     images: ["/opengraph-image"],
   },
