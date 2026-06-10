@@ -35,13 +35,13 @@ const client = process.env.OPENAI_API_KEY
 const MESSAGE_CHARACTER_LIMIT = 750;
 const OPENAI_TIMEOUT_MS = 20_000;
 const RATE_LIMITED_MESSAGE =
-  "Okay. Deep breath. You've analyzed a lot of texts today. Try again later.";
+  "You've used today's private reads. Give it some time and try again later.";
 const BURST_RATE_LIMITED_MESSAGE =
-  "Tiny pause. TextPanic needs a second before the next interpretation.";
+  "Tiny pause. Give it a moment before the next interpretation.";
 const TIMEOUT_MESSAGE =
-  "The read is taking too long. The text can wait. Try again in a moment.";
+  "This is taking longer than expected. Your message can wait; try again in a moment.";
 const GENERIC_ERROR_MESSAGE =
-  "TextPanic hit a small processing snag. Try again in a moment.";
+  "BetweenLines AI hit a small processing snag. Try again in a moment.";
 
 const redis =
   process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
@@ -89,7 +89,7 @@ function validateMessage(body: unknown) {
 
   if (typeof message !== "string") {
     return {
-      error: "Paste a message first. TextPanic needs something to read.",
+      error: "Paste a message first. BetweenLines AI needs something to read.",
     };
   }
 
@@ -97,7 +97,7 @@ function validateMessage(body: unknown) {
 
   if (trimmedMessage.length === 0) {
     return {
-      error: "Paste a message first. TextPanic needs something to read.",
+      error: "Paste a message first. BetweenLines AI needs something to read.",
     };
   }
 
@@ -217,6 +217,25 @@ function createCommunicationIntelligenceScore({
   return clampScore(clarity + confidence + emotionalPressure + perceptionAlignment);
 }
 
+function completePerceptionGap(perceptionGap: string) {
+  if (/\b(reduce|soften|clarify|clearer|name the|direct|specific ask)\b/i.test(perceptionGap)) {
+    return perceptionGap;
+  }
+
+  return `${perceptionGap} A clearer ask or softer opening would reduce that gap.`;
+}
+
+function softenAnalysisLanguage(text: string) {
+  return text
+    .replace(/\bmanipulative\b/gi, "emotionally high-pressure")
+    .replace(/\btoxic\b/gi, "hard to receive")
+    .replace(/\bdesperate\b/gi, "intense")
+    .replace(/\bneedy\b/gi, "reassurance-seeking")
+    .replace(/\bpathetic\b/gi, "uncertain")
+    .replace(/\bred flag\b/gi, "possible concern")
+    .replace(/\bclingy\b/gi, "uncertain or reassurance-seeking");
+}
+
 function createDemoAnalysis(message: string): AnalysisResult {
   const isDevelopment = process.env.NODE_ENV === "development";
   const trimmedMessage = message.trim();
@@ -242,24 +261,24 @@ function createDemoAnalysis(message: string): AnalysisResult {
   let improvedRewrite =
     "I want to say this clearly without making it heavier than it needs to be. Can we talk about it?";
   let emotionalInterpretation =
-    "This is understandable, but the impact may be less clear than the intent.";
+    "This message could be read a few ways, but the main gap seems to be between your intended clarity and how much pressure the wording may create.";
   let perceptionGap =
-    "You intend to be direct, but the recipient may need to infer the emotional context.";
+    "You likely intend to be clear, but the recipient may need to infer the emotional context. Naming the need more directly would reduce that gap.";
   let youMeant =
     "You want to say something real without making the conversation heavier than it needs to be.";
   let theyMayHear =
-    "They may understand the point, but they might have to guess at the feeling underneath.";
+    "They may understand the point, but they might have to guess at the feeling or need underneath.";
   const mostRevealingLineQuote = getMostRevealingLine(trimmedMessage);
   let mostRevealingLineExplanation =
     "This is where the message shows the emotional stakes most clearly.";
   let recipientLikelyPerception =
-    "They will probably understand the point, but they may also wonder what you are not saying out loud.";
+    "They may understand the point, but they could also wonder what you are not saying out loud.";
 
   if (appearsNonEnglish) {
     emotionalInterpretation =
       "The message has emotional subtext, but demo mode cannot reliably localize the full read. Keeping the interpretation clear instead of forcing English assumptions onto it.";
     perceptionGap =
-      "Your intent may be clear in context, but formality and tone can shift across language and region.";
+      "Your intent may be clear in context, but formality and tone can shift across language and region. Keeping the rewrite close to your original tone reduces that gap.";
     mostRevealingLineExplanation =
       "This line carries the clearest signal, though tone can shift by language and context.";
     recipientLikelyPerception =
@@ -269,11 +288,11 @@ function createDemoAnalysis(message: string): AnalysisResult {
     emotionalInterpretation =
       "This is extremely brief, so the recipient may read distance or irritation into it.";
     perceptionGap =
-      "You may intend acknowledgment, but they may perceive withdrawal or disapproval.";
+      "You may intend acknowledgment, but they may perceive withdrawal or disapproval. Adding one short feeling or next step would reduce that gap.";
     mostRevealingLineExplanation =
       "The brevity does the emotional work; it can read like distance more than agreement.";
     recipientLikelyPerception =
-      "They will likely read this as cold, annoyed, or deliberately clipped.";
+      "They may read this as cold, annoyed, or deliberately clipped.";
     improvedRewrite =
       "Okay. I am not thrilled about it, but I hear you.";
   } else if (lowerMessage.includes("are you ignoring me")) {
@@ -281,7 +300,7 @@ function createDemoAnalysis(message: string): AnalysisResult {
       ? "The casual ending softens the sentence, but the core message still carries emotional pressure."
       : "This is asking for reassurance, but the wording may feel accusatory.";
     perceptionGap =
-      "You want reassurance, but they may perceive blame before they understand the need.";
+      "You want reassurance, but they may perceive blame before they understand the need. Naming the check-in more gently would reduce that gap.";
     mostRevealingLineExplanation =
       "This turns a check-in into something that may feel like an accusation.";
     recipientLikelyPerception =
@@ -292,44 +311,44 @@ function createDemoAnalysis(message: string): AnalysisResult {
     emotionalInterpretation =
       "This is professional, but it can signal frustration because it points back to a missed exchange.";
     perceptionGap =
-      "You intend to restore momentum, but they may perceive impatience.";
+      "You intend to restore momentum, but they may perceive impatience. A specific, neutral next step would reduce that gap.";
     mostRevealingLineExplanation =
       "The phrase is professional, but it also signals impatience and prior frustration.";
     recipientLikelyPerception =
-      "They will read it as professional, but also as a very polished warning shot.";
+      "They may read it as professional, but also as noticeably impatient.";
     improvedRewrite =
       "Following up on my last email. Could you take another look when you have a chance?";
   } else if (lowerMessage.includes("whatever") && lowerMessage.includes("do what you want")) {
     emotionalInterpretation =
       "The wording gives permission, but the emotional impact suggests unresolved frustration.";
     perceptionGap =
-      "You may intend to step back, but they may perceive resentment or a test.";
+      "You may intend to step back, but they may perceive resentment or a test. Saying what matters to you directly would reduce that gap.";
     mostRevealingLineExplanation =
       "This sounds like permission, but emotionally it carries disappointment and pressure.";
     recipientLikelyPerception =
-      "They will probably hear the frustration, but the wording invites a fight instead of a real answer.";
+      "They may hear the frustration, but the wording could invite defensiveness instead of a real answer.";
     improvedRewrite =
       "I'm frustrated, and I don't want to keep going in circles. Do what you think is best, but I want you to know this matters to me.";
   } else if (lowerMessage.includes("this job sucks")) {
     emotionalInterpretation =
       "The emotion is clear, but the message does not yet clarify whether you want support, action, or space to vent.";
     perceptionGap =
-      "You intend to express pressure, but they may not know what kind of response would help.";
+      "You intend to express pressure, but they may not know what kind of response would help. Naming whether you want support, change, or space would reduce that gap.";
     mostRevealingLineExplanation =
       "The line names the feeling clearly, but it does not tell the other person what you need.";
     recipientLikelyPerception =
-      "They will know you are fed up, but they may not know whether you want support, change, or just a place to vent.";
+      "They may understand you are fed up, but they may not know whether you want support, change, or just a place to vent.";
     improvedRewrite =
       "I'm really frustrated with work right now. I need to figure out what's actually fixable, because this is wearing me down.";
   } else if (context === "work" && soundsAngry) {
     emotionalInterpretation =
       "The concern may be valid, but the emotional pressure could draw attention away from the practical request.";
     perceptionGap =
-      "You intend to flag a problem, but they may focus on the frustration before the substance.";
+      "You intend to flag a problem, but they may focus on the frustration before the substance. Separating the issue from the heat would reduce that gap.";
     mostRevealingLineExplanation =
       "This is where the valid issue starts to sound more heated than actionable.";
     recipientLikelyPerception =
-      "They will likely focus on the heat of the message before they get to the actual issue.";
+      "They may focus on the heat of the message before they get to the actual issue.";
     improvedRewrite =
       "I'm pretty frustrated with how this is going. Can we talk through what needs to change?";
   } else if (context === "work") {
@@ -337,13 +356,13 @@ function createDemoAnalysis(message: string): AnalysisResult {
       ? "This stays professional on the surface, but the tension is still visible."
       : "This is mostly clear and practical, with room for a little more warmth if the relationship needs it.";
     perceptionGap = isPassiveAggressive
-      ? "You intend to stay professional, but they may perceive pressure underneath the wording."
+      ? "You intend to stay professional, but they may perceive pressure underneath the wording. A neutral next step would reduce that gap."
       : "You intend to move the work forward, and they are likely to perceive a clear next step.";
     mostRevealingLineExplanation = isPassiveAggressive
       ? "The politeness softens the surface, but the frustration is still visible."
       : "This line carries the practical ask, which keeps the message grounded.";
     recipientLikelyPerception =
-      "They will read it as professional, though it may feel clipped if there is tension already.";
+      "They may read it as professional, though it could feel clipped if there is tension already.";
     improvedRewrite =
       "I wanted to follow up and make sure we're on the same page. What would be the best next step here?";
   } else if (context === "dating" && soundsTentative) {
@@ -351,7 +370,7 @@ function createDemoAnalysis(message: string): AnalysisResult {
       ? "The casual wording reduces intensity, but the message still asks for emotional clarity."
       : "This is asking for reassurance while trying to keep the tone light.";
     perceptionGap =
-      "You intend to check the connection, but they may perceive uncertainty or pressure to reassure.";
+      "You intend to check the connection, but they may perceive uncertainty or pressure to reassure. A softer, direct check-in would reduce that gap.";
     mostRevealingLineExplanation =
       "This is the moment the message reveals it is asking for emotional clarity.";
     recipientLikelyPerception =
@@ -362,22 +381,22 @@ function createDemoAnalysis(message: string): AnalysisResult {
     emotionalInterpretation =
       "This is oriented toward repair; it will land best if it clearly names responsibility and impact.";
     perceptionGap =
-      "You intend to repair trust, but they may look for evidence that you understand the impact.";
+      "You intend to repair trust, but they may look for evidence that you understand the impact. Naming responsibility clearly would reduce that gap.";
     mostRevealingLineExplanation =
       "This is where the repair attempt shows whether it is taking responsibility.";
     recipientLikelyPerception =
-      "They will be looking for whether you understand the impact, not just whether you regret the awkwardness.";
+      "They may be looking for whether you understand the impact, not just whether you regret the awkwardness.";
     improvedRewrite =
       "I'm sorry. I can see how that came across, and I should have handled it better.";
   } else if (soundsAngry) {
     emotionalInterpretation =
       "The feeling is clear, but the delivery may raise defensiveness before the issue is understood.";
     perceptionGap =
-      "You intend honesty, but they may perceive escalation.";
+      "You intend honesty, but they may perceive escalation. A clearer ask would reduce that gap.";
     mostRevealingLineExplanation =
       "This line carries the heat, so it may shape the whole read before the point lands.";
     recipientLikelyPerception =
-      "They will probably get defensive unless the message gives them something clear to respond to.";
+      "They may get defensive unless the message gives them something clear to respond to.";
     improvedRewrite =
       "I'm upset, and I want to be honest about that without making this worse. Can we talk about what's going on?";
   } else if (soundsTentative) {
@@ -385,7 +404,7 @@ function createDemoAnalysis(message: string): AnalysisResult {
       ? "The casual wording lowers the stakes, but it also makes the real ask less direct."
       : "This is gentle, but it circles the point instead of stating it cleanly.";
     perceptionGap =
-      "You intend to be low-pressure, but they may perceive uncertainty or indirectness.";
+      "You intend to be low-pressure, but they may perceive uncertainty or indirectness. Naming the ask more simply would reduce that gap.";
     mostRevealingLineExplanation =
       "This phrase reveals the reassurance-seeking under the softer wording.";
     recipientLikelyPerception =
@@ -410,7 +429,7 @@ function createDemoAnalysis(message: string): AnalysisResult {
     emotionalInterpretation =
       "This sounds calm, grounded, and easy to receive.";
     perceptionGap =
-      "The intent and likely perception are closely aligned: clear, respectful, and steady.";
+      "The intent and likely perception are closely aligned: clear, respectful, and steady. There is little to reduce here.";
     youMeant =
       "You meant to be clear and kind without overperforming or chasing reassurance.";
     theyMayHear =
@@ -418,7 +437,7 @@ function createDemoAnalysis(message: string): AnalysisResult {
     mostRevealingLineExplanation =
       "This line gives the message its steady center instead of escalating the feeling.";
     recipientLikelyPerception =
-      "They will probably read this as healthy and direct. You do not need to sand it down much.";
+      "They are likely to read this as healthy and direct. You do not need to sand it down much.";
     improvedRewrite = trimmedMessage;
   }
 
@@ -445,18 +464,18 @@ function createDemoAnalysis(message: string): AnalysisResult {
       soundsCalmOrHealthy
         ? "Calm and healthy"
         : isPassiveAggressive
-        ? "Passive-aggressive"
+        ? "Indirect frustration"
         : soundsAngry
-          ? "Frustrated and blunt"
+          ? "Emotionally loaded"
           : soundsTentative
-            ? "Anxious but trying to sound chill"
-            : "Clear enough, a little under-seasoned"
+            ? "Uncertain but careful"
+            : "Clear with room to sharpen"
     }`,
     confidenceScore,
     clarityScore,
     communicationIntelligenceScore,
     communicationFramework: {
-      perceptionGap,
+      perceptionGap: completePerceptionGap(perceptionGap),
       emotionalPressure: hasHighPressure
         ? "The message carries noticeable emotional pressure, so the recipient may respond to the tone before the content."
         : "The emotional pressure is low enough for the content to stay easy to receive.",
@@ -470,7 +489,7 @@ function createDemoAnalysis(message: string): AnalysisResult {
           : "The main point could be easier to identify with a little more directness.",
     },
     emotionalInterpretation: `${label}${emotionalInterpretation}`,
-    perceptionGap,
+    perceptionGap: completePerceptionGap(perceptionGap),
     intentVsImpact: {
       youMeant,
       theyMayHear,
@@ -510,7 +529,10 @@ function normalizeAnalysisResult(
       : null;
 
   return {
-    tone: typeof result.tone === "string" ? result.tone : fallback.tone,
+    tone:
+      typeof result.tone === "string"
+        ? softenAnalysisLanguage(result.tone)
+        : fallback.tone,
     confidenceScore:
       typeof result.confidenceScore === "number"
         ? result.confidenceScore
@@ -526,41 +548,41 @@ function normalizeAnalysisResult(
     communicationFramework: {
       perceptionGap:
         typeof communicationFramework?.perceptionGap === "string"
-          ? communicationFramework.perceptionGap
+          ? softenAnalysisLanguage(completePerceptionGap(communicationFramework.perceptionGap))
           : fallback.communicationFramework.perceptionGap,
       emotionalPressure:
         typeof communicationFramework?.emotionalPressure === "string"
-          ? communicationFramework.emotionalPressure
+          ? softenAnalysisLanguage(communicationFramework.emotionalPressure)
           : fallback.communicationFramework.emotionalPressure,
       confidenceSignal:
         typeof communicationFramework?.confidenceSignal === "string"
-          ? communicationFramework.confidenceSignal
+          ? softenAnalysisLanguage(communicationFramework.confidenceSignal)
           : fallback.communicationFramework.confidenceSignal,
       hiddenSubtext:
         typeof communicationFramework?.hiddenSubtext === "string"
-          ? communicationFramework.hiddenSubtext
+          ? softenAnalysisLanguage(communicationFramework.hiddenSubtext)
           : fallback.communicationFramework.hiddenSubtext,
       communicationClarity:
         typeof communicationFramework?.communicationClarity === "string"
-          ? communicationFramework.communicationClarity
+          ? softenAnalysisLanguage(communicationFramework.communicationClarity)
           : fallback.communicationFramework.communicationClarity,
     },
     emotionalInterpretation:
       typeof result.emotionalInterpretation === "string"
-        ? result.emotionalInterpretation
+        ? softenAnalysisLanguage(result.emotionalInterpretation)
         : fallback.emotionalInterpretation,
     perceptionGap:
       typeof result.perceptionGap === "string"
-        ? result.perceptionGap
+        ? softenAnalysisLanguage(completePerceptionGap(result.perceptionGap))
         : fallback.perceptionGap,
     intentVsImpact: {
       youMeant:
         typeof intentVsImpact?.youMeant === "string"
-          ? intentVsImpact.youMeant
+          ? softenAnalysisLanguage(intentVsImpact.youMeant)
           : fallback.intentVsImpact.youMeant,
       theyMayHear:
         typeof intentVsImpact?.theyMayHear === "string"
-          ? intentVsImpact.theyMayHear
+          ? softenAnalysisLanguage(intentVsImpact.theyMayHear)
           : fallback.intentVsImpact.theyMayHear,
     },
     mostRevealingLine: {
@@ -570,16 +592,16 @@ function normalizeAnalysisResult(
           : fallback.mostRevealingLine.quote,
       explanation:
         typeof mostRevealingLine?.explanation === "string"
-          ? mostRevealingLine.explanation
+          ? softenAnalysisLanguage(mostRevealingLine.explanation)
           : fallback.mostRevealingLine.explanation,
     },
     recipientLikelyPerception:
       typeof result.recipientLikelyPerception === "string"
-        ? result.recipientLikelyPerception
+        ? softenAnalysisLanguage(result.recipientLikelyPerception)
         : fallback.recipientLikelyPerception,
     improvedRewrite:
       typeof result.improvedRewrite === "string"
-        ? result.improvedRewrite
+        ? softenAnalysisLanguage(result.improvedRewrite)
         : fallback.improvedRewrite,
   };
 }
@@ -646,7 +668,19 @@ export async function POST(request: Request) {
   }, OPENAI_TIMEOUT_MS);
 
   try {
-    const prompt = `You are TextPanic, an emotionally intelligent communication interpretation product.
+    const prompt = `You are BetweenLines AI, a calm, emotionally intelligent communication companion.
+
+Core communication principles:
+- Clarity over assumption.
+- Curiosity over escalation.
+- Interpretation over judgment.
+- Emotional awareness over emotional reaction.
+- Reduce unnecessary pressure.
+- Help the user communicate more clearly.
+- Never fuel paranoia, catastrophizing, or mind-reading.
+- Never tell the user what someone definitely thinks or feels.
+- Use "may," "could," and "might" where appropriate.
+- Sound like a trusted friend with excellent judgment: warm, steady, direct, and useful.
 
 Communication Intelligence Framework:
 - Perception Gap: the difference between what the sender intended and what the recipient may perceive.
@@ -663,6 +697,10 @@ Product voice:
 - Screenshot-friendly when the insight is useful.
 - No roast language, meme language, exaggerated internet phrasing, or gimmicks.
 - If the message already sounds calm, confident, kind, direct, emotionally healthy, or ready to send, reassure the user clearly instead of manufacturing a problem.
+- Do not overreact. If there are multiple plausible reads, say so calmly.
+- Avoid making the recipient sound hostile unless the wording strongly supports that interpretation.
+- Avoid harsh labels such as "manipulative," "toxic," "desperate," "needy," "pathetic," "red flag," or "clingy."
+- Prefer language like "emotionally high-pressure," "may feel intense," "could come across as uncertain," "may read as defensive," "creates a perception gap," and "softening this could reduce pressure."
 
 Language and cultural awareness:
 - Detect the language of the user's message.
@@ -703,28 +741,33 @@ Required JSON keys:
 
 Analysis style rules:
 - The analysis should sound like a communication expert with strong emotional intelligence.
-- Detect passive aggression, fake casualness, insecurity, defensiveness, emotional pressure, emotional distance, overexplaining, avoidance, mixed signals, and indirectness.
+- Consider whether the message contains reassurance-seeking, frustration, uncertainty, fear of being ignored, desire for clarity, guilt, avoidance, vulnerability, pressure, or defensiveness.
+- Detect indirect frustration, fake casualness, uncertainty, defensiveness, emotional pressure, emotional distance, overexplaining, avoidance, mixed signals, and indirectness.
 - Be accurate and useful, never cruel.
 - Name the likely perception if it helps the user understand communication impact.
 - Use restraint. Prioritize clarity over humor.
-- If the message is serious, vulnerable, or high-stakes, be more sincere than funny.
+- If the message is serious, vulnerable, or high-stakes, be more sincere than clever.
 - If the message is emotionally clear, calm, confident, or healthy, say that directly. The user may need permission to stop overthinking it.
 - The intentVsImpact section should separate the user's likely good intent from the way the recipient may receive it.
-- The perceptionGap field should concisely explain the difference between intended meaning and likely perceived meaning.
+- The perceptionGap field must clearly distinguish: what the sender likely means, what the recipient may hear, why the gap exists, and how to reduce that gap.
+- Every perceptionGap should be concise but complete. It should usually include a practical bridge such as naming the need, softening the opener, making the ask more specific, or reducing extra pressure.
 - The communicationIntelligenceScore should reflect clarity, confidence signal, emotional pressure, and perception alignment. It is a communication quality indicator, not a judgment of the person.
 - The mostRevealingLine quote must be an exact short phrase or sentence from the message, not a paraphrase. Keep the explanation concise, insightful, and screenshot-friendly.
 - Avoid clinical phrases like "this indicates" or "you may be experiencing."
 - Avoid corporate filler and therapy-speak.
 - Match the language of the message in tone, idiom, and register. If the language is not English, do not translate the user's situation into English cultural assumptions.
+- If uncertain, say something close to: "This message could be read a few ways, but the main gap seems to be between your intended clarity and how much pressure the wording may create."
 
 Rewrite style rules:
 - The improvedRewrite should sound like something a normal person would actually send.
-- Make the analysis funny/sharp when appropriate, but make the improvedRewrite useful.
+- Make the analysis clear and emotionally accurate; make the improvedRewrite useful.
 - Do not make the improvedRewrite sarcastic unless that is clearly appropriate.
 - Do not default to phrases like "I am feeling..." unless that is truly the most natural option.
 - Avoid robotic phrasing, corporate filler, HR language, and therapist-speak unless the context clearly calls for it.
 - Preserve the sender's emotional intent. Do not sanitize all emotion out of the message.
 - Make the message clearer and easier to receive, not bland.
+- Preserve the user's intent while reducing unnecessary emotional pressure.
+- Keep the user's natural tone where possible.
 - Match the likely context when possible: dating, work, friendship, family, apology, confrontation.
 - Keep casual messages casual.
 - Keep professional messages professional, but not stiff.
@@ -742,23 +785,23 @@ Rewrite style rules:
 English examples of the desired voice. These show attitude, not language requirements:
 - Input: "hey just checking if you're mad at me lol"
   emotionalInterpretation: "The casual phrasing softens the message, but the recipient may still hear a request for reassurance."
-  perceptionGap: "You intend a light check-in, but they may perceive emotional pressure underneath it."
+  perceptionGap: "You intend a light check-in, but they may perceive emotional pressure underneath it because the need for reassurance is indirect. A clearer, gentler ask would reduce that gap."
   improvedRewrite: "Hey, I might be overthinking it, but I wanted to check in. Are we okay?"
 - Input: "K."
   emotionalInterpretation: "This is clear but very low-context, so it may read as detached."
-  perceptionGap: "You may intend simple acknowledgment, but they may perceive distance or disapproval."
+  perceptionGap: "You may intend simple acknowledgment, but they may perceive distance or disapproval because there is no emotional context. Adding one short cue would reduce that gap."
   improvedRewrite: "Okay. I am not thrilled about it, but I hear you."
 - Input: "whatever do what you want"
-  emotionalInterpretation: "The wording sounds like permission, but the impact is likely frustration or resignation."
-  perceptionGap: "You may intend to disengage, but they may perceive resentment or a test."
+  emotionalInterpretation: "The wording sounds like permission, but the impact may be frustration or resignation."
+  perceptionGap: "You may intend to disengage, but they may perceive resentment or a test because the real feeling is implied rather than named. Saying what matters directly would reduce that gap."
   improvedRewrite: "I'm frustrated, and I don't want to keep going in circles. Do what you think is best, but I want you to know this matters to me."
 - Input: "per my last email"
   emotionalInterpretation: "This is professional, but it can also communicate impatience."
-  perceptionGap: "You intend to reference prior context, but they may perceive frustration."
+  perceptionGap: "You intend to reference prior context, but they may perceive frustration because the phrase points to a missed step. A neutral next action would reduce that gap."
   improvedRewrite: "Following up on my last email. Could you take another look when you have a chance?"
 - Input: "this job sucks"
   emotionalInterpretation: "The emotional pressure is clear, but the message does not yet clarify what support or action you want."
-  perceptionGap: "You intend to express strain, but they may not know what response would help."
+  perceptionGap: "You intend to express strain, but they may not know what response would help because the need is unnamed. Saying whether you want support, change, or space would reduce that gap."
   improvedRewrite: "I'm really frustrated with work right now. I need to figure out what's actually fixable, because this is wearing me down."
 
 Message:

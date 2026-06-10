@@ -543,7 +543,7 @@ function ShareCard({
                 BetweenLines<span className="text-[#2f6fed]/90"> AI</span>
               </p>
               <p className="mt-1 text-[0.68rem] font-medium leading-tight text-slate-500/75">
-                Communication Intelligence for Modern Messaging.
+                Communication intelligence designed to create clarity, not chaos.
               </p>
             </div>
           </div>
@@ -1065,8 +1065,8 @@ export default function Home() {
               <p className="text-[1.05rem] font-black leading-none tracking-[-0.03em] text-slate-950 sm:text-[1.16rem]">
                 BetweenLines<span className="text-[#2f6fed]/90"> AI</span>
               </p>
-              <p className="mt-1 max-w-[18rem] text-[0.72rem] font-medium leading-[1.35] text-slate-500/76 sm:max-w-none sm:text-[0.78rem]">
-                Communication Intelligence for Modern Messaging.
+              <p className="mt-1 max-w-[22rem] text-[0.72rem] font-medium leading-[1.35] text-slate-500/76 [text-wrap:balance] sm:max-w-[30rem] sm:text-[0.78rem]">
+                Communication intelligence designed to create clarity, not chaos.
               </p>
             </div>
           </div>
@@ -1268,17 +1268,17 @@ export default function Home() {
 
                   {socialMirror ? (
                     <div className="space-y-3 rounded-[1.55rem] bg-[#fffdf8]/75 p-4 shadow-sm ring-1 ring-slate-950/[0.04] sm:p-5">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
                           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                            Share the interpretation
+                            Copy the insight
                           </p>
                           <p className="mt-1 text-sm leading-6 text-slate-600">
                             No original text included. Just the communication
                             insight.
                           </p>
                         </div>
-                        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:justify-end">
+                        <div className="flex flex-col items-stretch gap-2 sm:items-end">
                           <button
                             type="button"
                             aria-label="Copy this analysis"
@@ -1287,32 +1287,34 @@ export default function Home() {
                           >
                             {analysisCopied ? "Copied" : "Copy this analysis"}
                           </button>
-                          <button
-                            type="button"
-                            aria-label="Download share card"
-                            onClick={handleDownloadShareCard}
-                            disabled={isDownloadingShareCard}
-                            className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-slate-950 px-5 py-2.5 text-sm font-semibold text-white shadow-[0_18px_44px_-32px_rgba(15,23,42,0.7)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950/20 disabled:cursor-wait disabled:bg-slate-500 disabled:shadow-none"
-                          >
-                            {isDownloadingShareCard
-                              ? "Making the card..."
-                              : "Download share card"}
-                          </button>
-                          <button
-                            type="button"
-                            aria-label={
-                              showSharePreview
-                                ? "Hide share card preview"
-                                : "Preview share card"
-                            }
-                            onClick={handleToggleSharePreview}
-                            aria-expanded={showSharePreview}
-                            className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#fffefa] px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm ring-1 ring-slate-950/[0.08] transition duration-200 ease-out hover:-translate-y-0.5 hover:text-slate-950 hover:ring-[#2f6fed]/24 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2f6fed]/12"
-                          >
-                            {showSharePreview
-                              ? "Hide share card"
-                              : "Preview share card"}
-                          </button>
+                          <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-400 sm:justify-end">
+                            <button
+                              type="button"
+                              aria-label="Export insight"
+                              onClick={handleDownloadShareCard}
+                              disabled={isDownloadingShareCard}
+                              className="inline-flex min-h-[32px] items-center justify-center rounded-full px-1.5 text-slate-400 transition duration-200 ease-out hover:text-slate-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2f6fed]/12 disabled:cursor-wait disabled:text-slate-300"
+                            >
+                              {isDownloadingShareCard
+                                ? "Exporting..."
+                                : "Export insight"}
+                            </button>
+                            <button
+                              type="button"
+                              aria-label={
+                                showSharePreview
+                                  ? "Hide share card preview"
+                                  : "Preview share card"
+                              }
+                              onClick={handleToggleSharePreview}
+                              aria-expanded={showSharePreview}
+                              className="inline-flex min-h-[32px] items-center justify-center rounded-full px-1.5 text-slate-400 transition duration-200 ease-out hover:text-slate-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2f6fed]/12"
+                            >
+                              {showSharePreview
+                                ? "Hide preview"
+                                : "Preview share card"}
+                            </button>
+                          </div>
                         </div>
                       </div>
 

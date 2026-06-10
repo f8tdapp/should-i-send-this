@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 const siteDescription =
-  "Communication Intelligence for Modern Messaging. Understand how your message lands before you send it.";
+  "Communication intelligence designed to create clarity, not chaos. See the gap between what you mean and what others may hear.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://textpanic.com"),
