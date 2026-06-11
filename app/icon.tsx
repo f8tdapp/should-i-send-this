@@ -18,15 +18,44 @@ export default function Icon() {
           alignItems: "center",
           justifyContent: "center",
           borderRadius: "18px",
-          background: "#0f172a",
-          color: "#fff2d8",
-          fontFamily: "Arial, Helvetica, sans-serif",
-          fontSize: "38px",
-          fontWeight: 900,
+          background: "#172033",
           position: "relative",
         }}
       >
-        T
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "5px",
+            width: "28px",
+          }}
+        >
+          <div
+            style={{
+              width: "25px",
+              height: "4px",
+              borderRadius: "999px",
+              background: "#FFFDF8",
+            }}
+          />
+          <div
+            style={{
+              marginLeft: "8px",
+              width: "20px",
+              height: "4px",
+              borderRadius: "999px",
+              background: "rgba(255,253,248,0.88)",
+            }}
+          />
+          <div
+            style={{
+              width: "15px",
+              height: "4px",
+              borderRadius: "999px",
+              background: "rgba(255,253,248,0.72)",
+            }}
+          />
+        </div>
         <div
           style={{
             position: "absolute",
@@ -35,7 +64,7 @@ export default function Icon() {
             width: "11px",
             height: "11px",
             borderRadius: "999px",
-            background: "#2f6fed",
+            background: "#64748B",
           }}
         />
       </div>
@@ -43,4 +72,3 @@ export default function Icon() {
     size,
   );
 }
-

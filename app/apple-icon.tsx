@@ -18,15 +18,44 @@ export default function AppleIcon() {
           alignItems: "center",
           justifyContent: "center",
           borderRadius: "42px",
-          background: "#0f172a",
-          color: "#fff2d8",
-          fontFamily: "Arial, Helvetica, sans-serif",
-          fontSize: "106px",
-          fontWeight: 900,
+          background: "#172033",
           position: "relative",
         }}
       >
-        T
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "13px",
+            width: "78px",
+          }}
+        >
+          <div
+            style={{
+              width: "70px",
+              height: "11px",
+              borderRadius: "999px",
+              background: "#FFFDF8",
+            }}
+          />
+          <div
+            style={{
+              marginLeft: "22px",
+              width: "56px",
+              height: "11px",
+              borderRadius: "999px",
+              background: "rgba(255,253,248,0.88)",
+            }}
+          />
+          <div
+            style={{
+              width: "42px",
+              height: "11px",
+              borderRadius: "999px",
+              background: "rgba(255,253,248,0.72)",
+            }}
+          />
+        </div>
         <div
           style={{
             position: "absolute",
@@ -35,8 +64,8 @@ export default function AppleIcon() {
             width: "28px",
             height: "28px",
             borderRadius: "999px",
-            border: "8px solid #0f172a",
-            background: "#2f6fed",
+            border: "8px solid #172033",
+            background: "#64748B",
           }}
         />
       </div>
@@ -44,4 +73,3 @@ export default function AppleIcon() {
     size,
   );
 }
-

@@ -7,6 +7,80 @@ export const size = {
 
 export const contentType = "image/png";
 
+function LayeredLineMark({
+  size,
+  radius,
+  dotSize,
+  dotOffset,
+}: {
+  size: number;
+  radius: number;
+  dotSize: number;
+  dotOffset: number;
+}) {
+  return (
+    <div
+      style={{
+        width: `${size}px`,
+        height: `${size}px`,
+        borderRadius: `${radius}px`,
+        background: "#172033",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+      }}
+    >
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: `${Math.max(5, size * 0.09)}px`,
+          width: `${size * 0.5}px`,
+        }}
+      >
+        <div
+          style={{
+            width: `${size * 0.46}px`,
+            height: `${size * 0.075}px`,
+            borderRadius: "999px",
+            background: "#FFFDF8",
+          }}
+        />
+        <div
+          style={{
+            marginLeft: `${size * 0.15}px`,
+            width: `${size * 0.36}px`,
+            height: `${size * 0.075}px`,
+            borderRadius: "999px",
+            background: "rgba(255,253,248,0.88)",
+          }}
+        />
+        <div
+          style={{
+            width: `${size * 0.27}px`,
+            height: `${size * 0.075}px`,
+            borderRadius: "999px",
+            background: "rgba(255,253,248,0.72)",
+          }}
+        />
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          right: `${dotOffset}px`,
+          top: `${dotOffset}px`,
+          width: `${dotSize}px`,
+          height: `${dotSize}px`,
+          borderRadius: "999px",
+          border: "4px solid #F4F1EA",
+          background: "#64748B",
+        }}
+      />
+    </div>
+  );
+}
+
 export default function Image() {
   return new ImageResponse(
     (
@@ -17,8 +91,8 @@ export default function Image() {
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
-          background: "#7487b8",
-          color: "#0f172a",
+          background: "#F4F1EA",
+          color: "#111827",
           padding: "72px",
           fontFamily: "Arial",
         }}
@@ -37,32 +111,17 @@ export default function Image() {
               gap: "20px",
             }}
           >
-            <div
-              style={{
-                width: "68px",
-                height: "68px",
-                borderRadius: "24px",
-                background: "#0f172a",
-                color: "#fff2d8",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                fontSize: "38px",
-                fontWeight: 900,
-              }}
-            >
-              T
-            </div>
+            <LayeredLineMark size={68} radius={24} dotSize={16} dotOffset={-2} />
             <div
               style={{
                 display: "flex",
                 fontSize: "54px",
                 fontWeight: 900,
-                letterSpacing: "-2px",
+                letterSpacing: "-1.8px",
               }}
             >
-              <span>Text</span>
-              <span style={{ color: "#2f6fed" }}>Panic</span>
+              <span>BetweenLines</span>
+              <span style={{ color: "#64748B", marginLeft: "12px" }}>AI</span>
             </div>
           </div>
 
@@ -77,14 +136,14 @@ export default function Image() {
               style={{
                 display: "flex",
                 flexDirection: "column",
-                fontSize: "78px",
+                fontSize: "76px",
                 lineHeight: 1.02,
                 fontWeight: 800,
                 letterSpacing: "-2.5px",
               }}
             >
-              <span>Paste your text.</span>
-              <span>We’ll tell you what people hear.</span>
+              <span>See the gap between</span>
+              <span>what you mean and what others may hear.</span>
             </div>
             <div
               style={{
@@ -93,7 +152,7 @@ export default function Image() {
                 color: "#334155",
               }}
             >
-              For messages written during emotional turbulence.
+              Communication intelligence designed to create clarity, not chaos.
             </div>
           </div>
         </div>
@@ -108,8 +167,8 @@ export default function Image() {
             color: "#334155",
           }}
         >
-          <div>The outside read before you hit send.</div>
-          <div>textpanic.com</div>
+          <div>Private clarity before you hit send.</div>
+          <div>BetweenLines AI</div>
         </div>
       </div>
     ),

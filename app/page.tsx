@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type RefObject } from "react";
 import { toPng } from "html-to-image";
-import { captureTextPanicEvent } from "./lib/analytics";
+import { captureBetweenLinesEvent } from "./lib/analytics";
 
 type AnalysisResult = {
   tone: string;
@@ -511,7 +511,7 @@ function formatAnalysisForClipboard(
     "HOW THIS MIGHT LAND",
     result.recipientLikelyPerception,
     "",
-    "textpanic.com",
+    "BetweenLines AI",
   ].join("\n");
 }
 
@@ -641,7 +641,7 @@ function ShareCard({
         </div>
 
         <p className="mt-6 text-right text-xs font-semibold tracking-[0.12em] text-[#6B7280]">
-          textpanic.com
+          BetweenLines AI
         </p>
       </div>
     </div>
@@ -758,7 +758,7 @@ export default function Home() {
         clearResult: false,
         viewedInsightCards: ["communication"],
       });
-      captureTextPanicEvent("text_analyzed", {
+      captureBetweenLinesEvent("text_analyzed", {
         ...getSafeAnalyticsProperties(message, severity),
       });
     } catch (error) {
@@ -813,7 +813,7 @@ export default function Home() {
 
     if (prefersReducedMotion) {
       setShowRewrite(true);
-      captureTextPanicEvent("rewrite_revealed", rewriteEventProperties);
+      captureBetweenLinesEvent("rewrite_revealed", rewriteEventProperties);
       return;
     }
 
@@ -822,7 +822,7 @@ export default function Home() {
       setShowRewrite(true);
       setIsRevealingRewrite(false);
       revealTimeoutRef.current = null;
-      captureTextPanicEvent("rewrite_revealed", rewriteEventProperties);
+      captureBetweenLinesEvent("rewrite_revealed", rewriteEventProperties);
     }, 650);
   };
 
@@ -832,7 +832,7 @@ export default function Home() {
     try {
       await navigator.clipboard.writeText(result.improvedRewrite);
       setRewriteCopied(true);
-      captureTextPanicEvent("rewrite_copied", {
+      captureBetweenLinesEvent("rewrite_copied", {
         ...getSafeAnalyticsProperties(message, socialMirror?.severity),
       });
 
@@ -858,7 +858,7 @@ export default function Home() {
         formatAnalysisForClipboard(result, socialMirror),
       );
       setAnalysisCopied(true);
-      captureTextPanicEvent("result_copied", {
+      captureBetweenLinesEvent("result_copied", {
         ...getSafeAnalyticsProperties(message, socialMirror.severity),
       });
 
@@ -888,10 +888,10 @@ export default function Home() {
         pixelRatio: 2,
       });
       const link = document.createElement("a");
-      link.download = "textpanic-read.png";
+      link.download = "betweenlines-ai-read.png";
       link.href = dataUrl;
       link.click();
-      captureTextPanicEvent("share_card_downloaded", {
+      captureBetweenLinesEvent("share_card_downloaded", {
         ...getSafeAnalyticsProperties(message, socialMirror.severity),
       });
     } catch (error) {
@@ -899,7 +899,7 @@ export default function Home() {
       setError(
         "The share card refused to become a PNG. Very dramatic. Try again.",
       );
-      captureTextPanicEvent("share_card_download_failed", {
+      captureBetweenLinesEvent("share_card_download_failed", {
         ...getSafeAnalyticsProperties(message, socialMirror.severity),
       });
     } finally {
@@ -913,7 +913,7 @@ export default function Home() {
     setShowSharePreview(nextShowSharePreview);
 
     if (nextShowSharePreview) {
-      captureTextPanicEvent("share_card_preview_opened", {
+      captureBetweenLinesEvent("share_card_preview_opened", {
         ...getSafeAnalyticsProperties(message, socialMirror?.severity),
       });
     }

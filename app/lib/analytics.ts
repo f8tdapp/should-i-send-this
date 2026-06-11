@@ -2,7 +2,7 @@
 
 import posthog from "posthog-js";
 
-type TextPanicEvent =
+type BetweenLinesEvent =
   | "example_selected"
   | "text_analyzed"
   | "rewrite_revealed"
@@ -12,7 +12,7 @@ type TextPanicEvent =
   | "share_card_download_failed"
   | "share_card_preview_opened";
 
-type TextPanicEventProperties = {
+type BetweenLinesEventProperties = {
   character_count?: number;
   example_type?: string;
   severity?: string;
@@ -41,9 +41,9 @@ function getPostHog() {
   return posthog;
 }
 
-export function captureTextPanicEvent(
-  event: TextPanicEvent,
-  properties: TextPanicEventProperties = {},
+export function captureBetweenLinesEvent(
+  event: BetweenLinesEvent,
+  properties: BetweenLinesEventProperties = {},
 ) {
   getPostHog()?.capture(event, properties);
 }

@@ -18,35 +18,21 @@ const siteDescription =
   "Communication intelligence designed to create clarity, not chaos. See the gap between what you mean and what others may hear.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://textpanic.com"),
   title: "BetweenLines AI",
   description: siteDescription,
-  alternates: {
-    canonical: "https://textpanic.com",
-  },
   openGraph: {
     title: "BetweenLines AI",
     description: siteDescription,
-    url: "https://textpanic.com",
     siteName: "BetweenLines AI",
     type: "website",
-    images: [
-      {
-        url: "/opengraph-image",
-        width: 1200,
-        height: 630,
-        alt: "BetweenLines AI social preview",
-      },
-    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "BetweenLines AI",
     description: siteDescription,
-    images: ["/opengraph-image"],
   },
   icons: {
-    icon: "/favicon.ico",
+    icon: "/icon",
     apple: "/apple-icon",
   },
 };

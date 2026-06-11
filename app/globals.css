@@ -46,6 +46,10 @@ body {
   animation: result-card-enter 560ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+.thought-line-enter {
+  animation: thought-line-enter 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 .guided-read-card {
   transform-origin: center top;
 }
@@ -88,9 +92,22 @@ body {
   }
 }
 
+@keyframes thought-line-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .app-card-enter,
   .result-card-enter,
+  .thought-line-enter,
   .rewrite-loading-dot {
     animation: none;
   }
