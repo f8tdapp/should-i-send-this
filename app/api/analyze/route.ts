@@ -7,6 +7,7 @@ type AnalysisResult = {
   confidenceScore: number;
   clarityScore: number;
   communicationIntelligenceScore: number;
+  classification: MessageClassification;
   communicationFramework: {
     perceptionGap: string;
     emotionalPressure: string;
@@ -26,14 +27,62 @@ type AnalysisResult = {
   };
   recipientLikelyPerception: string;
   improvedRewrite: string;
+  debug: AnalysisDebugMetadata;
+};
+
+type MessageClassification = {
+  category: string;
+  likelyIntent: string;
+  emotionalPressureLevel: "low" | "medium" | "high";
+  confidenceSignal: string;
+  communicationRisk: "low" | "medium" | "high";
+  rewriteStrategy: string;
+};
+
+type OptionalMessageContext = {
+  relationshipContext?: string;
+  desiredTone?: string;
+  messageGoal?: string;
+};
+
+type SafeFeedbackInput = {
+  rating?: "helpful" | "not_helpful" | "unclear";
+  tagCount: number;
+  validatedTagLabels: string[];
+};
+
+type AnalysisDebugMetadata = {
+  promptVersion: string;
+  model: string;
+  tokenUsage: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  } | null;
+  success: boolean;
+  failureReason?: string;
 };
 
 const client = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
+const PROMPT_VERSION = "betweenlines-ci-v2.0.0";
+const OPENAI_MODEL = "gpt-4.1-mini";
 const MESSAGE_CHARACTER_LIMIT = 750;
+const RELATIONSHIP_CONTEXT_CHARACTER_LIMIT = 180;
+const DESIRED_TONE_CHARACTER_LIMIT = 80;
+const MESSAGE_GOAL_CHARACTER_LIMIT = 160;
 const OPENAI_TIMEOUT_MS = 20_000;
+const ALLOWLISTED_FEEDBACK_TAGS = new Set([
+  "accurate",
+  "unclear",
+  "too_intense",
+  "too_soft",
+  "good_rewrite",
+  "bad_rewrite",
+  "helpful",
+]);
 const RATE_LIMITED_MESSAGE =
   "You've used today's private reads. Give it some time and try again later.";
 const BURST_RATE_LIMITED_MESSAGE =
@@ -74,6 +123,28 @@ function jsonResponse(body: unknown, status = 200) {
   });
 }
 
+function withDevelopmentDebug<T extends Record<string, unknown>>(
+  body: T,
+  debug: AnalysisDebugMetadata,
+) {
+  if (process.env.NODE_ENV !== "development") {
+    return body;
+  }
+
+  return { ...body, debug };
+}
+
+function analysisResponse(analysis: AnalysisResult) {
+  if (process.env.NODE_ENV === "development") {
+    return jsonResponse(analysis);
+  }
+
+  const publicAnalysis = { ...analysis };
+  delete (publicAnalysis as Partial<AnalysisResult>).debug;
+
+  return jsonResponse(publicAnalysis);
+}
+
 function getRequestIp(request: Request) {
   const forwardedFor = request.headers.get("x-forwarded-for");
   const firstForwardedIp = forwardedFor?.split(",")[0]?.trim();
@@ -81,11 +152,115 @@ function getRequestIp(request: Request) {
   return firstForwardedIp || "anonymous";
 }
 
-function validateMessage(body: unknown) {
-  const message =
-    body && typeof body === "object" && "message" in body
-      ? (body as { message?: unknown }).message
+function createDebugMetadata({
+  success,
+  failureReason,
+  tokenUsage = null,
+}: {
+  success: boolean;
+  failureReason?: string;
+  tokenUsage?: AnalysisDebugMetadata["tokenUsage"];
+}): AnalysisDebugMetadata {
+  return {
+    promptVersion: PROMPT_VERSION,
+    model: OPENAI_MODEL,
+    tokenUsage,
+    success,
+    ...(failureReason ? { failureReason } : {}),
+  };
+}
+
+function getSafeErrorDetails(error: unknown) {
+  if (!error || typeof error !== "object") {
+    return { name: "UnknownError" };
+  }
+
+  const maybeError = error as {
+    name?: unknown;
+    status?: unknown;
+    code?: unknown;
+    type?: unknown;
+  };
+
+  return {
+    name: typeof maybeError.name === "string" ? maybeError.name : "Error",
+    status: typeof maybeError.status === "number" ? maybeError.status : undefined,
+    code: typeof maybeError.code === "string" ? maybeError.code : undefined,
+    type: typeof maybeError.type === "string" ? maybeError.type : undefined,
+  };
+}
+
+function getOptionalString(
+  body: Record<string, unknown>,
+  key: keyof OptionalMessageContext,
+  maxLength: number,
+) {
+  const value = body[key];
+
+  if (value === undefined || value === null) {
+    return {};
+  }
+
+  if (typeof value !== "string") {
+    return { error: `${key} must be text.` };
+  }
+
+  const trimmedValue = value.trim();
+
+  if (trimmedValue.length === 0) {
+    return {};
+  }
+
+  if (trimmedValue.length > maxLength) {
+    return { error: `${key} is too long.` };
+  }
+
+  return { value: trimmedValue };
+}
+
+function getSafeFeedback(body: Record<string, unknown>): SafeFeedbackInput | undefined {
+  const feedback = body.feedback;
+
+  if (!feedback || typeof feedback !== "object" || Array.isArray(feedback)) {
+    return undefined;
+  }
+
+  const feedbackRecord = feedback as Record<string, unknown>;
+  const rating: SafeFeedbackInput["rating"] =
+    feedbackRecord.rating === "helpful" ||
+    feedbackRecord.rating === "not_helpful" ||
+    feedbackRecord.rating === "unclear"
+      ? feedbackRecord.rating
       : undefined;
+  const rawTags = Array.isArray(feedbackRecord.tags)
+    ? feedbackRecord.tags.filter((tag): tag is string => typeof tag === "string")
+    : [];
+  const validatedTagLabels = rawTags
+    .map((tag) => tag.trim().toLowerCase())
+    .filter((tag) => ALLOWLISTED_FEEDBACK_TAGS.has(tag))
+    .slice(0, 5);
+
+  if (!rating && rawTags.length === 0) {
+    return undefined;
+  }
+
+  return {
+    rating,
+    tagCount: Math.min(rawTags.length, 20),
+    validatedTagLabels,
+  };
+}
+
+function validateMessage(body: unknown) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return {
+      error: "That request came through sideways. Try pasting it again.",
+    };
+  }
+
+  const record = body as Record<string, unknown>;
+  const message =
+    "message" in record ? record.message : undefined;
 
   if (typeof message !== "string") {
     return {
@@ -105,7 +280,41 @@ function validateMessage(body: unknown) {
     return { error: "That's enough text for one interpretation." };
   }
 
-  return { message: trimmedMessage };
+  const relationshipContext = getOptionalString(
+    record,
+    "relationshipContext",
+    RELATIONSHIP_CONTEXT_CHARACTER_LIMIT,
+  );
+  const desiredTone = getOptionalString(
+    record,
+    "desiredTone",
+    DESIRED_TONE_CHARACTER_LIMIT,
+  );
+  const messageGoal = getOptionalString(
+    record,
+    "messageGoal",
+    MESSAGE_GOAL_CHARACTER_LIMIT,
+  );
+  const contextFields = { relationshipContext, desiredTone, messageGoal };
+  const contextError = Object.values(contextFields).find(
+    (field): field is { error: string } => "error" in field,
+  );
+
+  if (contextError) {
+    return { error: contextError.error };
+  }
+
+  return {
+    message: trimmedMessage,
+    context: {
+      ...(relationshipContext.value
+        ? { relationshipContext: relationshipContext.value }
+        : {}),
+      ...(desiredTone.value ? { desiredTone: desiredTone.value } : {}),
+      ...(messageGoal.value ? { messageGoal: messageGoal.value } : {}),
+    },
+    feedback: getSafeFeedback(record),
+  };
 }
 
 async function checkRateLimit(ip: string) {
@@ -236,7 +445,135 @@ function softenAnalysisLanguage(text: string) {
     .replace(/\bclingy\b/gi, "uncertain or reassurance-seeking");
 }
 
-function createDemoAnalysis(message: string): AnalysisResult {
+function classifyMessage(message: string): MessageClassification {
+  const trimmedMessage = message.trim();
+  const context = inferDemoContext(trimmedMessage);
+  const isShortAck = /^\s*(k|ok|okay|sure)\.?\s*$/i.test(trimmedMessage);
+  const soundsTentative =
+    /\b(just|maybe|sorry|checking|wondering|if you can|are we okay|mad at me|upset with me)\b/i.test(
+      trimmedMessage,
+    ) || trimmedMessage.includes("?");
+  const soundsAngry =
+    /\b(sucks|hate|angry|mad|annoyed|whatever|ridiculous|done|explain yourself)\b/i.test(
+      trimmedMessage,
+    );
+  const isPassiveAggressive =
+    /\b(per my last email|whatever|fine|sure|no worries)\b/i.test(
+      trimmedMessage,
+    ) || isShortAck;
+  const soundsCalmOrHealthy =
+    !soundsAngry &&
+    !isPassiveAggressive &&
+    !/\b(ignoring me|mad at me|upset with me|whatever|hate|ridiculous)\b/i.test(
+      trimmedMessage,
+    ) &&
+    (/\b(i understand|thanks for telling me|no pressure|when you have time|i appreciate|i hear you|that works|sounds good|hope you're okay|i'm proud|happy for you)\b/i.test(
+      trimmedMessage,
+    ) ||
+      (trimmedMessage.length >= 45 && !soundsTentative));
+
+  if (soundsCalmOrHealthy) {
+    return {
+      category: context === "general" ? "clear check-in" : context,
+      likelyIntent: "communicate clearly while keeping the exchange respectful",
+      emotionalPressureLevel: "low",
+      confidenceSignal: "grounded and direct",
+      communicationRisk: "low",
+      rewriteStrategy: "preserve the message or make only a tiny clarity edit",
+    };
+  }
+
+  if (soundsAngry) {
+    return {
+      category: context === "work" ? "workplace frustration" : "frustration",
+      likelyIntent: "name a real concern or release pressure",
+      emotionalPressureLevel: "high",
+      confidenceSignal: "direct but emotionally loaded",
+      communicationRisk: "high",
+      rewriteStrategy: "keep the honest point while lowering heat and adding a clear ask",
+    };
+  }
+
+  if (isPassiveAggressive) {
+    return {
+      category: context === "work" ? "professional follow-up" : "indirect frustration",
+      likelyIntent: "signal dissatisfaction without saying it directly",
+      emotionalPressureLevel: "medium",
+      confidenceSignal: "controlled but indirect",
+      communicationRisk: "medium",
+      rewriteStrategy: "replace implication with a neutral next step or simple feeling cue",
+    };
+  }
+
+  if (soundsTentative) {
+    return {
+      category: context === "dating" ? "relationship check-in" : "tentative check-in",
+      likelyIntent: "ask for clarity or reassurance without applying too much pressure",
+      emotionalPressureLevel: "medium",
+      confidenceSignal: "softened and uncertain",
+      communicationRisk: "medium",
+      rewriteStrategy: "make the ask warmer and more direct while keeping it low-pressure",
+    };
+  }
+
+  return {
+    category: context,
+    likelyIntent: "communicate a practical point",
+    emotionalPressureLevel: "low",
+    confidenceSignal: "mostly steady",
+    communicationRisk: "low",
+    rewriteStrategy: "tighten clarity without changing the tone much",
+  };
+}
+
+function normalizeClassification(
+  value: unknown,
+  fallback: MessageClassification,
+): MessageClassification {
+  if (!value || typeof value !== "object") {
+    return fallback;
+  }
+
+  const classification = value as Record<string, unknown>;
+  const emotionalPressureLevel = classification.emotionalPressureLevel;
+  const communicationRisk = classification.communicationRisk;
+
+  return {
+    category:
+      typeof classification.category === "string"
+        ? softenAnalysisLanguage(classification.category)
+        : fallback.category,
+    likelyIntent:
+      typeof classification.likelyIntent === "string"
+        ? softenAnalysisLanguage(classification.likelyIntent)
+        : fallback.likelyIntent,
+    emotionalPressureLevel:
+      emotionalPressureLevel === "low" ||
+      emotionalPressureLevel === "medium" ||
+      emotionalPressureLevel === "high"
+        ? emotionalPressureLevel
+        : fallback.emotionalPressureLevel,
+    confidenceSignal:
+      typeof classification.confidenceSignal === "string"
+        ? softenAnalysisLanguage(classification.confidenceSignal)
+        : fallback.confidenceSignal,
+    communicationRisk:
+      communicationRisk === "low" ||
+      communicationRisk === "medium" ||
+      communicationRisk === "high"
+        ? communicationRisk
+        : fallback.communicationRisk,
+    rewriteStrategy:
+      typeof classification.rewriteStrategy === "string"
+        ? softenAnalysisLanguage(classification.rewriteStrategy)
+        : fallback.rewriteStrategy,
+  };
+}
+
+function createDemoAnalysis(
+  message: string,
+  debug = createDebugMetadata({ success: true }),
+): AnalysisResult {
   const isDevelopment = process.env.NODE_ENV === "development";
   const trimmedMessage = message.trim();
   const lowerMessage = trimmedMessage.toLowerCase();
@@ -474,6 +811,7 @@ function createDemoAnalysis(message: string): AnalysisResult {
     confidenceScore,
     clarityScore,
     communicationIntelligenceScore,
+    classification: classifyMessage(trimmedMessage),
     communicationFramework: {
       perceptionGap: completePerceptionGap(perceptionGap),
       emotionalPressure: hasHighPressure
@@ -500,14 +838,16 @@ function createDemoAnalysis(message: string): AnalysisResult {
     },
     recipientLikelyPerception,
     improvedRewrite,
+    debug,
   };
 }
 
 function normalizeAnalysisResult(
   value: unknown,
   message: string,
+  debug = createDebugMetadata({ success: true }),
 ): AnalysisResult {
-  const fallback = createDemoAnalysis(message);
+  const fallback = createDemoAnalysis(message, debug);
 
   if (!value || typeof value !== "object") return fallback;
 
@@ -545,6 +885,10 @@ function normalizeAnalysisResult(
       typeof result.communicationIntelligenceScore === "number"
         ? clampScore(result.communicationIntelligenceScore)
         : fallback.communicationIntelligenceScore,
+    classification: normalizeClassification(
+      result.classification,
+      fallback.classification,
+    ),
     communicationFramework: {
       perceptionGap:
         typeof communicationFramework?.perceptionGap === "string"
@@ -603,6 +947,7 @@ function normalizeAnalysisResult(
       typeof result.improvedRewrite === "string"
         ? softenAnalysisLanguage(result.improvedRewrite)
         : fallback.improvedRewrite,
+    debug,
   };
 }
 
@@ -620,15 +965,105 @@ function parseAnalysisText(text: string) {
   return JSON.parse(jsonText.slice(start, end + 1));
 }
 
+function formatPromptContext(context: OptionalMessageContext) {
+  const contextLines = [
+    context.relationshipContext
+      ? `- relationshipContext: ${context.relationshipContext}`
+      : null,
+    context.desiredTone ? `- desiredTone: ${context.desiredTone}` : null,
+    context.messageGoal ? `- messageGoal: ${context.messageGoal}` : null,
+  ].filter(Boolean);
+
+  if (contextLines.length === 0) {
+    return "- No additional context provided.";
+  }
+
+  return contextLines.join("\n");
+}
+
+function getTokenUsage(response: unknown): AnalysisDebugMetadata["tokenUsage"] {
+  if (!response || typeof response !== "object" || !("usage" in response)) {
+    return null;
+  }
+
+  const usage = (response as { usage?: unknown }).usage;
+
+  if (!usage || typeof usage !== "object") {
+    return null;
+  }
+
+  const usageRecord = usage as Record<string, unknown>;
+  const inputTokens =
+    typeof usageRecord.input_tokens === "number"
+      ? usageRecord.input_tokens
+      : undefined;
+  const outputTokens =
+    typeof usageRecord.output_tokens === "number"
+      ? usageRecord.output_tokens
+      : undefined;
+  const totalTokens =
+    typeof usageRecord.total_tokens === "number"
+      ? usageRecord.total_tokens
+      : undefined;
+
+  if (
+    inputTokens === undefined &&
+    outputTokens === undefined &&
+    totalTokens === undefined
+  ) {
+    return null;
+  }
+
+  return { inputTokens, outputTokens, totalTokens };
+}
+
+function trackSafeFeedback({
+  feedback,
+  classification,
+  debug,
+  characterCount,
+}: {
+  feedback?: SafeFeedbackInput;
+  classification: MessageClassification;
+  debug: AnalysisDebugMetadata;
+  characterCount: number;
+}) {
+  if (!feedback) {
+    return;
+  }
+
+  console.info("Analyze: safe feedback received", {
+    promptVersion: debug.promptVersion,
+    model: debug.model,
+    success: debug.success,
+    rating: feedback.rating,
+    tagCount: feedback.tagCount,
+    validatedTagLabels: feedback.validatedTagLabels,
+    validatedTagCount: feedback.validatedTagLabels.length,
+    category: classification.category,
+    emotionalPressureLevel: classification.emotionalPressureLevel,
+    communicationRisk: classification.communicationRisk,
+    characterCountBucket: Math.ceil(characterCount / 100) * 100,
+  });
+}
+
 export async function POST(request: Request) {
   let body: unknown;
 
   try {
     body = await request.json();
   } catch (err) {
-    console.error("Analyze: invalid JSON body", err);
+    console.error("Analyze: invalid JSON body", getSafeErrorDetails(err));
+    const debug = createDebugMetadata({
+      success: false,
+      failureReason: "malformed_json_body",
+    });
+
     return jsonResponse(
-      { error: "That request came through sideways. Try pasting it again." },
+      withDevelopmentDebug(
+        { error: "That request came through sideways. Try pasting it again." },
+        debug,
+      ),
       400,
     );
   }
@@ -636,21 +1071,39 @@ export async function POST(request: Request) {
   const validatedMessage = validateMessage(body);
 
   if ("error" in validatedMessage) {
-    return jsonResponse({ error: validatedMessage.error }, 400);
+    const debug = createDebugMetadata({
+      success: false,
+      failureReason: "validation_failed",
+    });
+
+    return jsonResponse(
+      withDevelopmentDebug({ error: validatedMessage.error }, debug),
+      400,
+    );
   }
 
   const message = validatedMessage.message;
+  const optionalContext = validatedMessage.context;
+  const safeFeedback = validatedMessage.feedback;
   const rateLimit = await checkRateLimit(getRequestIp(request));
 
   if (!rateLimit.success) {
+    const debug = createDebugMetadata({
+      success: false,
+      failureReason: rateLimit.code,
+    });
+
     return jsonResponse(
-      {
-        error:
-          rateLimit.code === "burst_limit_exceeded"
-            ? BURST_RATE_LIMITED_MESSAGE
-            : RATE_LIMITED_MESSAGE,
-        code: rateLimit.code,
-      },
+      withDevelopmentDebug(
+        {
+          error:
+            rateLimit.code === "burst_limit_exceeded"
+              ? BURST_RATE_LIMITED_MESSAGE
+              : RATE_LIMITED_MESSAGE,
+          code: rateLimit.code,
+        },
+        debug,
+      ),
       429,
     );
   }
@@ -659,7 +1112,22 @@ export async function POST(request: Request) {
     console.error(
       "Analyze: OPENAI_API_KEY is not configured. Returning demo analysis fallback.",
     );
-    return jsonResponse(createDemoAnalysis(message));
+    const analysis = createDemoAnalysis(
+      message,
+      createDebugMetadata({
+        success: true,
+        failureReason: "openai_api_key_missing_demo_fallback",
+      }),
+    );
+
+    trackSafeFeedback({
+      feedback: safeFeedback,
+      classification: analysis.classification,
+      debug: analysis.debug,
+      characterCount: message.length,
+    });
+
+    return analysisResponse(analysis);
   }
 
   const abortController = new AbortController();
@@ -670,17 +1138,16 @@ export async function POST(request: Request) {
   try {
     const prompt = `You are BetweenLines AI, a calm, emotionally intelligent communication companion.
 
+Prompt version: ${PROMPT_VERSION}
+
 Core communication principles:
 - Clarity over assumption.
 - Curiosity over escalation.
 - Interpretation over judgment.
-- Emotional awareness over emotional reaction.
-- Reduce unnecessary pressure.
-- Help the user communicate more clearly.
 - Never fuel paranoia, catastrophizing, or mind-reading.
 - Never tell the user what someone definitely thinks or feels.
 - Use "may," "could," and "might" where appropriate.
-- Sound like a trusted friend with excellent judgment: warm, steady, direct, and useful.
+- Help the user communicate clearly with warm, steady, direct judgment.
 
 Communication Intelligence Framework:
 - Perception Gap: the difference between what the sender intended and what the recipient may perceive.
@@ -690,30 +1157,28 @@ Communication Intelligence Framework:
 - Communication Clarity: how easy it is to understand the core message and desired response.
 
 Product voice:
-- Mature, useful, and emotionally intelligent.
-- Clear, nonjudgmental, and trusted.
-- Insightful without sounding clinical.
-- Direct without being harsh.
-- Screenshot-friendly when the insight is useful.
+- Mature, useful, nonjudgmental, emotionally intelligent, and direct without being harsh.
 - No roast language, meme language, exaggerated internet phrasing, or gimmicks.
-- If the message already sounds calm, confident, kind, direct, emotionally healthy, or ready to send, reassure the user clearly instead of manufacturing a problem.
-- Do not overreact. If there are multiple plausible reads, say so calmly.
+- If the message already sounds calm, confident, kind, direct, emotionally healthy, or ready to send, reassure the user instead of manufacturing a problem.
 - Avoid making the recipient sound hostile unless the wording strongly supports that interpretation.
 - Avoid harsh labels such as "manipulative," "toxic," "desperate," "needy," "pathetic," "red flag," or "clingy."
 - Prefer language like "emotionally high-pressure," "may feel intense," "could come across as uncertain," "may read as defensive," "creates a perception gap," and "softening this could reduce pressure."
 
+Anti-overinterpretation rules:
+- Do not turn neutral, healthy, or logistical messages into drama.
+- If the message is already respectful and clear, say the risk is low and keep the rewrite identical or nearly identical.
+- Do not infer abandonment, hostility, manipulation, romantic interest, contempt, or hidden conflict unless the wording strongly supports it.
+- Treat short messages as low-context first, not automatically angry.
+- When context is missing, name uncertainty rather than filling it with a dramatic story.
+- Avoid escalating "could be clearer" into a serious relational problem.
+- If the safest read is ordinary, practical, or kind, choose that read.
+
 Language and cultural awareness:
-- Detect the language of the user's message.
-- If the message is in English, use natural English.
-- If the message is in another language, analyze and rewrite in that language unless the user clearly asks otherwise.
-- Preserve the original language and level of formality where possible, including formal/informal pronouns, honorifics, and workplace politeness norms.
-- Adapt humor to the language and likely cultural context of the message.
+- Analyze and rewrite in the message's language unless the user clearly asks otherwise.
+- Preserve formality, pronouns, honorifics, dialect, code-switching, and workplace politeness norms where possible.
 - Do not force English slang, American/UK idioms, or internet jokes into non-English messages.
-- If region is unclear, avoid region-specific slang and choose clear, warm, useful language.
-- Humor should come from emotional accuracy, not stereotypes.
 - Do not mock the user's language, dialect, grammar, accent, or culture.
-- Respect workplace/professional norms by region when they are obvious from the message.
-- If unsure, be clear, warm, and useful rather than overly clever.
+- If region is unclear, avoid region-specific slang and be clear, warm, and useful.
 
 Analyze the draft and return ONLY valid JSON. Do not include markdown, comments, or extra text.
 
@@ -722,6 +1187,13 @@ Required JSON keys:
 - confidenceScore: number from 0-10
 - clarityScore: number from 0-10
 - communicationIntelligenceScore: number from 0-100, where higher means clearer, steadier, lower-pressure, and better aligned with likely perception
+- classification: object with exactly these keys:
+  - category: string
+  - likelyIntent: string
+  - emotionalPressureLevel: one of "low", "medium", or "high"
+  - confidenceSignal: string
+  - communicationRisk: one of "low", "medium", or "high"
+  - rewriteStrategy: string
 - communicationFramework: object with exactly these string keys:
   - perceptionGap
   - emotionalPressure
@@ -740,45 +1212,34 @@ Required JSON keys:
 - improvedRewrite: string
 
 Analysis style rules:
-- The analysis should sound like a communication expert with strong emotional intelligence.
-- Consider whether the message contains reassurance-seeking, frustration, uncertainty, fear of being ignored, desire for clarity, guilt, avoidance, vulnerability, pressure, or defensiveness.
-- Detect indirect frustration, fake casualness, uncertainty, defensiveness, emotional pressure, emotional distance, overexplaining, avoidance, mixed signals, and indirectness.
-- Be accurate and useful, never cruel.
-- Name the likely perception if it helps the user understand communication impact.
-- Use restraint. Prioritize clarity over humor.
-- If the message is serious, vulnerable, or high-stakes, be more sincere than clever.
-- If the message is emotionally clear, calm, confident, or healthy, say that directly. The user may need permission to stop overthinking it.
+- Sound like a communication expert with strong emotional intelligence: accurate, useful, restrained, and never cruel.
+- Consider reassurance-seeking, frustration, uncertainty, fear of being ignored, guilt, avoidance, vulnerability, pressure, defensiveness, overexplaining, mixed signals, and indirectness.
+- Name likely perception only when it helps the user understand communication impact.
+- If the message is serious, vulnerable, or high-stakes, be sincere. If it is clear, calm, confident, or healthy, say that directly.
 - The intentVsImpact section should separate the user's likely good intent from the way the recipient may receive it.
 - The perceptionGap field must clearly distinguish: what the sender likely means, what the recipient may hear, why the gap exists, and how to reduce that gap.
-- Every perceptionGap should be concise but complete. It should usually include a practical bridge such as naming the need, softening the opener, making the ask more specific, or reducing extra pressure.
+- Every perceptionGap should be concise and include a practical bridge such as naming the need, softening the opener, making the ask more specific, or reducing extra pressure.
 - The communicationIntelligenceScore should reflect clarity, confidence signal, emotional pressure, and perception alignment. It is a communication quality indicator, not a judgment of the person.
 - The mostRevealingLine quote must be an exact short phrase or sentence from the message, not a paraphrase. Keep the explanation concise, insightful, and screenshot-friendly.
-- Avoid clinical phrases like "this indicates" or "you may be experiencing."
-- Avoid corporate filler and therapy-speak.
+- Avoid clinical phrases, corporate filler, and therapy-speak.
 - Match the language of the message in tone, idiom, and register. If the language is not English, do not translate the user's situation into English cultural assumptions.
 - If uncertain, say something close to: "This message could be read a few ways, but the main gap seems to be between your intended clarity and how much pressure the wording may create."
+- Use the optional context only to improve calibration. Do not mention it unless it directly improves the analysis.
+- Desired tone and message goal should guide the rewrite, but they should not override safety, clarity, or the original message's natural register.
 
 Rewrite style rules:
 - The improvedRewrite should sound like something a normal person would actually send.
-- Make the analysis clear and emotionally accurate; make the improvedRewrite useful.
-- Do not make the improvedRewrite sarcastic unless that is clearly appropriate.
-- Do not default to phrases like "I am feeling..." unless that is truly the most natural option.
-- Avoid robotic phrasing, corporate filler, HR language, and therapist-speak unless the context clearly calls for it.
-- Preserve the sender's emotional intent. Do not sanitize all emotion out of the message.
+- Preserve the user's intent, emotional intent, natural tone, and original language while reducing unnecessary pressure.
 - Make the message clearer and easier to receive, not bland.
-- Preserve the user's intent while reducing unnecessary emotional pressure.
-- Keep the user's natural tone where possible.
+- Avoid sarcasm, robotic phrasing, corporate filler, HR language, and therapist-speak unless the context clearly calls for it.
 - Match the likely context when possible: dating, work, friendship, family, apology, confrontation.
-- Keep casual messages casual.
-- Keep professional messages professional, but not stiff.
-- Do not over-polish casual texts.
+- Keep casual messages casual and professional messages professional but not stiff.
 - If the original message is blunt, preserve some directness while making it less damaging.
 - If the original message is emotionally pressured, make it steadier without removing warmth.
 - If the original message is angry, make it honest but controlled.
 - If the original message is already healthy, keep the rewrite minimal or identical unless a small clarity edit would truly help.
 - If the original message is very short, the rewrite can be short too.
 - Do not make every message sound like HR.
-- Keep improvedRewrite in the original language unless the user clearly asks for another language.
 - Preserve the original formality level when it helps the message land: casual stays casual, polite stays polite, professional stays professional.
 - Do not over-correct dialect, code-switching, informal texting style, or region-specific phrasing unless it creates a real clarity problem.
 
@@ -804,16 +1265,20 @@ English examples of the desired voice. These show attitude, not language require
   perceptionGap: "You intend to express strain, but they may not know what response would help because the need is unnamed. Saying whether you want support, change, or space would reduce that gap."
   improvedRewrite: "I'm really frustrated with work right now. I need to figure out what's actually fixable, because this is wearing me down."
 
+Optional context:
+${formatPromptContext(optionalContext)}
+
 Message:
 ${message}`;
 
     const resp = await client.responses.create({
-      model: "gpt-4.1-mini",
+      model: OPENAI_MODEL,
       input: prompt,
       max_output_tokens: 780,
     }, {
       signal: abortController.signal,
     });
+    const tokenUsage = getTokenUsage(resp);
 
     // Extract text from response output. Use output_text when available
     const responseWithText = resp as { output_text?: unknown; output?: unknown };
@@ -833,40 +1298,81 @@ ${message}`;
 
     const cleaned = (text || "").trim();
     if (!cleaned) {
-      console.error(
-        "Analyze: empty response from OpenAI. Returning demo analysis fallback.",
+      console.error("Analyze: empty response from OpenAI. Returning demo analysis fallback.");
+      const analysis = createDemoAnalysis(
+        message,
+        createDebugMetadata({
+          success: false,
+          failureReason: "openai_empty_response_demo_fallback",
+          tokenUsage,
+        }),
       );
-      return jsonResponse(createDemoAnalysis(message));
+
+      trackSafeFeedback({
+        feedback: safeFeedback,
+        classification: analysis.classification,
+        debug: analysis.debug,
+        characterCount: message.length,
+      });
+
+      return analysisResponse(analysis);
     }
 
-    let analysis = createDemoAnalysis(message);
+    const successDebug = createDebugMetadata({
+      success: true,
+      tokenUsage,
+    });
+    let analysis = createDemoAnalysis(message, successDebug);
     try {
-      analysis = normalizeAnalysisResult(parseAnalysisText(cleaned), message);
+      analysis = normalizeAnalysisResult(parseAnalysisText(cleaned), message, successDebug);
     } catch (err) {
       console.error(
         "Analyze: failed to parse JSON from OpenAI response. Returning demo analysis fallback.",
-        err,
+        getSafeErrorDetails(err),
       );
-      analysis = createDemoAnalysis(message);
+      analysis = createDemoAnalysis(
+        message,
+        createDebugMetadata({
+          success: false,
+          failureReason: "openai_json_parse_failed_demo_fallback",
+          tokenUsage,
+        }),
+      );
     }
 
-    if (process.env.NODE_ENV === "development") {
-      console.log("Analyze: normalized API response", analysis);
-    }
+    trackSafeFeedback({
+      feedback: safeFeedback,
+      classification: analysis.classification,
+      debug: analysis.debug,
+      characterCount: message.length,
+    });
 
-    return jsonResponse(analysis);
+    return analysisResponse(analysis);
   } catch (error) {
     if (abortController.signal.aborted) {
       console.error("Analyze route OpenAI request timed out.");
-      return jsonResponse({ error: TIMEOUT_MESSAGE }, 504);
+      const debug = createDebugMetadata({
+        success: false,
+        failureReason: "openai_timeout",
+      });
+
+      return jsonResponse(
+        withDevelopmentDebug({ error: TIMEOUT_MESSAGE }, debug),
+        504,
+      );
     }
 
     console.error(
       "Analyze route OpenAI request failed.",
-      error,
+      getSafeErrorDetails(error),
     );
 
-    return jsonResponse({ error: GENERIC_ERROR_MESSAGE }, 502);
+    const debug = createDebugMetadata({
+      success: false,
+      failureReason: "openai_request_failed",
+    });
+
+    return jsonResponse(withDevelopmentDebug({ error: GENERIC_ERROR_MESSAGE }, debug), 502);
   } finally {
     clearTimeout(timeout);
   }

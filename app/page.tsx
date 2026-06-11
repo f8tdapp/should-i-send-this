@@ -62,6 +62,13 @@ const loadingMessages = [
   "Reading how this might land...",
 ];
 
+const rotatingThoughts = [
+  "Should I send this to my ex?",
+  "Does this sound passive aggressive?",
+  "Am I overexplaining?",
+  "Why does this feel emotionally loaded?",
+];
+
 const signaturePhrases: SignaturePhrase[] = [
   {
     name: "fake-casual",
@@ -508,6 +515,25 @@ function formatAnalysisForClipboard(
   ].join("\n");
 }
 
+function BrandMark({ className = "" }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`relative flex shrink-0 items-center justify-center rounded-2xl bg-[#172033] text-[#FFFDF8] shadow-[0_16px_38px_-28px_rgba(17,24,39,0.72)] ${className}`}
+    >
+      <span className="flex w-[1.15rem] flex-col gap-1">
+        <span className="h-0.5 w-4 rounded-full bg-[#FFFDF8]" />
+        <span className="ml-1.5 h-0.5 w-3.5 rounded-full bg-[#FFFDF8]/88" />
+        <span className="h-0.5 w-2.5 rounded-full bg-[#FFFDF8]/72" />
+      </span>
+      <span
+        aria-hidden="true"
+        className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#FFFDF8] bg-[#64748B]"
+      />
+    </div>
+  );
+}
+
 function ShareCard({
   result,
   socialMirror,
@@ -520,71 +546,63 @@ function ShareCard({
   return (
     <div
       ref={cardRef}
-      className="relative overflow-hidden rounded-[1.75rem] bg-[#fffefa] p-6 text-slate-950 shadow-[0_26px_86px_-54px_rgba(15,23,42,0.46)] ring-1 ring-[#7185bd]/18 sm:p-8"
+      className="relative overflow-hidden rounded-[1.75rem] bg-[#FFFDF8] p-6 text-[#111827] shadow-[0_22px_70px_-54px_rgba(17,24,39,0.38)] ring-1 ring-[#D8D2C7] sm:p-8"
     >
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(47,111,237,0.14),transparent_34%),linear-gradient(145deg,rgba(255,217,130,0.2),rgba(222,210,255,0.22)_58%,rgba(207,221,229,0.28))]"
+        className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(232,225,214,0.55),transparent_34%),linear-gradient(145deg,rgba(248,244,236,0.72),rgba(239,232,221,0.58)_58%,rgba(255,255,255,0.7))]"
       />
       <div className="relative">
         <div className="flex items-start justify-between gap-4">
           <div className="inline-flex items-start gap-3">
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-[#fff2d8] shadow-[0_16px_38px_-28px_rgba(15,23,42,0.8)]">
-              <span className="text-base font-black leading-none tracking-[-0.04em]">
-                T
-              </span>
-              <span
-                aria-hidden="true"
-                className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#fffefa] bg-[#2f6fed]"
-              />
-            </div>
+            <BrandMark className="h-9 w-9" />
             <div>
               <p className="text-[1.02rem] font-black leading-none tracking-[-0.035em]">
-                BetweenLines<span className="text-[#2f6fed]/90"> AI</span>
+                BetweenLines<span className="text-[#64748B]"> AI</span>
               </p>
-              <p className="mt-1 text-[0.68rem] font-medium leading-tight text-slate-500/75">
+              <p className="mt-1 text-[0.68rem] font-medium leading-tight text-[#6B7280]">
                 Communication intelligence designed to create clarity, not chaos.
               </p>
             </div>
           </div>
-          <div className="max-w-[12rem] rounded-full bg-slate-950 px-3 py-1.5 text-right text-xs font-semibold leading-tight text-[#fff2d8] shadow-[0_18px_45px_-34px_rgba(15,23,42,0.8)]">
+          <div className="max-w-[12rem] rounded-full bg-[#172033] px-3 py-1.5 text-right text-xs font-semibold leading-tight text-[#FFFFFF] shadow-[0_18px_45px_-34px_rgba(17,24,39,0.78)]">
             {socialMirror.severity}
           </div>
         </div>
 
         <div className="mt-7 space-y-3">
-          <div className="rounded-[1.35rem] bg-[#ffd982] p-5 ring-1 ring-[#d99a1c]/35">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#7b4d03]">
+          <div className="rounded-[1.35rem] bg-[#E9D8A6] p-5 ring-1 ring-[#9CA3AF]">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#334155]">
               BETWEEN THE LINES
             </p>
             <p className="mt-3 text-[1.05rem] font-semibold leading-[1.38] tracking-tight">
               {result.emotionalInterpretation}
             </p>
           </div>
-          <div className="rounded-[1.35rem] bg-[#eaf0ff] p-5 ring-1 ring-[#8aa7e6]/35">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#2f4c86]">
+          <div className="rounded-[1.35rem] bg-[#F8F4EC] p-5 ring-1 ring-[#D8D2C7]">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#64748B]">
               COMMUNICATION INTELLIGENCE
             </p>
-            <p className="mt-2 text-[2rem] font-semibold leading-none tracking-tight text-[#17346f]">
+            <p className="mt-2 text-[2rem] font-semibold leading-none tracking-tight text-[#334155]">
               {result.communicationIntelligenceScore}
-              <span className="text-base text-[#5f76a6]">/100</span>
+              <span className="text-base text-[#64748B]">/100</span>
             </p>
           </div>
-          <div className="rounded-[1.35rem] bg-[#cfdde5] p-5 ring-1 ring-[#7899aa]/32">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#3d5d6d]">
+          <div className="rounded-[1.35rem] bg-[#EFE8DD] p-5 ring-1 ring-[#D8D2C7]">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#64748B]">
               PERCEPTION GAP
             </p>
-            <p className="mt-3 text-[1rem] font-semibold leading-[1.38] tracking-tight text-[#233642]">
+            <p className="mt-3 text-[1rem] font-semibold leading-[1.38] tracking-tight text-[#334155]">
               {result.perceptionGap}
             </p>
           </div>
-          <div className="rounded-[1.35rem] bg-[#fffefa] p-5 ring-1 ring-[#d6cdae]/55">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#806f3d]">
+          <div className="rounded-[1.35rem] bg-[#FFFDF8] p-5 ring-1 ring-[#D8D2C7]">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#64748B]">
               INTENT VS IMPACT
             </p>
-            <div className="mt-3 grid gap-3 text-[#2c2618] sm:grid-cols-2">
+            <div className="mt-3 grid gap-3 text-[#111827] sm:grid-cols-2">
               <div>
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.13em] text-[#9a8858]">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.13em] text-[#64748B]">
                   You meant
                 </p>
                 <p className="mt-1 text-[0.95rem] font-semibold leading-[1.36] tracking-tight">
@@ -592,7 +610,7 @@ function ShareCard({
                 </p>
               </div>
               <div>
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.13em] text-[#9a8858]">
+                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.13em] text-[#64748B]">
                   They may hear
                 </p>
                 <p className="mt-1 text-[0.95rem] font-semibold leading-[1.36] tracking-tight">
@@ -601,28 +619,28 @@ function ShareCard({
               </div>
             </div>
           </div>
-          <div className="rounded-[1.35rem] bg-[#ded2ff] p-5 ring-1 ring-[#9f8add]/36">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#584191]">
+          <div className="rounded-[1.35rem] bg-[#E9D8A6] p-5 ring-1 ring-[#C7BDAF]">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#334155]">
               MOST REVEALING LINE
             </p>
-            <p className="mt-3 text-[1.02rem] font-semibold leading-[1.35] tracking-tight text-[#211b32]">
+            <p className="mt-3 text-[1.02rem] font-semibold leading-[1.35] tracking-tight text-[#111827]">
               &ldquo;{result.mostRevealingLine.quote}&rdquo;
             </p>
-            <p className="mt-2 text-[0.92rem] font-medium leading-[1.45] text-[#4f426d]">
+            <p className="mt-2 text-[0.92rem] font-medium leading-[1.45] text-[#334155]">
               {result.mostRevealingLine.explanation}
             </p>
           </div>
-          <div className="rounded-[1.35rem] bg-[#cfdde5] p-5 ring-1 ring-[#7899aa]/32">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#3d5d6d]">
+          <div className="rounded-[1.35rem] bg-[#EFE8DD] p-5 ring-1 ring-[#D8D2C7]">
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#64748B]">
               HOW THIS MIGHT LAND
             </p>
-            <p className="mt-3 text-[1.05rem] font-semibold leading-[1.38] tracking-tight text-[#233642]">
+            <p className="mt-3 text-[1.05rem] font-semibold leading-[1.38] tracking-tight text-[#334155]">
               {result.recipientLikelyPerception}
             </p>
           </div>
         </div>
 
-        <p className="mt-6 text-right text-xs font-semibold tracking-[0.12em] text-slate-400">
+        <p className="mt-6 text-right text-xs font-semibold tracking-[0.12em] text-[#6B7280]">
           textpanic.com
         </p>
       </div>
@@ -644,6 +662,10 @@ export default function Home() {
   const [socialMirror, setSocialMirror] = useState<SocialMirror | null>(null);
   const [activeInsightCardId, setActiveInsightCardId] =
     useState<InsightCardId>("communication");
+  const [viewedInsightCardIds, setViewedInsightCardIds] = useState<
+    InsightCardId[]
+  >([]);
+  const [thoughtIndex, setThoughtIndex] = useState(0);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const analysisCopyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -658,6 +680,28 @@ export default function Home() {
   const isAtCharacterLimit = messageLength >= MESSAGE_CHARACTER_LIMIT;
   const canAnalyze = !isLoading && !isMessageEmpty && !isOverCharacterLimit;
 
+  const resetAnalysisUiState = ({
+    clearResult = true,
+    viewedInsightCards = [],
+  }: {
+    clearResult?: boolean;
+    viewedInsightCards?: InsightCardId[];
+  } = {}) => {
+    if (clearResult) {
+      setResult(null);
+      setSocialMirror(null);
+    }
+
+    setError("");
+    setRewriteCopied(false);
+    setAnalysisCopied(false);
+    setShowSharePreview(false);
+    setShowRewrite(false);
+    setIsRevealingRewrite(false);
+    setActiveInsightCardId("communication");
+    setViewedInsightCardIds(viewedInsightCards);
+  };
+
   const handleAnalyze = async () => {
     if (isLoading) return;
 
@@ -666,15 +710,7 @@ export default function Home() {
       revealTimeoutRef.current = null;
     }
 
-    setResult(null);
-    setSocialMirror(null);
-    setError("");
-    setRewriteCopied(false);
-    setAnalysisCopied(false);
-    setShowSharePreview(false);
-    setShowRewrite(false);
-    setIsRevealingRewrite(false);
-    setActiveInsightCardId("communication");
+    resetAnalysisUiState();
 
     if (isMessageEmpty) {
       setError("Paste a message before analyzing.");
@@ -700,8 +736,6 @@ export default function Home() {
       const rawText = await response.text();
       const data = rawText ? JSON.parse(rawText) : null;
 
-      console.log("Analyze API response received by frontend:", data);
-
       if (!response.ok) {
         throw new Error(data?.error || "Analysis failed. Please try again.");
       }
@@ -720,11 +754,10 @@ export default function Home() {
         severity,
         subtext: nextSubtext,
       });
-      setShowRewrite(false);
-      setRewriteCopied(false);
-      setAnalysisCopied(false);
-      setShowSharePreview(false);
-      setActiveInsightCardId("communication");
+      resetAnalysisUiState({
+        clearResult: false,
+        viewedInsightCards: ["communication"],
+      });
       captureTextPanicEvent("text_analyzed", {
         ...getSafeAnalyticsProperties(message, severity),
       });
@@ -741,15 +774,7 @@ export default function Home() {
 
   const handleClearText = () => {
     setMessage("");
-    setResult(null);
-    setSocialMirror(null);
-    setError("");
-    setRewriteCopied(false);
-    setAnalysisCopied(false);
-    setShowSharePreview(false);
-    setShowRewrite(false);
-    setIsRevealingRewrite(false);
-    setActiveInsightCardId("communication");
+    resetAnalysisUiState();
 
     if (copyTimeoutRef.current) {
       clearTimeout(copyTimeoutRef.current);
@@ -765,6 +790,15 @@ export default function Home() {
       clearTimeout(revealTimeoutRef.current);
       revealTimeoutRef.current = null;
     }
+  };
+
+  const handleOpenInsightCard = (cardId: InsightCardId) => {
+    setActiveInsightCardId(cardId);
+    setViewedInsightCardIds((currentCardIds) =>
+      currentCardIds.includes(cardId)
+        ? currentCardIds
+        : [...currentCardIds, cardId],
+    );
   };
 
   const handleRevealRewrite = () => {
@@ -901,34 +935,62 @@ export default function Home() {
     };
   }, []);
 
+  useEffect(() => {
+    const reducedMotionQuery = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    );
+    let thoughtTimer: ReturnType<typeof setInterval> | null = null;
+
+    const syncThoughtRotation = () => {
+      if (thoughtTimer) {
+        clearInterval(thoughtTimer);
+        thoughtTimer = null;
+      }
+
+      if (!reducedMotionQuery.matches) {
+        thoughtTimer = setInterval(() => {
+          setThoughtIndex((currentIndex) =>
+            (currentIndex + 1) % rotatingThoughts.length,
+          );
+        }, 3600);
+      }
+    };
+
+    syncThoughtRotation();
+    reducedMotionQuery.addEventListener("change", syncThoughtRotation);
+
+    return () => {
+      if (thoughtTimer) {
+        clearInterval(thoughtTimer);
+      }
+
+      reducedMotionQuery.removeEventListener("change", syncThoughtRotation);
+    };
+  }, []);
+
   const loadingMessage = loadingMessages[message.length % loadingMessages.length];
-  const exampleUseCases = [
-    "Should I send this to my ex?",
-    "Does this sound passive aggressive?",
-    "Am I overexplaining?",
-    "Why does this feel emotionally loaded?",
-  ];
+  const currentThought = rotatingThoughts[thoughtIndex];
   const insightCards = result
     ? [
         {
           id: "communication" as const,
           title: "Between the Lines",
           activeClassName:
-            "bg-[#ffd982] text-slate-950 ring-[#d99a1c]/42 shadow-[0_28px_70px_-48px_rgba(164,106,5,0.72)]",
+            "bg-[#172033] text-[#FFFFFF] ring-[#9CA3AF] shadow-[0_34px_88px_-46px_rgba(17,24,39,0.68)]",
           inactiveClassName:
-            "bg-[#f4c96f] text-[#4d3303] ring-[#d99a1c]/34 shadow-[0_18px_42px_-38px_rgba(164,106,5,0.46)]",
+            "bg-[#FFFDF8] text-[#334155] ring-[#D8D2C7] shadow-[0_14px_32px_-28px_rgba(17,24,39,0.24)]",
           content: (
             <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <p className="max-w-[39rem] text-[1.24rem] font-semibold leading-[1.36] tracking-tight sm:text-[1.48rem] sm:leading-[1.32]">
                 {result.emotionalInterpretation}
               </p>
-              <div className="w-fit shrink-0 rounded-2xl bg-[#fffefa]/70 px-3.5 py-2.5 text-[#17346f] ring-1 ring-[#d99a1c]/22 sm:text-right">
-                <p className="text-[0.62rem] font-semibold uppercase tracking-[0.14em] text-[#7b4d03]/75">
+              <div className="w-fit shrink-0 rounded-2xl bg-[#FFFDF8] px-3.5 py-2.5 text-[#334155] ring-1 ring-[#C7BDAF] sm:text-right">
+                <p className="text-xs font-semibold leading-4 tracking-normal text-[#64748B]">
                   Intelligence
                 </p>
                 <p className="mt-1 text-2xl font-semibold leading-none tracking-tight">
                   {result.communicationIntelligenceScore}
-                  <span className="text-sm text-[#5f76a6]">/100</span>
+                  <span className="text-sm text-[#64748B]">/100</span>
                 </p>
               </div>
             </div>
@@ -938,9 +1000,9 @@ export default function Home() {
           id: "landing" as const,
           title: "How This Might Land",
           activeClassName:
-            "bg-[#cfdde5] text-[#233642] ring-[#7899aa]/34 shadow-[0_24px_58px_-50px_rgba(45,74,92,0.54)]",
+            "bg-[#FFFFFF] text-[#111827] ring-[#C7BDAF] shadow-[0_28px_70px_-46px_rgba(17,24,39,0.5)]",
           inactiveClassName:
-            "bg-[#bfd0da] text-[#233642] ring-[#7899aa]/28 shadow-[0_18px_42px_-38px_rgba(45,74,92,0.38)]",
+            "bg-[#F8F4EC] text-[#334155] ring-[#C7BDAF] shadow-[0_16px_40px_-34px_rgba(17,24,39,0.3)]",
           content: (
             <p className="mt-3 max-w-[39rem] text-[1.14rem] font-semibold leading-[1.4] tracking-tight sm:text-[1.3rem] sm:leading-[1.34]">
               {result.recipientLikelyPerception}
@@ -951,9 +1013,9 @@ export default function Home() {
           id: "perception" as const,
           title: "Perception Gap",
           activeClassName:
-            "bg-[#fbfcff] text-[#243149] ring-[#9aabc8]/24 shadow-[0_22px_50px_-48px_rgba(63,86,132,0.46)]",
+            "bg-[#F8F4EC] text-[#111827] ring-[#C7BDAF] shadow-[0_26px_66px_-46px_rgba(17,24,39,0.44)]",
           inactiveClassName:
-            "bg-[#eef3fb] text-[#243149] ring-[#9aabc8]/22 shadow-[0_16px_38px_-36px_rgba(63,86,132,0.34)]",
+            "bg-[#F8F4EC] text-[#334155] ring-[#D8D2C7] shadow-[0_14px_34px_-30px_rgba(17,24,39,0.22)]",
           content: (
             <p className="mt-3 max-w-[39rem] text-sm font-semibold leading-6 tracking-tight sm:text-base">
               {result.perceptionGap}
@@ -964,22 +1026,22 @@ export default function Home() {
           id: "intent" as const,
           title: "Intent vs Impact",
           activeClassName:
-            "bg-[#fffefa] text-[#2c2618] ring-[#c8b884]/32 shadow-[0_20px_46px_-48px_rgba(94,78,32,0.42)]",
+            "bg-[#FFFDF8] text-[#111827] ring-[#C7BDAF] shadow-[0_26px_64px_-44px_rgba(17,24,39,0.42)]",
           inactiveClassName:
-            "bg-[#f5f0df] text-[#2c2618] ring-[#c8b884]/28 shadow-[0_16px_38px_-36px_rgba(94,78,32,0.32)]",
+            "bg-[#F8F4EC] text-[#334155] ring-[#C7BDAF] shadow-[0_16px_40px_-34px_rgba(17,24,39,0.28)]",
           content: (
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.13em] text-[#9a8858]">
-                  You meant
+                <p className="text-sm font-semibold leading-5 tracking-normal text-[#334155]">
+                  You Meant
                 </p>
                 <p className="mt-1.5 max-w-[39rem] text-sm font-semibold leading-6 tracking-tight sm:text-base">
                   {result.intentVsImpact.youMeant}
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.13em] text-[#9a8858]">
-                  They may hear
+                <p className="text-sm font-semibold leading-5 tracking-normal text-[#334155]">
+                  They May Hear
                 </p>
                 <p className="mt-1.5 max-w-[39rem] text-sm font-semibold leading-6 tracking-tight sm:text-base">
                   {result.intentVsImpact.theyMayHear}
@@ -992,15 +1054,15 @@ export default function Home() {
           id: "revealing" as const,
           title: "Most Revealing Line",
           activeClassName:
-            "bg-[#ded2ff] text-[#211b32] ring-[#9f8add]/32 shadow-[0_18px_42px_-46px_rgba(72,52,124,0.48)]",
+            "bg-[#E9D8A6] text-[#111827] ring-[#C7BDAF] shadow-[0_26px_64px_-44px_rgba(17,24,39,0.42)]",
           inactiveClassName:
-            "bg-[#d1c3f5] text-[#211b32] ring-[#9f8add]/28 shadow-[0_16px_38px_-36px_rgba(72,52,124,0.34)]",
+            "bg-[#F8F4EC] text-[#334155] ring-[#D8D2C7] shadow-[0_14px_34px_-30px_rgba(17,24,39,0.22)]",
           content: (
             <>
               <p className="mt-3 max-w-[39rem] text-[1.06rem] font-semibold leading-[1.35] tracking-tight sm:text-[1.14rem]">
                 &ldquo;{result.mostRevealingLine.quote}&rdquo;
               </p>
-              <p className="mt-2 max-w-[39rem] text-sm font-medium leading-6 text-[#4f426d] sm:text-base">
+              <p className="mt-2 max-w-[39rem] text-sm font-medium leading-6 text-[#334155] sm:text-base">
                 {result.mostRevealingLine.explanation}
               </p>
             </>
@@ -1012,9 +1074,9 @@ export default function Home() {
                 id: "subtext" as const,
                 title: "Hidden Subtext",
                 activeClassName:
-                  "bg-[#fffdf8] text-slate-700 ring-slate-950/[0.06] shadow-[0_14px_34px_-40px_rgba(15,23,42,0.38)]",
+                  "bg-[#FFFFFF] text-[#111827] ring-[#C7BDAF] shadow-[0_24px_58px_-40px_rgba(17,24,39,0.38)]",
                 inactiveClassName:
-                  "bg-[#f2eee2] text-slate-600 ring-slate-950/[0.05] shadow-[0_12px_30px_-36px_rgba(15,23,42,0.28)]",
+                  "bg-[#F8F4EC] text-[#334155] ring-[#C7BDAF] shadow-[0_14px_36px_-32px_rgba(17,24,39,0.26)]",
                 content: (
                   <p className="mt-2 max-w-[39rem] text-sm font-semibold leading-6 tracking-tight sm:text-base">
                     {socialMirror.subtext}
@@ -1037,102 +1099,96 @@ export default function Home() {
   return (
     // This full-screen wrapper is the visible canvas behind the app card.
     // Body/global background changes were previously masked by this layer.
-    <div className="relative min-h-screen overflow-hidden bg-[var(--background)] text-slate-950 font-sans antialiased">
+    <div className="relative min-h-screen overflow-hidden bg-[#2B3042] text-[#111827] font-sans antialiased">
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 overflow-hidden"
       >
-        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.2),rgba(78,73,168,0.24)_38%,rgba(47,111,237,0.14)_66%,rgba(255,123,189,0.16)_100%)]" />
-        <div className="absolute inset-x-[-12%] top-[-20%] h-72 rotate-[-3deg] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.36),rgba(222,210,255,0.18)_48%,rgba(255,255,255,0)_70%)] blur-2xl sm:h-96" />
-        <div className="absolute inset-x-[-10%] bottom-[-24%] h-80 rotate-[4deg] bg-[radial-gradient(ellipse_at_center,rgba(72,48,150,0.22),rgba(47,111,237,0.12)_48%,rgba(72,48,150,0)_72%)] blur-3xl sm:h-[28rem]" />
-        <div className="absolute left-1/2 top-1/2 h-[35rem] w-[min(88vw,56rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,254,250,0.58),rgba(207,221,229,0.24)_40%,rgba(47,111,237,0.12)_62%,rgba(255,255,255,0)_78%)] blur-2xl" />
-        <div className="absolute left-1/2 top-[46%] h-[22rem] w-[min(68vw,38rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,217,130,0.14),rgba(222,210,255,0.1)_50%,rgba(255,255,255,0)_74%)] blur-xl" />
+        <div className="absolute inset-0 bg-[#2B3042]" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,253,248,0.22),rgba(232,225,214,0.12)_42%,#2B3042_78%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-2/3 bg-[linear-gradient(180deg,rgba(43,48,66,0)_0%,rgba(23,32,51,0.34)_100%)]" />
+        <div className="absolute left-1/2 top-[45%] h-[38rem] w-[min(86vw,54rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(255,253,248,0.18),rgba(232,225,214,0.09)_48%,rgba(43,48,66,0)_74%)] blur-2xl" />
+        <div className="absolute left-1/2 top-[50%] h-[18rem] w-[min(62vw,34rem)] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(244,241,234,0.12),rgba(232,225,214,0.06)_56%,rgba(43,48,66,0)_78%)] blur-xl" />
       </div>
 
-      <main className="relative z-10 mx-auto flex min-h-screen max-w-[52rem] flex-col justify-center px-5 py-7 sm:px-8 sm:py-10">
-        <div className="app-card-enter rounded-[1.75rem] bg-[#fffefa]/98 p-4 shadow-[0_34px_110px_-58px_rgba(45,64,116,0.46),0_0_70px_-34px_rgba(132,112,255,0.34)] ring-1 ring-[#7185bd]/18 backdrop-blur-xl transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_38px_120px_-58px_rgba(45,64,116,0.52),0_0_82px_-34px_rgba(132,112,255,0.42)] sm:p-7 lg:p-8">
-          <div className="inline-flex max-w-full items-start gap-3">
-            <div className="relative mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-[#fff2d8] shadow-[0_16px_38px_-28px_rgba(15,23,42,0.8)]">
-              <span className="text-base font-black leading-none tracking-[-0.04em]">
-                T
-              </span>
-              <span
-                aria-hidden="true"
-                className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full border-2 border-[#fffefa] bg-[#2f6fed]"
-              />
-            </div>
+      <main className="relative z-10 mx-auto flex min-h-screen max-w-[60rem] flex-col justify-center px-5 py-7 sm:px-8 sm:py-10 lg:px-10">
+        <div className="app-card-enter rounded-[1.85rem] bg-[#FFFDF8] p-5 shadow-[0_46px_136px_-50px_rgba(17,24,39,0.74),0_0_88px_-44px_rgba(255,253,248,0.35)] ring-1 ring-[#C7BDAF] backdrop-blur-xl transition duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_50px_142px_-50px_rgba(17,24,39,0.78),0_0_92px_-44px_rgba(255,253,248,0.38)] sm:p-8 lg:p-10">
+          <div className="inline-flex max-w-full items-start gap-3.5">
+            <BrandMark className="mt-0.5 h-10 w-10" />
             <div className="min-w-0">
-              <p className="text-[1.05rem] font-black leading-none tracking-[-0.03em] text-slate-950 sm:text-[1.16rem]">
-                BetweenLines<span className="text-[#2f6fed]/90"> AI</span>
+              <p className="text-[1.16rem] font-black leading-none tracking-[-0.03em] text-[#111827] sm:text-[1.32rem]">
+                BetweenLines<span className="text-[#64748B]"> AI</span>
               </p>
-              <p className="mt-1 max-w-[22rem] text-[0.72rem] font-medium leading-[1.35] text-slate-500/76 [text-wrap:balance] sm:max-w-[30rem] sm:text-[0.78rem]">
+              <p className="mt-1.5 max-w-[23rem] text-[0.76rem] font-medium leading-[1.4] text-[#374151] [text-wrap:balance] sm:max-w-[38rem] sm:text-[0.88rem]">
                 Communication intelligence designed to create clarity, not chaos.
               </p>
             </div>
           </div>
 
-          <div className="mt-4 max-w-full sm:mt-5">
-            <h1 className="max-w-full text-[clamp(1.9rem,5.8vw,2.45rem)] font-semibold leading-[1.08] tracking-tight text-slate-950 [overflow-wrap:break-word] [text-wrap:balance] sm:leading-[1.06]">
+          <div className="mt-5 max-w-[48rem] sm:mt-6">
+            <h1 className="max-w-full text-[clamp(1.92rem,4vw,2.52rem)] font-semibold leading-[1.12] tracking-tight text-[#111827] [overflow-wrap:break-word] [text-wrap:balance] sm:leading-[1.1]">
               See the gap between what you mean and what others may hear.
             </h1>
           </div>
 
-          <div className="mt-4 space-y-3.5 sm:mt-5 sm:space-y-4">
+          <div className="mt-5 space-y-4 sm:mt-5 sm:space-y-[1.125rem]">
             <label htmlFor="message" className="sr-only">
               Message input
             </label>
-            <div className="rounded-[1rem] bg-[#fbfcff]/48 px-3.5 py-2.5">
-              <p className="text-[0.66rem] font-semibold uppercase tracking-[0.15em] text-slate-400">
-                Thoughts people have before hitting send
+            <div className="mx-auto max-w-[42rem] border-y border-[#D8D2C7] px-3 py-2 text-center">
+              <p className="text-[0.82rem] font-semibold leading-5 text-[#374151]">
+                Remove the uncertainty before you hit send.
               </p>
-              <div className="mt-2 flex flex-wrap gap-x-1.5 gap-y-1">
-                {exampleUseCases.map((useCase) => (
-                  <span
-                    key={useCase}
-                    className="rounded-[0.9rem] bg-[#fffefa]/52 px-2.5 py-0.5 text-[0.72rem] font-medium leading-5 text-slate-500/90"
-                  >
-                    &ldquo;{useCase}&rdquo;
-                  </span>
-                ))}
+              <div className="mt-2 min-h-[1.7rem] overflow-hidden text-center">
+                <p
+                  key={currentThought}
+                  className="thought-line-enter text-[0.96rem] font-medium italic leading-6 text-[#334155] [text-wrap:balance] sm:text-[1.04rem]"
+                >
+                  &ldquo;{currentThought}&rdquo;
+                </p>
               </div>
             </div>
-            <textarea
-              id="message"
-              aria-label="Message to analyze"
-              rows={10}
-              maxLength={MESSAGE_CHARACTER_LIMIT}
-              value={message}
-              onChange={(event) => {
-                setMessage(event.target.value);
-              }}
-              placeholder="Paste the message you want to understand..."
-              className="w-full min-h-[178px] rounded-[1.45rem] border border-[#b9c7db]/70 bg-[#f4f7fb] px-5 py-4 text-base leading-7 text-slate-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.88),inset_0_18px_42px_-36px_rgba(70,91,128,0.5),0_18px_50px_-38px_rgba(15,23,42,0.28)] placeholder:text-slate-500/78 outline-none transition duration-300 ease-out hover:border-[#9fb2cc]/85 hover:bg-[#f7f9fc] focus:border-[#2f6fed]/55 focus:bg-[#fbfcff] focus:ring-4 focus:ring-[#2f6fed]/14 sm:min-h-[195px] sm:px-6 sm:py-4"
-            />
-            <div className="-mt-0.5 inline-flex w-fit max-w-full items-center gap-2 rounded-full bg-[#eef5ff] px-4 py-2 text-sm font-semibold text-[#2f4c86] shadow-sm ring-1 ring-[#2f6fed]/16">
-              <span aria-hidden="true">&#128274;</span>
-              <span>We don&apos;t store or save your messages.</span>
-            </div>
-            <div className="flex items-center justify-end gap-3 px-1 text-xs font-medium text-slate-500">
-              {isAtCharacterLimit ? (
-                <span className="text-[#9b6508]">
-                  That&apos;s enough text for one interpretation.
-                </span>
-              ) : null}
-              <span
-                className={`tabular-nums transition-colors ${
-                  isAtCharacterLimit
-                    ? "font-semibold text-[#9b6508]"
-                    : isNearCharacterLimit
-                      ? "font-semibold text-[#2f6fed]"
-                      : "text-slate-400"
-                }`}
-              >
-                {messageLength} / {MESSAGE_CHARACTER_LIMIT}
-              </span>
+            <div className="rounded-[1.85rem] bg-[#F8F4EC] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.74),0_22px_58px_-48px_rgba(17,24,39,0.42)] ring-1 ring-[#C7BDAF] sm:p-3">
+              <textarea
+                id="message"
+                aria-label="Message to analyze"
+                rows={10}
+                maxLength={MESSAGE_CHARACTER_LIMIT}
+                value={message}
+                onChange={(event) => {
+                  setMessage(event.target.value);
+                }}
+                placeholder="Paste the message you want to understand..."
+                className="w-full min-h-[205px] rounded-[1.45rem] border border-[#BFB3A3] bg-[#FFFFFF] px-5 py-[1.125rem] text-base leading-7 text-[#111827] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),inset_0_20px_44px_-36px_rgba(191,179,163,0.58),0_12px_34px_-30px_rgba(17,24,39,0.38)] placeholder:text-[#6B7280] outline-none transition duration-300 ease-out hover:border-[#C7BDAF] hover:bg-[#FFFDF8] focus:border-[#334155] focus:bg-[#FFFFFF] focus:ring-4 focus:ring-[#334155]/16 sm:min-h-[230px] sm:px-7 sm:py-5 sm:text-[1.04rem]"
+              />
+              <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="inline-flex w-fit max-w-full items-center gap-2 rounded-full bg-[#F1F5F9] px-4 py-2 text-sm font-semibold text-[#334155] shadow-sm ring-1 ring-[#D8D2C7]">
+                  <span aria-hidden="true">&#128274;</span>
+                  <span>We don&apos;t store or save your messages.</span>
+                </div>
+                <div className="flex items-center justify-end gap-3 px-1 text-xs font-medium text-[#6B7280]">
+                  {isAtCharacterLimit ? (
+                    <span className="text-[#334155]">
+                      That&apos;s enough text for one interpretation.
+                    </span>
+                  ) : null}
+                  <span
+                    className={`tabular-nums transition-colors ${
+                      isAtCharacterLimit
+                        ? "font-semibold text-[#334155]"
+                        : isNearCharacterLimit
+                          ? "font-semibold text-[#64748B]"
+                          : "text-[#6B7280]"
+                    }`}
+                  >
+                    {messageLength} / {MESSAGE_CHARACTER_LIMIT}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {error ? (
-              <p className="rounded-3xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700">
+              <p className="rounded-3xl border border-[#D8D2C7] bg-[#FFFDF8] px-5 py-4 text-sm font-medium text-[#334155] shadow-sm">
                 {error}
               </p>
             ) : null}
@@ -1144,7 +1200,7 @@ export default function Home() {
                   aria-label="Clear text"
                   onClick={handleClearText}
                   disabled={isLoading}
-                  className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-[#eaf0ff] px-6 py-3 text-base font-semibold text-[#2f4c86] shadow-[0_16px_36px_-30px_rgba(47,111,237,0.6)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#dfe8ff] hover:text-[#17346f] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2f6fed]/16 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+                  className="inline-flex min-h-[52px] items-center justify-center rounded-full bg-[#F1F5F9] px-6 py-3 text-base font-semibold text-[#334155] shadow-[0_14px_30px_-28px_rgba(17,24,39,0.3)] ring-1 ring-[#D8D2C7] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#EFE8DD] hover:text-[#172033] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/18 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
                 >
                   Clear text
                 </button>
@@ -1154,7 +1210,7 @@ export default function Home() {
                 aria-label="Interpret my message"
                 onClick={handleAnalyze}
                 disabled={!canAnalyze}
-                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-3 rounded-full bg-slate-950 px-8 py-3.5 text-base font-semibold text-white shadow-[0_18px_50px_-30px_rgba(15,23,42,0.35)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-slate-950/20 disabled:cursor-not-allowed disabled:bg-slate-500 disabled:shadow-none"
+                className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-3 rounded-full bg-[#172033] px-8 py-3.5 text-base font-semibold text-[#FFFFFF] shadow-[0_18px_48px_-30px_rgba(17,24,39,0.52)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#111827] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#334155]/24 disabled:cursor-not-allowed disabled:bg-[#64748B] disabled:shadow-none"
               >
                 {isLoading ? (
                     <span className="inline-flex items-center gap-3">
@@ -1168,53 +1224,53 @@ export default function Home() {
             </div>
           </div>
 
-          <section className="mt-9 rounded-[1.5rem] bg-[#f6f3eb] p-4 shadow-sm ring-1 ring-slate-950/[0.04] sm:mt-11 sm:p-6">
+          <section className="mt-7 rounded-[1.65rem] bg-[#FFFDF8] p-4 shadow-[0_24px_70px_-52px_rgba(17,24,39,0.4)] ring-1 ring-[#D8D2C7] sm:mt-9 sm:p-6">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#2f6fed]">
-                  BETWEEN THE LINES
+                <p className="text-[1.02rem] font-semibold leading-6 tracking-normal text-[#172033]">
+                  Between the Lines
                 </p>
               </div>
             </div>
 
             <div
-              className="mt-4 space-y-5 transition-all duration-500 ease-out"
+              className="mt-3 space-y-3.5 transition-all duration-500 ease-out sm:mt-3.5 sm:space-y-4"
             >
               {isLoading ? (
-                <div className="rounded-[1.35rem] bg-[#fbfcff] px-5 py-6 shadow-sm ring-1 ring-[#9aabc8]/18">
-                  <div className="inline-flex items-center gap-3 text-sm font-semibold leading-6 text-slate-700">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#2f6fed]/25 border-t-[#2f6fed]" />
+                <div className="rounded-[1.35rem] bg-[#FFFFFF] px-5 py-6 shadow-[0_16px_44px_-36px_rgba(17,24,39,0.32)] ring-1 ring-[#D8D2C7]">
+                  <div className="inline-flex items-center gap-3 text-sm font-semibold leading-6 text-[#334155]">
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#64748B]/25 border-t-[#64748B]" />
                     {loadingMessage}
                   </div>
-                  <p className="mt-3 max-w-md text-sm leading-6 text-slate-500">
+                  <p className="mt-3 max-w-md text-sm leading-6 text-[#6B7280]">
                     BetweenLines AI is reading the communication impact. Privately. Carefully.
                     Usefully.
                   </p>
                 </div>
               ) : result ? (
-                <div className="space-y-6">
-                  <div className="space-y-3">
+                <div className="space-y-4 sm:space-y-5">
+                  <div className="space-y-2.5">
                     {socialMirror ? (
-                      <div className="inline-flex max-w-full rounded-full bg-slate-950 px-3.5 py-1.5 text-sm font-semibold text-[#fff2d8] shadow-[0_18px_45px_-36px_rgba(15,23,42,0.7)]">
+                      <div className="inline-flex max-w-full rounded-full bg-[#172033] px-3 py-1 text-xs font-semibold text-[#FFFFFF] shadow-[0_10px_24px_-22px_rgba(17,24,39,0.5)]">
                         <span className="truncate">
                           {socialMirror.severity}
                         </span>
                       </div>
                     ) : null}
 
-                    <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
-                      <span className="rounded-full bg-[#fffdf8]/62 px-3 py-1.5 ring-1 ring-slate-950/[0.04]">
-                        Signal: <span className="text-slate-700">{result.tone}</span>
+                    <div className="flex flex-wrap gap-1.5 text-[0.72rem] font-semibold text-[#6B7280]">
+                      <span className="rounded-full bg-[#F8F4EC] px-2.5 py-1 ring-1 ring-[#E5DED3]">
+                        Signal: <span className="text-[#334155]">{result.tone}</span>
                       </span>
-                      <span className="rounded-full bg-[#fffdf8]/62 px-3 py-1.5 ring-1 ring-slate-950/[0.04]">
+                      <span className="rounded-full bg-[#F8F4EC] px-2.5 py-1 ring-1 ring-[#E5DED3]">
                         Confidence signal:{" "}
-                        <span className="text-slate-700">
+                        <span className="text-[#334155]">
                           {result.confidenceScore}/10
                         </span>
                       </span>
-                      <span className="rounded-full bg-[#fffdf8]/62 px-3 py-1.5 ring-1 ring-slate-950/[0.04]">
+                      <span className="rounded-full bg-[#F8F4EC] px-2.5 py-1 ring-1 ring-[#E5DED3]">
                         Clarity:{" "}
-                        <span className="text-slate-700">
+                        <span className="text-[#334155]">
                           {result.clarityScore}/10
                         </span>
                       </span>
@@ -1222,11 +1278,12 @@ export default function Home() {
                   </div>
 
                   <div
-                    className="guided-read-deck rounded-[1.8rem] bg-[#fbfcff]/44 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.6),0_24px_70px_-58px_rgba(45,64,116,0.48)] ring-1 ring-white/45 sm:p-3"
+                    className="guided-read-deck rounded-[1.9rem] bg-[#FFFFFF] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_22px_64px_-50px_rgba(17,24,39,0.42)] ring-1 ring-[#D8D2C7] sm:p-3"
                     aria-label="Communication insight deck"
                   >
                     {visibleInsightCards.map((card, index) => {
                       const isActive = card.id === activeInsightCardId;
+                      const hasBeenViewed = viewedInsightCardIds.includes(card.id);
 
                       return (
                         <button
@@ -1235,24 +1292,47 @@ export default function Home() {
                           aria-label={
                             isActive
                               ? `${card.title} insight currently selected`
-                              : `Show ${card.title} insight`
+                              : hasBeenViewed
+                                ? `Show ${card.title} insight, already read`
+                                : `Show ${card.title} insight, unread`
                           }
-                          aria-pressed={isActive}
-                          onClick={() => setActiveInsightCardId(card.id)}
+                          aria-current={isActive ? "true" : undefined}
+                          aria-expanded={isActive}
+                          onClick={() => handleOpenInsightCard(card.id)}
                           style={{ zIndex: isActive ? 50 : 40 - index }}
-                          className={`guided-read-card insight-deck-card result-card-enter relative block w-full rounded-[1.45rem] border-0 text-left outline-none ring-1 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:ring-4 focus-visible:ring-[#2f6fed]/26 ${
+                          className={`guided-read-card insight-deck-card result-card-enter relative block w-full rounded-[1.45rem] border-0 text-left outline-none ring-1 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:ring-4 focus-visible:ring-[#64748B]/24 ${
                             isActive
-                              ? `${card.activeClassName} z-50 min-h-[230px] p-6 sm:min-h-[250px] sm:p-7`
-                              : `${card.inactiveClassName} -mt-2 min-h-[58px] px-5 py-4 hover:-translate-y-0.5 hover:shadow-[0_22px_48px_-38px_rgba(45,64,116,0.46)] sm:-mt-3`
+                              ? `${card.activeClassName} z-50 min-h-[260px] p-6 sm:min-h-[305px] sm:p-8`
+                              : `${card.inactiveClassName} -mt-2 min-h-[60px] px-5 py-3.5 hover:-translate-y-0.5 hover:shadow-[0_18px_42px_-36px_rgba(17,24,39,0.28)] sm:-mt-3 sm:min-h-[64px] sm:px-6 ${
+                                  hasBeenViewed
+                                    ? "bg-[#FFFEFA] ring-[#BFB3A3] shadow-[0_12px_30px_-28px_rgba(17,24,39,0.2)]"
+                                    : ""
+                                }`
                           }`}
                         >
                           <div className="flex items-center justify-between gap-3">
-                            <p className="text-xs font-semibold uppercase tracking-[0.16em] sm:text-sm">
-                              {card.title}
+                            <p className="inline-flex min-w-0 items-center gap-2 text-[0.84rem] font-semibold leading-5 tracking-normal sm:text-[0.95rem]">
+                              {!isActive && hasBeenViewed ? (
+                                <span
+                                  aria-hidden="true"
+                                  className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#F1F5F9] text-[0.62rem] font-bold leading-none text-[#64748B] ring-1 ring-[#D8D2C7]"
+                                >
+                                  &#10003;
+                                </span>
+                              ) : null}
+                              <span className="truncate">
+                                {card.title}
+                              </span>
                             </p>
                             {!isActive ? (
-                              <span className="shrink-0 rounded-full bg-white/50 px-2.5 py-1 text-[0.68rem] font-semibold uppercase tracking-[0.12em] opacity-75">
-                                Tap
+                              <span
+                                className={`shrink-0 rounded-full px-2.5 py-1 text-[0.68rem] font-semibold tracking-normal opacity-90 ring-1 ${
+                                  hasBeenViewed
+                                    ? "bg-[#F1F5F9] text-[#64748B] ring-[#D8D2C7]"
+                                    : "bg-[#FFFFFF]/80 ring-[#D8D2C7]"
+                                }`}
+                              >
+                                {hasBeenViewed ? "Read" : "Tap"}
                               </span>
                             ) : null}
                           </div>
@@ -1267,13 +1347,13 @@ export default function Home() {
                   </div>
 
                   {socialMirror ? (
-                    <div className="space-y-3 rounded-[1.55rem] bg-[#fffdf8]/75 p-4 shadow-sm ring-1 ring-slate-950/[0.04] sm:p-5">
+                    <div className="space-y-2.5 rounded-[1.55rem] bg-[#FFFFFF] p-4 shadow-[0_14px_38px_-34px_rgba(17,24,39,0.24)] ring-1 ring-[#E5DED3] sm:p-5">
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                            Copy the insight
+                          <p className="text-sm font-semibold leading-5 tracking-normal text-[#172033]">
+                            Copy the Insight
                           </p>
-                          <p className="mt-1 text-sm leading-6 text-slate-600">
+                          <p className="mt-1 text-sm leading-6 text-[#374151]">
                             No original text included. Just the communication
                             insight.
                           </p>
@@ -1283,17 +1363,17 @@ export default function Home() {
                             type="button"
                             aria-label="Copy this analysis"
                             onClick={handleCopyAnalysis}
-                            className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#eaf0ff] px-5 py-2.5 text-sm font-semibold text-[#2f4c86] shadow-[0_16px_36px_-30px_rgba(47,111,237,0.6)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#dfe8ff] hover:text-[#17346f] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2f6fed]/16"
+                            className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#F1F5F9] px-5 py-2.5 text-sm font-semibold text-[#334155] shadow-[0_14px_30px_-28px_rgba(17,24,39,0.32)] ring-1 ring-[#D8D2C7] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#EFE8DD] hover:text-[#172033] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/18"
                           >
                             {analysisCopied ? "Copied" : "Copy this analysis"}
                           </button>
-                          <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs font-semibold text-slate-400 sm:justify-end">
+                          <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs font-semibold text-[#6B7280] sm:justify-end">
                             <button
                               type="button"
                               aria-label="Export insight"
                               onClick={handleDownloadShareCard}
                               disabled={isDownloadingShareCard}
-                              className="inline-flex min-h-[32px] items-center justify-center rounded-full px-1.5 text-slate-400 transition duration-200 ease-out hover:text-slate-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2f6fed]/12 disabled:cursor-wait disabled:text-slate-300"
+                              className="inline-flex min-h-[32px] items-center justify-center rounded-full px-1.5 text-[#6B7280] transition duration-200 ease-out hover:text-[#334155] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/12 disabled:cursor-wait disabled:text-[#9CA3AF]"
                             >
                               {isDownloadingShareCard
                                 ? "Exporting..."
@@ -1308,7 +1388,7 @@ export default function Home() {
                               }
                               onClick={handleToggleSharePreview}
                               aria-expanded={showSharePreview}
-                              className="inline-flex min-h-[32px] items-center justify-center rounded-full px-1.5 text-slate-400 transition duration-200 ease-out hover:text-slate-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2f6fed]/12"
+                              className="inline-flex min-h-[32px] items-center justify-center rounded-full px-1.5 text-[#6B7280] transition duration-200 ease-out hover:text-[#334155] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/12"
                             >
                               {showSharePreview
                                 ? "Hide preview"
@@ -1330,9 +1410,9 @@ export default function Home() {
                       </div>
 
                       {showSharePreview ? (
-                        <div className="rounded-[1.35rem] bg-[#f6f3eb] p-3 ring-1 ring-slate-950/[0.04] sm:p-4">
-                          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-                            Share card preview
+                        <div className="rounded-[1.35rem] bg-[#FFFDF8] p-3 ring-1 ring-[#E5DED3] sm:p-4">
+                          <p className="mb-3 text-sm font-semibold leading-5 tracking-normal text-[#172033]">
+                            Share Card Preview
                           </p>
                           <ShareCard
                             result={result}
@@ -1344,15 +1424,15 @@ export default function Home() {
                   ) : null}
 
                   {!showRewrite ? (
-                    <div className="relative overflow-hidden rounded-[1.45rem] bg-[#fffefa]/86 p-4 shadow-[0_18px_52px_-46px_rgba(45,64,116,0.42)] ring-1 ring-[#7185bd]/16 sm:p-5">
+                    <div className="relative overflow-hidden rounded-[1.45rem] bg-[#FFFFFF] p-4 shadow-[0_14px_40px_-36px_rgba(17,24,39,0.26)] ring-1 ring-[#E5DED3] sm:p-5">
                       <div
                         aria-hidden="true"
                         className="space-y-2.5 blur-[3px] transition duration-500"
                       >
-                        <div className="h-3.5 w-24 rounded-full bg-slate-300/70" />
-                        <div className="h-4 w-[92%] rounded-full bg-slate-300/60" />
-                        <div className="h-4 w-[78%] rounded-full bg-slate-300/55" />
-                        <div className="h-4 w-[64%] rounded-full bg-slate-300/50" />
+                        <div className="h-3.5 w-24 rounded-full bg-[#D8D2C7]" />
+                        <div className="h-4 w-[92%] rounded-full bg-[#E5DED3]" />
+                        <div className="h-4 w-[78%] rounded-full bg-[#E5DED3]" />
+                        <div className="h-4 w-[64%] rounded-full bg-[#E5DED3]" />
                       </div>
                       <p id="rewrite-preview-label" className="sr-only">
                         A clearer rewrite is available. Activate the button to reveal it.
@@ -1363,7 +1443,7 @@ export default function Home() {
                         aria-describedby="rewrite-preview-label"
                         onClick={handleRevealRewrite}
                         disabled={isRevealingRewrite}
-                        className="absolute inset-x-4 top-1/2 inline-flex min-h-[52px] -translate-y-1/2 items-center justify-center rounded-full bg-[#2f6fed] px-7 py-3 text-base font-semibold text-white shadow-[0_18px_44px_-30px_rgba(47,111,237,0.82)] outline-none transition duration-300 ease-out hover:-translate-y-[52%] hover:bg-[#245bd1] active:-translate-y-1/2 active:scale-[0.98] focus-visible:ring-4 focus-visible:ring-[#2f6fed]/20 disabled:cursor-wait disabled:bg-[#2a63d5] motion-reduce:transition-none sm:left-1/2 sm:right-auto sm:w-auto sm:min-w-[17rem] sm:-translate-x-1/2"
+                        className="absolute inset-x-4 top-1/2 inline-flex min-h-[52px] -translate-y-1/2 items-center justify-center rounded-full bg-[#334155] px-7 py-3 text-base font-semibold text-[#FFFFFF] shadow-[0_16px_38px_-30px_rgba(17,24,39,0.58)] outline-none transition duration-300 ease-out hover:-translate-y-[52%] hover:bg-[#172033] active:-translate-y-1/2 active:scale-[0.98] focus-visible:ring-4 focus-visible:ring-[#64748B]/22 disabled:cursor-wait disabled:bg-[#64748B] motion-reduce:transition-none sm:left-1/2 sm:right-auto sm:w-auto sm:min-w-[17rem] sm:-translate-x-1/2"
                       >
                         {isRevealingRewrite ? (
                           <span className="inline-flex items-center justify-center gap-2 text-center leading-snug">
@@ -1389,18 +1469,18 @@ export default function Home() {
                         : "max-h-0 translate-y-5 opacity-0 blur-md"
                     }`}
                   >
-                    <div className="rounded-[1.45rem] bg-[#fffefa] p-5 text-slate-950 shadow-[0_20px_60px_-46px_rgba(45,64,116,0.45)] ring-1 ring-[#7185bd]/18 transition duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none sm:p-6">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-300">
-                        Send this instead
+                    <div className="rounded-[1.45rem] bg-[#FFFFFF] p-5 text-[#111827] shadow-[0_16px_46px_-38px_rgba(17,24,39,0.3)] ring-1 ring-[#E5DED3] transition duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none sm:p-6">
+                      <p className="text-sm font-semibold leading-5 tracking-normal text-[#172033]">
+                        Send This Instead
                       </p>
-                      <p className="mt-4 text-base leading-7 text-slate-800 sm:text-lg sm:leading-8">
+                      <p className="mt-4 text-base leading-7 text-[#334155] sm:text-lg sm:leading-8">
                         {result.improvedRewrite}
                       </p>
                       <button
                         type="button"
                         aria-label="Copy rewrite"
                         onClick={handleCopyRewrite}
-                        className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-full bg-slate-950 px-5 py-2 text-sm font-semibold text-white shadow-[0_14px_34px_-28px_rgba(15,23,42,0.7)] outline-none transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-900 focus-visible:ring-4 focus-visible:ring-slate-950/20"
+                        className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-full bg-[#172033] px-5 py-2 text-sm font-semibold text-[#FFFFFF] shadow-[0_14px_34px_-28px_rgba(17,24,39,0.62)] outline-none transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#334155] focus-visible:ring-4 focus-visible:ring-[#334155]/20"
                       >
                         {rewriteCopied ? "Copied" : "Copy Rewrite"}
                       </button>
@@ -1408,27 +1488,13 @@ export default function Home() {
                   </div>
                 </div>
               ) : (
-                <div className="relative overflow-hidden rounded-[1.65rem] bg-[#fbfcff] px-6 py-9 shadow-[0_22px_70px_-55px_rgba(63,86,132,0.55)] ring-1 ring-[#9aabc8]/22 sm:px-8 sm:py-10">
-                  <div
-                    aria-hidden="true"
-                    className="absolute right-6 top-6 h-14 w-14 rounded-full bg-[#eaf0ff] text-[#6c82ad] shadow-[inset_0_1px_0_rgba(255,255,255,0.82)] sm:right-8 sm:top-8"
-                  >
-                    <span className="absolute left-1/2 top-1/2 text-3xl font-semibold leading-none -translate-x-1/2 -translate-y-1/2">
-                      *
-                    </span>
-                    <span className="absolute right-3 top-3 h-1.5 w-1.5 rounded-full bg-[#b7c5df]" />
-                    <span className="absolute bottom-3 left-3 h-1 w-1 rounded-full bg-[#b7c5df]" />
-                  </div>
-                  <div className="max-w-[31rem] pr-14 sm:pr-20">
-                    <p className="text-[0.72rem] font-semibold uppercase tracking-[0.22em] text-[#6f84a8]">
-                      Communication check
-                    </p>
-                    <h3 className="mt-4 text-2xl font-semibold leading-tight tracking-tight text-[#243149] sm:text-3xl">
-                      No message interpreted yet.
+                <div className="relative overflow-hidden rounded-[1.45rem] bg-[#FFFFFF] px-5 py-5 shadow-[0_16px_46px_-42px_rgba(17,24,39,0.34)] ring-1 ring-[#E5DED3] sm:px-6 sm:py-6">
+                  <div className="max-w-[34rem]">
+                    <h3 className="text-lg font-semibold leading-7 tracking-tight text-[#111827] sm:text-xl">
+                      Paste a message to see how it may land.
                     </h3>
-                    <p className="mt-4 text-base leading-7 text-[#64748b] sm:text-lg sm:leading-8">
-                      Paste a message to understand its impact. The rewrite stays locked
-                      until you ask for it.
+                    <p className="mt-2 text-sm leading-6 text-[#374151] sm:text-base">
+                      The clearer version stays private until you reveal it.
                     </p>
                   </div>
                 </div>
