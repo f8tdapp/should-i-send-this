@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type RefObject } from "react";
-import { toPng } from "html-to-image";
+import { useEffect, useRef, useState } from "react";
 import { captureBetweenLinesEvent } from "./lib/analytics";
 
 type AnalysisResult = {
@@ -32,11 +31,8 @@ type AnalysisResult = {
 
 type InsightCardId =
   | "communication"
-  | "landing"
   | "perception"
-  | "intent"
-  | "revealing"
-  | "subtext";
+  | "landing";
 
 type SignaturePhrase = {
   name: string;
@@ -50,6 +46,8 @@ type SocialMirror = {
 };
 
 const MESSAGE_CHARACTER_LIMIT = 750;
+const ACTIVE_INSIGHT_CARD_CLASS =
+  "bg-[#172033] text-[#FFFFFF] ring-[#9CA3AF] shadow-[0_34px_88px_-46px_rgba(17,24,39,0.68)]";
 
 const loadingMessages = [
   "Reading the communication impact...",
@@ -497,7 +495,8 @@ function formatAnalysisForClipboard(
     "BETWEEN THE LINES",
     result.emotionalInterpretation,
     "",
-    "PERCEPTION GAP",
+    "PERCEPTION GAP™",
+    "What you mean vs. what they may hear.",
     result.perceptionGap,
     "",
     "INTENT VS IMPACT",
@@ -534,120 +533,6 @@ function BrandMark({ className = "" }: { className?: string }) {
   );
 }
 
-function ShareCard({
-  result,
-  socialMirror,
-  cardRef,
-}: {
-  result: AnalysisResult;
-  socialMirror: SocialMirror;
-  cardRef?: RefObject<HTMLDivElement | null>;
-}) {
-  return (
-    <div
-      ref={cardRef}
-      className="relative overflow-hidden rounded-[1.75rem] bg-[#FFFDF8] p-6 text-[#111827] shadow-[0_22px_70px_-54px_rgba(17,24,39,0.38)] ring-1 ring-[#D8D2C7] sm:p-8"
-    >
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(232,225,214,0.55),transparent_34%),linear-gradient(145deg,rgba(248,244,236,0.72),rgba(239,232,221,0.58)_58%,rgba(255,255,255,0.7))]"
-      />
-      <div className="relative">
-        <div className="flex items-start justify-between gap-4">
-          <div className="inline-flex items-start gap-3">
-            <BrandMark className="h-9 w-9" />
-            <div>
-              <p className="text-[1.02rem] font-black leading-none tracking-[-0.035em]">
-                BetweenLines<span className="text-[#64748B]"> AI</span>
-              </p>
-              <p className="mt-1 text-[0.68rem] font-medium leading-tight text-[#6B7280]">
-                Communication intelligence designed to create clarity, not chaos.
-              </p>
-            </div>
-          </div>
-          <div className="max-w-[12rem] rounded-full bg-[#172033] px-3 py-1.5 text-right text-xs font-semibold leading-tight text-[#FFFFFF] shadow-[0_18px_45px_-34px_rgba(17,24,39,0.78)]">
-            {socialMirror.severity}
-          </div>
-        </div>
-
-        <div className="mt-7 space-y-3">
-          <div className="rounded-[1.35rem] bg-[#E9D8A6] p-5 ring-1 ring-[#9CA3AF]">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#334155]">
-              BETWEEN THE LINES
-            </p>
-            <p className="mt-3 text-[1.05rem] font-semibold leading-[1.38] tracking-tight">
-              {result.emotionalInterpretation}
-            </p>
-          </div>
-          <div className="rounded-[1.35rem] bg-[#F8F4EC] p-5 ring-1 ring-[#D8D2C7]">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#64748B]">
-              COMMUNICATION INTELLIGENCE
-            </p>
-            <p className="mt-2 text-[2rem] font-semibold leading-none tracking-tight text-[#334155]">
-              {result.communicationIntelligenceScore}
-              <span className="text-base text-[#64748B]">/100</span>
-            </p>
-          </div>
-          <div className="rounded-[1.35rem] bg-[#EFE8DD] p-5 ring-1 ring-[#D8D2C7]">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#64748B]">
-              PERCEPTION GAP
-            </p>
-            <p className="mt-3 text-[1rem] font-semibold leading-[1.38] tracking-tight text-[#334155]">
-              {result.perceptionGap}
-            </p>
-          </div>
-          <div className="rounded-[1.35rem] bg-[#FFFDF8] p-5 ring-1 ring-[#D8D2C7]">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#64748B]">
-              INTENT VS IMPACT
-            </p>
-            <div className="mt-3 grid gap-3 text-[#111827] sm:grid-cols-2">
-              <div>
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.13em] text-[#64748B]">
-                  You meant
-                </p>
-                <p className="mt-1 text-[0.95rem] font-semibold leading-[1.36] tracking-tight">
-                  {result.intentVsImpact.youMeant}
-                </p>
-              </div>
-              <div>
-                <p className="text-[0.68rem] font-semibold uppercase tracking-[0.13em] text-[#64748B]">
-                  They may hear
-                </p>
-                <p className="mt-1 text-[0.95rem] font-semibold leading-[1.36] tracking-tight">
-                  {result.intentVsImpact.theyMayHear}
-                </p>
-              </div>
-            </div>
-          </div>
-          <div className="rounded-[1.35rem] bg-[#E9D8A6] p-5 ring-1 ring-[#C7BDAF]">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#334155]">
-              MOST REVEALING LINE
-            </p>
-            <p className="mt-3 text-[1.02rem] font-semibold leading-[1.35] tracking-tight text-[#111827]">
-              &ldquo;{result.mostRevealingLine.quote}&rdquo;
-            </p>
-            <p className="mt-2 text-[0.92rem] font-medium leading-[1.45] text-[#334155]">
-              {result.mostRevealingLine.explanation}
-            </p>
-          </div>
-          <div className="rounded-[1.35rem] bg-[#EFE8DD] p-5 ring-1 ring-[#D8D2C7]">
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[#64748B]">
-              HOW THIS MIGHT LAND
-            </p>
-            <p className="mt-3 text-[1.05rem] font-semibold leading-[1.38] tracking-tight text-[#334155]">
-              {result.recipientLikelyPerception}
-            </p>
-          </div>
-        </div>
-
-        <p className="mt-6 text-right text-xs font-semibold tracking-[0.12em] text-[#6B7280]">
-          BetweenLines AI
-        </p>
-      </div>
-    </div>
-  );
-}
-
 export default function Home() {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -655,8 +540,6 @@ export default function Home() {
   const [error, setError] = useState("");
   const [rewriteCopied, setRewriteCopied] = useState(false);
   const [analysisCopied, setAnalysisCopied] = useState(false);
-  const [isDownloadingShareCard, setIsDownloadingShareCard] = useState(false);
-  const [showSharePreview, setShowSharePreview] = useState(false);
   const [showRewrite, setShowRewrite] = useState(false);
   const [isRevealingRewrite, setIsRevealingRewrite] = useState(false);
   const [socialMirror, setSocialMirror] = useState<SocialMirror | null>(null);
@@ -671,7 +554,6 @@ export default function Home() {
     null,
   );
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const shareCardRef = useRef<HTMLDivElement | null>(null);
   const lastSubtextRef = useRef<string | null>(null);
   const messageLength = message.length;
   const isMessageEmpty = message.trim().length === 0;
@@ -695,7 +577,6 @@ export default function Home() {
     setError("");
     setRewriteCopied(false);
     setAnalysisCopied(false);
-    setShowSharePreview(false);
     setShowRewrite(false);
     setIsRevealingRewrite(false);
     setActiveInsightCardId("communication");
@@ -876,49 +757,6 @@ export default function Home() {
     }
   };
 
-  const handleDownloadShareCard = async () => {
-    if (!shareCardRef.current || !socialMirror) return;
-
-    setIsDownloadingShareCard(true);
-    setError("");
-
-    try {
-      const dataUrl = await toPng(shareCardRef.current, {
-        cacheBust: true,
-        pixelRatio: 2,
-      });
-      const link = document.createElement("a");
-      link.download = "betweenlines-ai-read.png";
-      link.href = dataUrl;
-      link.click();
-      captureBetweenLinesEvent("share_card_downloaded", {
-        ...getSafeAnalyticsProperties(message, socialMirror.severity),
-      });
-    } catch (error) {
-      console.error("Share card download failed.", error);
-      setError(
-        "The share card refused to become a PNG. Very dramatic. Try again.",
-      );
-      captureBetweenLinesEvent("share_card_download_failed", {
-        ...getSafeAnalyticsProperties(message, socialMirror.severity),
-      });
-    } finally {
-      setIsDownloadingShareCard(false);
-    }
-  };
-
-  const handleToggleSharePreview = () => {
-    const nextShowSharePreview = !showSharePreview;
-
-    setShowSharePreview(nextShowSharePreview);
-
-    if (nextShowSharePreview) {
-      captureBetweenLinesEvent("share_card_preview_opened", {
-        ...getSafeAnalyticsProperties(message, socialMirror?.severity),
-      });
-    }
-  };
-
   useEffect(() => {
     return () => {
       if (copyTimeoutRef.current) {
@@ -975,12 +813,11 @@ export default function Home() {
         {
           id: "communication" as const,
           title: "Between the Lines",
-          activeClassName:
-            "bg-[#172033] text-[#FFFFFF] ring-[#9CA3AF] shadow-[0_34px_88px_-46px_rgba(17,24,39,0.68)]",
+          activeClassName: ACTIVE_INSIGHT_CARD_CLASS,
           inactiveClassName:
             "bg-[#FFFDF8] text-[#334155] ring-[#D8D2C7] shadow-[0_14px_32px_-28px_rgba(17,24,39,0.24)]",
           content: (
-            <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <p className="max-w-[39rem] text-[1.24rem] font-semibold leading-[1.36] tracking-tight sm:text-[1.48rem] sm:leading-[1.32]">
                 {result.emotionalInterpretation}
               </p>
@@ -997,96 +834,52 @@ export default function Home() {
           ),
         },
         {
-          id: "landing" as const,
-          title: "How This Might Land",
-          activeClassName:
-            "bg-[#FFF8EF] text-[#111827] ring-[#D8CDBE] shadow-[0_24px_58px_-42px_rgba(92,72,47,0.32)]",
+          id: "perception" as const,
+          title: "Perception Gap™",
+          activeClassName: ACTIVE_INSIGHT_CARD_CLASS,
           inactiveClassName:
             "bg-[#FAF4EA] text-[#334155] ring-[#D8CDBE] shadow-[0_12px_30px_-28px_rgba(92,72,47,0.2)]",
           content: (
-            <p className="mt-3 max-w-[39rem] text-base font-medium leading-7 tracking-normal text-[#374151] sm:text-[1.06rem]">
+            <div className="mt-3 max-w-[39rem]">
+              <p className="text-sm font-semibold leading-5 tracking-normal text-[#E5E7EB]">
+                What you mean vs. what they may hear.
+              </p>
+              <p className="mt-2 text-sm font-medium leading-6 tracking-normal text-[#F8FAFC]/88 sm:text-base">
+                {result.perceptionGap}
+              </p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-[1.05rem] bg-[#FFFDF8] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] ring-1 ring-[#D8D2C7]">
+                  <p className="text-xs font-semibold uppercase leading-4 tracking-[0.12em] text-[#64748B]">
+                    What you likely mean
+                  </p>
+                  <p className="mt-1.5 text-sm font-semibold leading-6 tracking-normal text-[#334155] sm:text-base">
+                    {result.intentVsImpact.youMeant}
+                  </p>
+                </div>
+                <div className="rounded-[1.05rem] bg-[#FFFDF8] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] ring-1 ring-[#D8D2C7]">
+                  <p className="text-xs font-semibold uppercase leading-4 tracking-[0.12em] text-[#64748B]">
+                    What they may hear
+                  </p>
+                  <p className="mt-1.5 text-sm font-semibold leading-6 tracking-normal text-[#334155] sm:text-base">
+                    {result.intentVsImpact.theyMayHear}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ),
+        },
+        {
+          id: "landing" as const,
+          title: "How This Might Land",
+          activeClassName: ACTIVE_INSIGHT_CARD_CLASS,
+          inactiveClassName:
+            "bg-[#FAF4EA] text-[#334155] ring-[#D8CDBE] shadow-[0_12px_30px_-28px_rgba(92,72,47,0.2)]",
+          content: (
+            <p className="mt-3 max-w-[39rem] text-base font-medium leading-7 tracking-normal text-[#F8FAFC]/88 sm:text-[1.06rem]">
               {result.recipientLikelyPerception}
             </p>
           ),
         },
-        {
-          id: "perception" as const,
-          title: "Perception Gap",
-          activeClassName:
-            "bg-[#FFF8EF] text-[#111827] ring-[#D8CDBE] shadow-[0_24px_58px_-42px_rgba(92,72,47,0.32)]",
-          inactiveClassName:
-            "bg-[#FAF4EA] text-[#334155] ring-[#D8CDBE] shadow-[0_12px_30px_-28px_rgba(92,72,47,0.2)]",
-          content: (
-            <p className="mt-3 max-w-[39rem] text-sm font-medium leading-6 tracking-normal text-[#374151] sm:text-base">
-              {result.perceptionGap}
-            </p>
-          ),
-        },
-        {
-          id: "intent" as const,
-          title: "Intent vs Impact",
-          activeClassName:
-            "bg-[#FFF8EF] text-[#111827] ring-[#D8CDBE] shadow-[0_24px_58px_-42px_rgba(92,72,47,0.32)]",
-          inactiveClassName:
-            "bg-[#FAF4EA] text-[#334155] ring-[#D8CDBE] shadow-[0_12px_30px_-28px_rgba(92,72,47,0.2)]",
-          content: (
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <div>
-                <p className="text-sm font-semibold leading-5 tracking-normal text-[#334155]">
-                  You Meant
-                </p>
-                <p className="mt-1.5 max-w-[39rem] text-sm font-medium leading-6 tracking-normal text-[#374151] sm:text-base">
-                  {result.intentVsImpact.youMeant}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-semibold leading-5 tracking-normal text-[#334155]">
-                  They May Hear
-                </p>
-                <p className="mt-1.5 max-w-[39rem] text-sm font-medium leading-6 tracking-normal text-[#374151] sm:text-base">
-                  {result.intentVsImpact.theyMayHear}
-                </p>
-              </div>
-            </div>
-          ),
-        },
-        {
-          id: "revealing" as const,
-          title: "Most Revealing Line",
-          activeClassName:
-            "bg-[#FFF8EF] text-[#111827] ring-[#D8CDBE] shadow-[0_24px_58px_-42px_rgba(92,72,47,0.32)]",
-          inactiveClassName:
-            "bg-[#FAF4EA] text-[#334155] ring-[#D8CDBE] shadow-[0_12px_30px_-28px_rgba(92,72,47,0.2)]",
-          content: (
-            <div className="mt-3 max-w-[39rem] space-y-3">
-              <div className="rounded-[1.05rem] bg-[#F3E8D6] px-4 py-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] ring-1 ring-[#D8CDBE]">
-                <p className="text-base font-semibold leading-7 tracking-normal text-[#111827] sm:text-[1.05rem]">
-                  &ldquo;{result.mostRevealingLine.quote}&rdquo;
-                </p>
-              </div>
-              <p className="text-sm font-medium leading-6 text-[#374151] sm:text-base">
-                {result.mostRevealingLine.explanation}
-              </p>
-            </div>
-          ),
-        },
-        ...(socialMirror
-          ? [
-              {
-                id: "subtext" as const,
-                title: "Hidden Subtext",
-                activeClassName:
-                  "bg-[#FFF8EF] text-[#111827] ring-[#D8CDBE] shadow-[0_24px_58px_-42px_rgba(92,72,47,0.32)]",
-                inactiveClassName:
-                  "bg-[#FAF4EA] text-[#334155] ring-[#D8CDBE] shadow-[0_12px_30px_-28px_rgba(92,72,47,0.2)]",
-                content: (
-                  <p className="mt-3 max-w-[39rem] text-sm font-medium leading-6 tracking-normal text-[#374151] sm:text-base">
-                    {socialMirror.subtext}
-                  </p>
-                ),
-              },
-            ]
-          : []),
       ]
     : [];
   const visibleInsightCards =
@@ -1139,7 +932,7 @@ export default function Home() {
             </label>
             <div className="mx-auto max-w-[42rem] border-y border-[#D8D2C7] px-3 py-2 text-center">
               <p className="text-[0.82rem] font-semibold leading-5 text-[#374151]">
-                Remove the uncertainty before you hit send.
+                Understand how your message may land before you send it.
               </p>
               <div className="mt-2 min-h-[1.7rem] overflow-hidden text-center">
                 <p
@@ -1160,7 +953,7 @@ export default function Home() {
                 onChange={(event) => {
                   setMessage(event.target.value);
                 }}
-                placeholder="Paste the message you want to understand..."
+                placeholder="Paste a message before you send it..."
                 className="w-full min-h-[205px] rounded-[1.45rem] border border-[#BFB3A3] bg-[#FFFFFF] px-5 py-[1.125rem] text-base leading-7 text-[#111827] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),inset_0_20px_44px_-36px_rgba(191,179,163,0.58),0_12px_34px_-30px_rgba(17,24,39,0.38)] placeholder:text-[#6B7280] outline-none transition duration-300 ease-out hover:border-[#C7BDAF] hover:bg-[#FFFDF8] focus:border-[#334155] focus:bg-[#FFFFFF] focus:ring-4 focus:ring-[#334155]/16 sm:min-h-[230px] sm:px-7 sm:py-5 sm:text-[1.04rem]"
               />
               <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -1313,32 +1106,36 @@ export default function Home() {
                                 }`
                           }`}
                         >
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="inline-flex min-w-0 items-center gap-2 text-[0.84rem] font-semibold leading-5 tracking-normal sm:text-[0.95rem]">
-                              {!isActive && hasBeenViewed ? (
+                          {isActive && isHeroCard ? (
+                            <span className="sr-only">{card.title}</span>
+                          ) : (
+                            <div className="flex items-center justify-between gap-3">
+                              <p className="inline-flex min-w-0 items-center gap-2 text-[0.84rem] font-semibold leading-5 tracking-normal sm:text-[0.95rem]">
+                                {!isActive && hasBeenViewed ? (
+                                  <span
+                                    aria-hidden="true"
+                                    className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#F1F5F9] text-[0.62rem] font-bold leading-none text-[#64748B] ring-1 ring-[#D8D2C7]"
+                                  >
+                                    &#10003;
+                                  </span>
+                                ) : null}
+                                <span className="truncate">
+                                  {card.title}
+                                </span>
+                              </p>
+                              {!isActive ? (
                                 <span
-                                  aria-hidden="true"
-                                  className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#F1F5F9] text-[0.62rem] font-bold leading-none text-[#64748B] ring-1 ring-[#D8D2C7]"
+                                  className={`shrink-0 rounded-full px-2.5 py-1 text-[0.68rem] font-semibold tracking-normal opacity-90 ring-1 ${
+                                    hasBeenViewed
+                                      ? "bg-[#F1F5F9] text-[#64748B] ring-[#D8D2C7]"
+                                      : "bg-[#FFFFFF]/80 ring-[#D8D2C7]"
+                                  }`}
                                 >
-                                  &#10003;
+                                  {hasBeenViewed ? "Read" : "Tap"}
                                 </span>
                               ) : null}
-                              <span className="truncate">
-                                {card.title}
-                              </span>
-                            </p>
-                            {!isActive ? (
-                              <span
-                                className={`shrink-0 rounded-full px-2.5 py-1 text-[0.68rem] font-semibold tracking-normal opacity-90 ring-1 ${
-                                  hasBeenViewed
-                                    ? "bg-[#F1F5F9] text-[#64748B] ring-[#D8D2C7]"
-                                    : "bg-[#FFFFFF]/80 ring-[#D8D2C7]"
-                                }`}
-                              >
-                                {hasBeenViewed ? "Read" : "Tap"}
-                              </span>
-                            ) : null}
-                          </div>
+                            </div>
+                          )}
                           {isActive ? (
                             <div className="insight-active-content">
                               {card.content}
@@ -1349,80 +1146,71 @@ export default function Home() {
                     })}
                   </div>
 
-                  {socialMirror ? (
-                    <div className="space-y-2.5 rounded-[1.55rem] bg-[#FFFFFF] p-4 shadow-[0_14px_38px_-34px_rgba(17,24,39,0.24)] ring-1 ring-[#E5DED3] sm:p-5">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
-                          <p className="text-sm font-semibold leading-5 tracking-normal text-[#172033]">
-                            Copy the Insight
-                          </p>
-                          <p className="mt-1 text-sm leading-6 text-[#374151]">
-                            No original text included. Just the communication
-                            insight.
-                          </p>
-                        </div>
-                        <div className="flex flex-col items-stretch gap-2 sm:items-end">
-                          <button
-                            type="button"
-                            aria-label="Copy this analysis"
-                            onClick={handleCopyAnalysis}
-                            className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-[#F1F5F9] px-5 py-2.5 text-sm font-semibold text-[#334155] shadow-[0_14px_30px_-28px_rgba(17,24,39,0.32)] ring-1 ring-[#D8D2C7] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#EFE8DD] hover:text-[#172033] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/18"
-                          >
-                            {analysisCopied ? "Copied" : "Copy this analysis"}
-                          </button>
-                          <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 text-xs font-semibold text-[#6B7280] sm:justify-end">
-                            <button
-                              type="button"
-                              aria-label="Export insight"
-                              onClick={handleDownloadShareCard}
-                              disabled={isDownloadingShareCard}
-                              className="inline-flex min-h-[32px] items-center justify-center rounded-full px-1.5 text-[#6B7280] transition duration-200 ease-out hover:text-[#334155] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/12 disabled:cursor-wait disabled:text-[#9CA3AF]"
-                            >
-                              {isDownloadingShareCard
-                                ? "Exporting..."
-                                : "Export insight"}
-                            </button>
-                            <button
-                              type="button"
-                              aria-label={
-                                showSharePreview
-                                  ? "Hide share card preview"
-                                  : "Preview share card"
-                              }
-                              onClick={handleToggleSharePreview}
-                              aria-expanded={showSharePreview}
-                              className="inline-flex min-h-[32px] items-center justify-center rounded-full px-1.5 text-[#6B7280] transition duration-200 ease-out hover:text-[#334155] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/12"
-                            >
-                              {showSharePreview
-                                ? "Hide preview"
-                                : "Preview share card"}
-                            </button>
-                          </div>
-                        </div>
+                  <details className="group rounded-[1.35rem] bg-[#FFFFFF] px-4 py-3.5 shadow-[0_12px_34px_-30px_rgba(17,24,39,0.22)] ring-1 ring-[#E5DED3] sm:px-5">
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-sm font-semibold leading-5 tracking-normal text-[#172033] marker:hidden">
+                      <span>Deeper read</span>
+                      <span className="text-xs font-semibold text-[#64748B] transition group-open:rotate-180">
+                        Expand
+                      </span>
+                    </summary>
+                    <div className="mt-4 space-y-4 border-t border-[#E5DED3] pt-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase leading-4 tracking-[0.12em] text-[#64748B]">
+                          Most Revealing Line
+                        </p>
+                        <p className="mt-2 text-base font-semibold leading-7 tracking-normal text-[#111827]">
+                          &ldquo;{result.mostRevealingLine.quote}&rdquo;
+                        </p>
+                        <p className="mt-1.5 text-sm font-medium leading-6 text-[#374151]">
+                          {result.mostRevealingLine.explanation}
+                        </p>
                       </div>
 
-                      <div
-                        aria-hidden="true"
-                        className="pointer-events-none fixed left-[-10000px] top-0 w-[720px]"
-                      >
-                        <ShareCard
-                          result={result}
-                          socialMirror={socialMirror}
-                          cardRef={shareCardRef}
-                        />
-                      </div>
-
-                      {showSharePreview ? (
-                        <div className="rounded-[1.35rem] bg-[#FFFDF8] p-3 ring-1 ring-[#E5DED3] sm:p-4">
-                          <p className="mb-3 text-sm font-semibold leading-5 tracking-normal text-[#172033]">
-                            Share Card Preview
+                      {socialMirror ? (
+                        <div className="border-t border-[#E5DED3] pt-4">
+                          <p className="text-xs font-semibold uppercase leading-4 tracking-[0.12em] text-[#64748B]">
+                            Hidden Subtext
                           </p>
-                          <ShareCard
-                            result={result}
-                            socialMirror={socialMirror}
-                          />
+                          <p className="mt-2 text-sm font-medium leading-6 tracking-normal text-[#374151] sm:text-base">
+                            {socialMirror.subtext}
+                          </p>
                         </div>
                       ) : null}
+
+                      <div className="grid gap-4 border-t border-[#E5DED3] pt-4 sm:grid-cols-2">
+                        <div>
+                          <p className="text-xs font-semibold uppercase leading-4 tracking-[0.12em] text-[#64748B]">
+                            Confidence Signal
+                          </p>
+                          <p className="mt-2 text-sm font-medium leading-6 text-[#374151]">
+                            {result.communicationFramework.confidenceSignal}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold uppercase leading-4 tracking-[0.12em] text-[#64748B]">
+                            Emotional Pressure
+                          </p>
+                          <p className="mt-2 text-sm font-medium leading-6 text-[#374151]">
+                            {result.communicationFramework.emotionalPressure}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </details>
+
+                  {socialMirror ? (
+                    <div className="flex flex-col gap-2 border-t border-[#E5DED3] pt-3 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs font-medium leading-5 text-[#6B7280]">
+                        No original text included.
+                      </p>
+                      <button
+                        type="button"
+                        aria-label="Copy insight"
+                        onClick={handleCopyAnalysis}
+                        className="inline-flex min-h-[36px] w-fit items-center justify-center rounded-full px-1.5 text-sm font-semibold text-[#64748B] transition duration-200 ease-out hover:text-[#172033] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/12"
+                      >
+                        {analysisCopied ? "Insight copied" : "Copy insight"}
+                      </button>
                     </div>
                   ) : null}
 
@@ -1479,7 +1267,7 @@ export default function Home() {
                             A Clearer Version
                           </p>
                           <p className="mt-1.5 text-sm leading-6 text-[#6B7280]">
-                            Use this as a starting point; edit it so it still sounds like you.
+                            Use this as a starting point — edit it so it still sounds like you.
                           </p>
                         </div>
                         <span className="inline-flex w-fit shrink-0 rounded-full bg-[#F3E8D6] px-2.5 py-1 text-[0.68rem] font-semibold text-[#64748B] ring-1 ring-[#D8CDBE]">
@@ -1506,10 +1294,10 @@ export default function Home() {
                 <div className="relative overflow-hidden rounded-[1.45rem] bg-[#FFFFFF] px-5 py-5 shadow-[0_16px_46px_-42px_rgba(17,24,39,0.34)] ring-1 ring-[#E5DED3] sm:px-6 sm:py-6">
                   <div className="max-w-[34rem]">
                     <h3 className="text-lg font-semibold leading-7 tracking-tight text-[#111827] sm:text-xl">
-                      Paste a message to see how it may land.
+                      Paste a message to reveal the Perception Gap™.
                     </h3>
                     <p className="mt-2 text-sm leading-6 text-[#374151] sm:text-base">
-                      The clearer version stays private until you reveal it.
+                      The difference between what you mean and what they may hear.
                     </p>
                   </div>
                 </div>
