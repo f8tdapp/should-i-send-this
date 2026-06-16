@@ -51,6 +51,15 @@ type SafeFeedbackInput = {
   validatedTagLabels: string[];
 };
 
+type SafeFeedbackMetadataInput = {
+  characterCount?: number;
+  severity?: string;
+  confidenceScore?: number;
+  clarityScore?: number;
+  communicationIntelligenceScore?: number;
+  rewriteVisible?: boolean;
+};
+
 type AnalysisDebugMetadata = {
   promptVersion: string;
   model: string;
@@ -82,6 +91,12 @@ const ALLOWLISTED_FEEDBACK_TAGS = new Set([
   "good_rewrite",
   "bad_rewrite",
   "helpful",
+  "felt_accurate",
+  "overreacted",
+  "too_vague",
+  "missed_point",
+  "rewrite_natural",
+  "rewrite_fake",
 ]);
 const RATE_LIMITED_MESSAGE =
   "You've used today's private reads. Give it some time and try again later.";
@@ -249,6 +264,50 @@ function getSafeFeedback(body: Record<string, unknown>): SafeFeedbackInput | und
     tagCount: Math.min(rawTags.length, 20),
     validatedTagLabels,
   };
+}
+
+function getBoundedNumber(value: unknown, min: number, max: number) {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return undefined;
+  }
+
+  return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+function getSafeFeedbackMetadata(
+  body: Record<string, unknown>,
+): SafeFeedbackMetadataInput | undefined {
+  const metadata = body.metadata;
+
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
+    return undefined;
+  }
+
+  const record = metadata as Record<string, unknown>;
+  const safeMetadata: SafeFeedbackMetadataInput = {
+    characterCount: getBoundedNumber(record.characterCount, 0, MESSAGE_CHARACTER_LIMIT),
+    severity:
+      typeof record.severity === "string"
+        ? record.severity.trim().slice(0, 40)
+        : undefined,
+    confidenceScore: getBoundedNumber(record.confidenceScore, 0, 10),
+    clarityScore: getBoundedNumber(record.clarityScore, 0, 10),
+    communicationIntelligenceScore: getBoundedNumber(
+      record.communicationIntelligenceScore,
+      0,
+      100,
+    ),
+    rewriteVisible:
+      typeof record.rewriteVisible === "boolean"
+        ? record.rewriteVisible
+        : undefined,
+  };
+
+  if (Object.values(safeMetadata).every((value) => value === undefined)) {
+    return undefined;
+  }
+
+  return safeMetadata;
 }
 
 function validateMessage(body: unknown) {
@@ -1022,15 +1081,19 @@ function trackSafeFeedback({
   classification,
   debug,
   characterCount,
+  metadata,
 }: {
   feedback?: SafeFeedbackInput;
-  classification: MessageClassification;
+  classification?: MessageClassification;
   debug: AnalysisDebugMetadata;
-  characterCount: number;
+  characterCount?: number;
+  metadata?: SafeFeedbackMetadataInput;
 }) {
   if (!feedback) {
     return;
   }
+
+  const feedbackCharacterCount = metadata?.characterCount ?? characterCount;
 
   console.info("Analyze: safe feedback received", {
     promptVersion: debug.promptVersion,
@@ -1040,10 +1103,18 @@ function trackSafeFeedback({
     tagCount: feedback.tagCount,
     validatedTagLabels: feedback.validatedTagLabels,
     validatedTagCount: feedback.validatedTagLabels.length,
-    category: classification.category,
-    emotionalPressureLevel: classification.emotionalPressureLevel,
-    communicationRisk: classification.communicationRisk,
-    characterCountBucket: Math.ceil(characterCount / 100) * 100,
+    category: classification?.category,
+    emotionalPressureLevel: classification?.emotionalPressureLevel,
+    communicationRisk: classification?.communicationRisk,
+    severity: metadata?.severity,
+    confidenceScore: metadata?.confidenceScore,
+    clarityScore: metadata?.clarityScore,
+    communicationIntelligenceScore: metadata?.communicationIntelligenceScore,
+    rewriteVisible: metadata?.rewriteVisible,
+    characterCountBucket:
+      feedbackCharacterCount === undefined
+        ? undefined
+        : Math.ceil(feedbackCharacterCount / 100) * 100,
   });
 }
 
@@ -1066,6 +1137,26 @@ export async function POST(request: Request) {
       ),
       400,
     );
+  }
+
+  if (body && typeof body === "object" && !Array.isArray(body)) {
+    const record = body as Record<string, unknown>;
+
+    if (record.feedbackOnly === true) {
+      const safeFeedback = getSafeFeedback(record);
+      const debug = createDebugMetadata({ success: true });
+
+      trackSafeFeedback({
+        feedback: safeFeedback,
+        debug,
+        metadata: getSafeFeedbackMetadata(record),
+      });
+
+      return jsonResponse(
+        withDevelopmentDebug({ ok: Boolean(safeFeedback) }, debug),
+        safeFeedback ? 200 : 400,
+      );
+    }
   }
 
   const validatedMessage = validateMessage(body);
@@ -1213,6 +1304,8 @@ Required JSON keys:
 
 Analysis style rules:
 - Sound like a communication expert with strong emotional intelligence: accurate, useful, restrained, and never cruel.
+- Prioritize stable, repeatable, concise phrasing over creative variation.
+- For the same message and optional context, keep interpretation, labels, scores, structure, and rewrite strategy consistent.
 - Consider reassurance-seeking, frustration, uncertainty, fear of being ignored, guilt, avoidance, vulnerability, pressure, defensiveness, overexplaining, mixed signals, and indirectness.
 - Name likely perception only when it helps the user understand communication impact.
 - If the message is serious, vulnerable, or high-stakes, be sincere. If it is clear, calm, confident, or healthy, say that directly.
@@ -1243,27 +1336,12 @@ Rewrite style rules:
 - Preserve the original formality level when it helps the message land: casual stays casual, polite stays polite, professional stays professional.
 - Do not over-correct dialect, code-switching, informal texting style, or region-specific phrasing unless it creates a real clarity problem.
 
-English examples of the desired voice. These show attitude, not language requirements:
-- Input: "hey just checking if you're mad at me lol"
-  emotionalInterpretation: "The casual phrasing softens the message, but the recipient may still hear a request for reassurance."
-  perceptionGap: "You intend a light check-in, but they may perceive emotional pressure underneath it because the need for reassurance is indirect. A clearer, gentler ask would reduce that gap."
-  improvedRewrite: "Hey, I might be overthinking it, but I wanted to check in. Are we okay?"
-- Input: "K."
-  emotionalInterpretation: "This is clear but very low-context, so it may read as detached."
-  perceptionGap: "You may intend simple acknowledgment, but they may perceive distance or disapproval because there is no emotional context. Adding one short cue would reduce that gap."
-  improvedRewrite: "Okay. I am not thrilled about it, but I hear you."
-- Input: "whatever do what you want"
-  emotionalInterpretation: "The wording sounds like permission, but the impact may be frustration or resignation."
-  perceptionGap: "You may intend to disengage, but they may perceive resentment or a test because the real feeling is implied rather than named. Saying what matters directly would reduce that gap."
-  improvedRewrite: "I'm frustrated, and I don't want to keep going in circles. Do what you think is best, but I want you to know this matters to me."
-- Input: "per my last email"
-  emotionalInterpretation: "This is professional, but it can also communicate impatience."
-  perceptionGap: "You intend to reference prior context, but they may perceive frustration because the phrase points to a missed step. A neutral next action would reduce that gap."
-  improvedRewrite: "Following up on my last email. Could you take another look when you have a chance?"
-- Input: "this job sucks"
-  emotionalInterpretation: "The emotional pressure is clear, but the message does not yet clarify what support or action you want."
-  perceptionGap: "You intend to express strain, but they may not know what response would help because the need is unnamed. Saying whether you want support, change, or space would reduce that gap."
-  improvedRewrite: "I'm really frustrated with work right now. I need to figure out what's actually fixable, because this is wearing me down."
+Stable wording patterns:
+- reassurance check-in: casual surface, indirect reassurance ask, softer direct check-in rewrite
+- short acknowledgment: low context may read detached, add one brief cue if needed
+- frustration: valid feeling, high pressure, clearer ask or named need
+- professional follow-up: possible impatience, neutral next action
+- healthy message: low risk, keep rewrite minimal or identical
 
 Optional context:
 ${formatPromptContext(optionalContext)}
@@ -1275,6 +1353,8 @@ ${message}`;
       model: OPENAI_MODEL,
       input: prompt,
       max_output_tokens: 780,
+      store: false,
+      temperature: 0.2,
     }, {
       signal: abortController.signal,
     });

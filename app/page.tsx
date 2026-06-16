@@ -45,9 +45,28 @@ type SocialMirror = {
   subtext: string;
 };
 
+type FeedbackLabel =
+  | "felt_accurate"
+  | "overreacted"
+  | "too_vague"
+  | "missed_point"
+  | "rewrite_natural"
+  | "rewrite_fake";
+
+type FeedbackStatus = "idle" | "saving" | "saved" | "error";
+
 const MESSAGE_CHARACTER_LIMIT = 750;
 const ACTIVE_INSIGHT_CARD_CLASS =
   "bg-[#172033] text-[#FFFFFF] ring-[#9CA3AF] shadow-[0_34px_88px_-46px_rgba(17,24,39,0.68)]";
+
+const feedbackOptions: { label: FeedbackLabel; text: string }[] = [
+  { label: "felt_accurate", text: "Felt accurate" },
+  { label: "overreacted", text: "Overreacted" },
+  { label: "too_vague", text: "Too vague" },
+  { label: "missed_point", text: "Missed the point" },
+  { label: "rewrite_natural", text: "Rewrite sounded natural" },
+  { label: "rewrite_fake", text: "Rewrite sounded fake" },
+];
 
 const loadingMessages = [
   "Reading the communication impact...",
@@ -548,6 +567,10 @@ export default function Home() {
   const [viewedInsightCardIds, setViewedInsightCardIds] = useState<
     InsightCardId[]
   >([]);
+  const [selectedFeedbackLabel, setSelectedFeedbackLabel] =
+    useState<FeedbackLabel | null>(null);
+  const [feedbackStatus, setFeedbackStatus] =
+    useState<FeedbackStatus>("idle");
   const [thoughtIndex, setThoughtIndex] = useState(0);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const analysisCopyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -581,6 +604,8 @@ export default function Home() {
     setIsRevealingRewrite(false);
     setActiveInsightCardId("communication");
     setViewedInsightCardIds(viewedInsightCards);
+    setSelectedFeedbackLabel(null);
+    setFeedbackStatus("idle");
   };
 
   const handleAnalyze = async () => {
@@ -754,6 +779,45 @@ export default function Home() {
       setError(
         "Copy did not work in this browser. The read is still right there.",
       );
+    }
+  };
+
+  const handleFeedbackClick = async (label: FeedbackLabel) => {
+    if (!result || feedbackStatus === "saving") return;
+
+    setSelectedFeedbackLabel(label);
+    setFeedbackStatus("saving");
+
+    try {
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          feedbackOnly: true,
+          feedback: {
+            tags: [label],
+          },
+          metadata: {
+            characterCount: message.trim().length,
+            severity: socialMirror?.severity,
+            confidenceScore: result.confidenceScore,
+            clarityScore: result.clarityScore,
+            communicationIntelligenceScore:
+              result.communicationIntelligenceScore,
+            rewriteVisible: showRewrite,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Feedback failed.");
+      }
+
+      setFeedbackStatus("saved");
+    } catch {
+      setFeedbackStatus("error");
     }
   };
 
@@ -1288,6 +1352,49 @@ export default function Home() {
                         {rewriteCopied ? "Copied" : "Copy clearer version"}
                       </button>
                     </div>
+                  </div>
+
+                  <div className="border-t border-[#E5DED3] pt-3.5">
+                    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                      <p className="text-xs font-medium leading-5 text-[#6B7280]">
+                        Was this read useful?
+                      </p>
+                      <div
+                        className="flex flex-wrap gap-1.5"
+                        aria-label="Feedback options"
+                      >
+                        {feedbackOptions.map((option) => {
+                          const isSelected =
+                            selectedFeedbackLabel === option.label;
+
+                          return (
+                            <button
+                              key={option.label}
+                              type="button"
+                              onClick={() => handleFeedbackClick(option.label)}
+                              disabled={feedbackStatus === "saving"}
+                              className={`inline-flex min-h-[30px] items-center justify-center rounded-full px-2.5 py-1 text-[0.72rem] font-semibold leading-4 transition duration-200 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/12 disabled:cursor-wait disabled:opacity-70 ${
+                                isSelected
+                                  ? "bg-[#172033] text-[#FFFFFF] ring-1 ring-[#172033]"
+                                  : "bg-[#F8F4EC] text-[#64748B] ring-1 ring-[#E5DED3] hover:bg-[#EFE8DD] hover:text-[#334155]"
+                              }`}
+                            >
+                              {option.text}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <p
+                      className="mt-2 min-h-5 text-xs font-medium leading-5 text-[#64748B]"
+                      role="status"
+                    >
+                      {feedbackStatus === "saved"
+                        ? "Thanks — feedback saved."
+                        : feedbackStatus === "error"
+                          ? "Feedback did not save. Try one more time."
+                          : ""}
+                    </p>
                   </div>
                 </div>
               ) : (
