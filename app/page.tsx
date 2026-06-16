@@ -55,6 +55,16 @@ type FeedbackLabel =
 
 type FeedbackStatus = "idle" | "saving" | "saved" | "error";
 
+type CommunicationStyle =
+  | "not_sure"
+  | "clear_direct"
+  | "warm_diplomatic"
+  | "professional_formal"
+  | "casual"
+  | "gentle_firm"
+  | "low_pressure"
+  | "globally_neutral";
+
 const MESSAGE_CHARACTER_LIMIT = 750;
 const ACTIVE_INSIGHT_CARD_CLASS =
   "bg-[#172033] text-[#FFFFFF] ring-[#9CA3AF] shadow-[0_34px_88px_-46px_rgba(17,24,39,0.68)]";
@@ -66,6 +76,50 @@ const feedbackOptions: { label: FeedbackLabel; text: string }[] = [
   { label: "missed_point", text: "Missed the point" },
   { label: "rewrite_natural", text: "Rewrite sounded natural" },
   { label: "rewrite_fake", text: "Rewrite sounded fake" },
+];
+
+const communicationStyleOptions: {
+  value: CommunicationStyle;
+  label: string;
+  contextValue?: string;
+}[] = [
+  { value: "not_sure", label: "Not sure" },
+  {
+    value: "clear_direct",
+    label: "Clear and direct",
+    contextValue: "clear and direct communication style",
+  },
+  {
+    value: "warm_diplomatic",
+    label: "Warm and diplomatic",
+    contextValue: "warm and diplomatic communication style",
+  },
+  {
+    value: "professional_formal",
+    label: "Professional / formal",
+    contextValue: "professional and formal communication style",
+  },
+  {
+    value: "casual",
+    label: "Casual",
+    contextValue: "casual communication style",
+  },
+  {
+    value: "gentle_firm",
+    label: "Gentle but firm",
+    contextValue: "gentle but firm communication style",
+  },
+  {
+    value: "low_pressure",
+    label: "Low-pressure",
+    contextValue: "low-pressure communication style",
+  },
+  {
+    value: "globally_neutral",
+    label: "Globally neutral",
+    contextValue:
+      "globally neutral communication style with minimal idioms and region-specific phrasing",
+  },
 ];
 
 const loadingMessages = [
@@ -571,6 +625,8 @@ export default function Home() {
     useState<FeedbackLabel | null>(null);
   const [feedbackStatus, setFeedbackStatus] =
     useState<FeedbackStatus>("idle");
+  const [communicationStyle, setCommunicationStyle] =
+    useState<CommunicationStyle>("not_sure");
   const [thoughtIndex, setThoughtIndex] = useState(0);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const analysisCopyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -584,6 +640,9 @@ export default function Home() {
   const isNearCharacterLimit = messageLength >= MESSAGE_CHARACTER_LIMIT * 0.85;
   const isAtCharacterLimit = messageLength >= MESSAGE_CHARACTER_LIMIT;
   const canAnalyze = !isLoading && !isMessageEmpty && !isOverCharacterLimit;
+  const selectedCommunicationStyle = communicationStyleOptions.find(
+    (option) => option.value === communicationStyle,
+  );
 
   const resetAnalysisUiState = ({
     clearResult = true,
@@ -631,12 +690,19 @@ export default function Home() {
     setIsLoading(true);
 
     try {
+      const analysisRequest = {
+        message,
+        ...(selectedCommunicationStyle?.contextValue
+          ? { desiredTone: selectedCommunicationStyle.contextValue }
+          : {}),
+      };
+
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify(analysisRequest),
       });
 
       const rawText = await response.text();
@@ -680,6 +746,7 @@ export default function Home() {
 
   const handleClearText = () => {
     setMessage("");
+    setCommunicationStyle("not_sure");
     resetAnalysisUiState();
 
     if (copyTimeoutRef.current) {
@@ -1020,6 +1087,31 @@ export default function Home() {
                 placeholder="Paste a message before you send it..."
                 className="w-full min-h-[205px] rounded-[1.45rem] border border-[#BFB3A3] bg-[#FFFFFF] px-5 py-[1.125rem] text-base leading-7 text-[#111827] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),inset_0_20px_44px_-36px_rgba(191,179,163,0.58),0_12px_34px_-30px_rgba(17,24,39,0.38)] placeholder:text-[#6B7280] outline-none transition duration-300 ease-out hover:border-[#C7BDAF] hover:bg-[#FFFDF8] focus:border-[#334155] focus:bg-[#FFFFFF] focus:ring-4 focus:ring-[#334155]/16 sm:min-h-[230px] sm:px-7 sm:py-5 sm:text-[1.04rem]"
               />
+              <div className="mt-2.5 flex flex-col gap-1.5 rounded-[1.2rem] bg-[#FFFDF8] px-3.5 py-3 ring-1 ring-[#E5DED3] sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                <label
+                  htmlFor="communication-style"
+                  className="text-xs font-semibold leading-5 text-[#64748B]"
+                >
+                  Communication style
+                </label>
+                <select
+                  id="communication-style"
+                  value={communicationStyle}
+                  onChange={(event) => {
+                    setCommunicationStyle(
+                      event.target.value as CommunicationStyle,
+                    );
+                  }}
+                  disabled={isLoading}
+                  className="min-h-[36px] rounded-full border border-[#D8D2C7] bg-[#FFFFFF] px-3.5 text-sm font-semibold text-[#334155] outline-none transition duration-200 ease-out hover:border-[#C7BDAF] focus:border-[#334155] focus:ring-4 focus:ring-[#334155]/12 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {communicationStyleOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="inline-flex w-fit max-w-full items-center gap-2 rounded-full bg-[#F1F5F9] px-4 py-2 text-sm font-semibold text-[#334155] shadow-sm ring-1 ring-[#D8D2C7]">
                   <span aria-hidden="true">&#128274;</span>

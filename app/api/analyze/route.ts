@@ -1269,7 +1269,12 @@ Language and cultural awareness:
 - Preserve formality, pronouns, honorifics, dialect, code-switching, and workplace politeness norms where possible.
 - Do not force English slang, American/UK idioms, or internet jokes into non-English messages.
 - Do not mock the user's language, dialect, grammar, accent, or culture.
-- If region is unclear, avoid region-specific slang and be clear, warm, and useful.
+- Handle cultural or regional differences through communication style dimensions, not stereotypes.
+- Do not make broad country, nationality, ethnicity, or culture claims such as "British people will read this as..." or "Americans prefer..."
+- Do not infer a recipient's reaction based on nationality, ethnicity, culture, or region.
+- When relevant, describe style dimensions such as direct vs. diplomatic, formal vs. casual, warm vs. efficient, brief vs. detailed, emotionally expressive vs. restrained, hierarchical vs. peer-to-peer, high-context vs. explicit, or conflict-avoidant vs. conflict-direct.
+- Use conditional phrasing such as "In a more formal context...", "If the recipient expects a softer tone...", or "In a more direct communication style..."
+- If region or norm expectations are unclear, avoid region-specific slang and be clear, warm, and useful.
 
 Analyze the draft and return ONLY valid JSON. Do not include markdown, comments, or extra text.
 
@@ -1319,6 +1324,7 @@ Analysis style rules:
 - The mostRevealingLine quote must be an exact short phrase or sentence from the message, not a paraphrase. Keep the explanation concise, insightful, and screenshot-friendly.
 - Avoid clinical phrases, corporate filler, and therapy-speak.
 - Match the language of the message in tone, idiom, and register. If the language is not English, do not translate the user's situation into English cultural assumptions.
+- When cultural context may matter, frame it as communication style, not identity. Avoid broad nationality claims and use conditional language.
 - If uncertain, say something close to: "This message could be read a few ways, but the main gap seems to be between your intended clarity and how much pressure the wording may create."
 - Use the optional context only to improve calibration. Do not mention it unless it directly improves the analysis.
 - Desired tone and message goal should guide the rewrite, but they should not override safety, clarity, or the original message's natural register.
@@ -1338,6 +1344,8 @@ Rewrite style rules:
 - Do not make every message sound like HR.
 - Preserve the original formality level when it helps the message land: casual stays casual, polite stays polite, professional stays professional.
 - Do not over-correct dialect, code-switching, informal texting style, or region-specific phrasing unless it creates a real clarity problem.
+- Avoid unnecessary idioms or region-specific phrases unless they match the user's original voice.
+- Keep rewrites globally understandable where possible while preserving the user's natural voice.
 
 Stable wording patterns:
 - reassurance check-in: casual surface, indirect reassurance ask, softer direct check-in rewrite
