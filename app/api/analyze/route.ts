@@ -76,7 +76,7 @@ const client = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
-const PROMPT_VERSION = "betweenlines-ci-v2.0.0";
+const PROMPT_VERSION = "betweenlines-ci-v2.1.0";
 const OPENAI_MODEL = "gpt-4.1-mini";
 const MESSAGE_CHARACTER_LIMIT = 750;
 const RELATIONSHIP_CONTEXT_CHARACTER_LIMIT = 180;
@@ -486,6 +486,10 @@ function createCommunicationIntelligenceScore({
 }
 
 function completePerceptionGap(perceptionGap: string) {
+  if (/\b(little|low|not much|closely aligned|already clear|already sounds clear|nothing major)\b/i.test(perceptionGap)) {
+    return perceptionGap;
+  }
+
   if (/\b(reduce|soften|clarify|clearer|name the|direct|specific ask)\b/i.test(perceptionGap)) {
     return perceptionGap;
   }
@@ -823,9 +827,9 @@ function createDemoAnalysis(
 
   if (soundsCalmOrHealthy) {
     emotionalInterpretation =
-      "This sounds calm, grounded, and easy to receive.";
+      "This already sounds clear and reasonable. There may not be much to change.";
     perceptionGap =
-      "The intent and likely perception are closely aligned: clear, respectful, and steady. There is little to reduce here.";
+      "The intent and likely perception are closely aligned: clear, respectful, and steady. The Perception Gap appears low here.";
     youMeant =
       "You meant to be clear and kind without overperforming or chasing reassurance.";
     theyMayHear =
@@ -833,7 +837,7 @@ function createDemoAnalysis(
     mostRevealingLineExplanation =
       "This line gives the message its steady center instead of escalating the feeling.";
     recipientLikelyPerception =
-      "They are likely to read this as healthy and direct. You do not need to sand it down much.";
+      "They are likely to read this as steady and direct. You do not need to sand it down much.";
     improvedRewrite = trimmedMessage;
   }
 
@@ -878,7 +882,9 @@ function createDemoAnalysis(
         : "The emotional pressure is low enough for the content to stay easy to receive.",
       confidenceSignal: soundsTentative
         ? "The message signals some uncertainty through softening or indirect phrasing."
-        : "The message signals enough confidence for the core point to be understood.",
+        : soundsCalmOrHealthy
+          ? "The message sounds grounded and clear enough to send without much adjustment."
+          : "The message signals enough confidence for the core point to be understood.",
       hiddenSubtext: theyMayHear,
       communicationClarity:
         clarityScore >= 8
@@ -1239,6 +1245,7 @@ Core communication principles:
 - Never tell the user what someone definitely thinks or feels.
 - Use "may," "could," and "might" where appropriate.
 - Help the user communicate clearly with warm, steady, direct judgment.
+- Not every message needs correction.
 
 Communication Intelligence Framework:
 - Perception Gap: the difference between what the sender intended and what the recipient may perceive.
@@ -1251,13 +1258,18 @@ Product voice:
 - Mature, useful, nonjudgmental, emotionally intelligent, and direct without being harsh.
 - No roast language, meme language, exaggerated internet phrasing, or gimmicks.
 - If the message already sounds calm, confident, kind, direct, emotionally healthy, or ready to send, reassure the user instead of manufacturing a problem.
+- If the message is already clear, respectful, and unlikely to create a perception gap, say so plainly.
 - Avoid making the recipient sound hostile unless the wording strongly supports that interpretation.
 - Avoid harsh labels such as "manipulative," "toxic," "desperate," "needy," "pathetic," "red flag," or "clingy."
 - Prefer language like "emotionally high-pressure," "may feel intense," "could come across as uncertain," "may read as defensive," "creates a perception gap," and "softening this could reduce pressure."
 
 Anti-overinterpretation rules:
 - Do not turn neutral, healthy, or logistical messages into drama.
-- If the message is already respectful and clear, say the risk is low and keep the rewrite identical or nearly identical.
+- Do not manufacture hidden subtext.
+- Do not exaggerate emotional pressure.
+- Do not rewrite a message just to rewrite it.
+- If the message is already respectful and clear, say the risk is low, set classification.communicationRisk to "low", use high clarity/confidence scores when appropriate, and keep the rewrite identical or nearly identical.
+- When appropriate, return a reassuring result such as: "This already sounds clear and reasonable. There may not be much to change."
 - Do not infer abandonment, hostility, manipulation, romantic interest, contempt, or hidden conflict unless the wording strongly supports it.
 - Treat short messages as low-context first, not automatically angry.
 - When context is missing, name uncertainty rather than filling it with a dramatic story.
@@ -1340,6 +1352,7 @@ Rewrite style rules:
 - If the original message is emotionally pressured, make it steadier without removing warmth.
 - If the original message is angry, make it honest but controlled.
 - If the original message is already healthy, keep the rewrite minimal or identical unless a small clarity edit would truly help.
+- For already clear messages, the rewrite is optional polish, not a correction.
 - If the original message is very short, the rewrite can be short too.
 - Do not make every message sound like HR.
 - Preserve the original formality level when it helps the message land: casual stays casual, polite stays polite, professional stays professional.

@@ -8,6 +8,7 @@ type AnalysisResult = {
   confidenceScore: number;
   clarityScore: number;
   communicationIntelligenceScore: number;
+  classification: MessageClassification;
   communicationFramework: {
     perceptionGap: string;
     emotionalPressure: string;
@@ -27,6 +28,15 @@ type AnalysisResult = {
   };
   recipientLikelyPerception: string;
   improvedRewrite: string;
+};
+
+type MessageClassification = {
+  category: string;
+  likelyIntent: string;
+  emotionalPressureLevel: "low" | "medium" | "high";
+  confidenceSignal: string;
+  communicationRisk: "low" | "medium" | "high";
+  rewriteStrategy: string;
 };
 
 type InsightCardId =
@@ -244,6 +254,14 @@ const defaultAnalysisResult: AnalysisResult = {
   confidenceScore: 0,
   clarityScore: 0,
   communicationIntelligenceScore: 0,
+  classification: {
+    category: "unknown",
+    likelyIntent: "No intent was provided.",
+    emotionalPressureLevel: "medium",
+    confidenceSignal: "No confidence signal was provided.",
+    communicationRisk: "medium",
+    rewriteStrategy: "No rewrite strategy was provided.",
+  },
   communicationFramework: {
     perceptionGap: "No perception gap was provided.",
     emotionalPressure: "No emotional pressure read was provided.",
@@ -269,6 +287,11 @@ function normalizeAnalysisResult(value: unknown): AnalysisResult {
   if (!value || typeof value !== "object") return defaultAnalysisResult;
 
   const result = value as Record<string, unknown>;
+  const classification =
+    result.classification &&
+    typeof result.classification === "object"
+      ? (result.classification as Record<string, unknown>)
+      : null;
   const intentVsImpact =
     result.intentVsImpact &&
     typeof result.intentVsImpact === "object"
@@ -302,6 +325,36 @@ function normalizeAnalysisResult(value: unknown): AnalysisResult {
       typeof result.communicationIntelligenceScore === "number"
         ? Math.max(0, Math.min(100, Math.round(result.communicationIntelligenceScore)))
         : defaultAnalysisResult.communicationIntelligenceScore,
+    classification: {
+      category:
+        typeof classification?.category === "string"
+          ? classification.category
+          : defaultAnalysisResult.classification.category,
+      likelyIntent:
+        typeof classification?.likelyIntent === "string"
+          ? classification.likelyIntent
+          : defaultAnalysisResult.classification.likelyIntent,
+      emotionalPressureLevel:
+        classification?.emotionalPressureLevel === "low" ||
+        classification?.emotionalPressureLevel === "medium" ||
+        classification?.emotionalPressureLevel === "high"
+          ? classification.emotionalPressureLevel
+          : defaultAnalysisResult.classification.emotionalPressureLevel,
+      confidenceSignal:
+        typeof classification?.confidenceSignal === "string"
+          ? classification.confidenceSignal
+          : defaultAnalysisResult.classification.confidenceSignal,
+      communicationRisk:
+        classification?.communicationRisk === "low" ||
+        classification?.communicationRisk === "medium" ||
+        classification?.communicationRisk === "high"
+          ? classification.communicationRisk
+          : defaultAnalysisResult.classification.communicationRisk,
+      rewriteStrategy:
+        typeof classification?.rewriteStrategy === "string"
+          ? classification.rewriteStrategy
+          : defaultAnalysisResult.classification.rewriteStrategy,
+    },
     communicationFramework: {
       perceptionGap:
         typeof communicationFramework?.perceptionGap === "string"
@@ -368,6 +421,12 @@ function getAnalysisText(result: AnalysisResult, message: string) {
     message,
     result.tone,
     result.communicationIntelligenceScore,
+    result.classification.category,
+    result.classification.likelyIntent,
+    result.classification.emotionalPressureLevel,
+    result.classification.confidenceSignal,
+    result.classification.communicationRisk,
+    result.classification.rewriteStrategy,
     result.communicationFramework.perceptionGap,
     result.communicationFramework.emotionalPressure,
     result.communicationFramework.confidenceSignal,
@@ -401,6 +460,15 @@ function selectRandomLine(lines: string[], previousLine: string | null) {
   return availableLines[Math.floor(Math.random() * availableLines.length)];
 }
 
+function isClearMessageResult(result: AnalysisResult) {
+  return (
+    result.classification.communicationRisk === "low" &&
+    result.classification.emotionalPressureLevel === "low" &&
+    result.clarityScore >= 8 &&
+    result.confidenceScore >= 8
+  );
+}
+
 function getSignaturePhrases(result: AnalysisResult, message: string) {
   const messageText = message.toLowerCase();
   const matchedCategories = signaturePhrases.filter((phrase) =>
@@ -414,6 +482,10 @@ function getReadSeverity(result: AnalysisResult, message: string) {
   const messageText = message.toLowerCase();
   const analysisText = getAnalysisText(result, message);
   const lowScores = result.confidenceScore <= 5 || result.clarityScore <= 5;
+
+  if (isClearMessageResult(result)) {
+    return "Looks Clear";
+  }
 
   if (
     /calm|healthy|grounded|steady|emotionally safe/.test(analysisText) &&
@@ -511,6 +583,7 @@ function getSubtext(
 
   if (/calm|confident|healthy|grounded|steady|respectful|emotionally safe/.test(analysisText)) {
     subtextCandidates.push(
+      "The Perception Gap appears low here.",
       "This sounds steady; the intent and likely perception are closely aligned.",
       "The message already communicates with clarity and respect.",
       "This is likely easier to receive than it may feel while drafting.",
@@ -939,19 +1012,51 @@ export default function Home() {
 
   const loadingMessage = loadingMessages[message.length % loadingMessages.length];
   const currentThought = rotatingThoughts[thoughtIndex];
+  const isClearMessage = result ? isClearMessageResult(result) : false;
+  const rewritePreviewLabel = isClearMessage
+    ? "Optional polish is available. Activate the button to reveal it."
+    : "A clearer rewrite is available. Activate the button to reveal it.";
+  const rewriteRevealLabel = isClearMessage
+    ? "Show optional polish"
+    : "Show me a clearer version";
+  const rewriteLoadingLabel = isClearMessage
+    ? "Preparing optional polish"
+    : "Making this clearer";
+  const rewriteTitle = isClearMessage
+    ? "Optional Polish"
+    : "A Clearer Version";
+  const rewriteDescription = isClearMessage
+    ? "Your original already works. This is only a slightly cleaner version if you want it."
+    : "Use this as a starting point - edit it so it still sounds like you.";
+  const copyRewriteLabel = isClearMessage
+    ? "Copy optional polish"
+    : "Copy clearer version";
   const insightCards = result
     ? [
         {
           id: "communication" as const,
-          title: "Between the Lines",
+          title: isClearMessage ? "This Looks Clear" : "Between the Lines",
           activeClassName: ACTIVE_INSIGHT_CARD_CLASS,
           inactiveClassName:
             "bg-[#FFFDF8] text-[#334155] ring-[#D8D2C7] shadow-[0_14px_32px_-28px_rgba(17,24,39,0.24)]",
           content: (
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <p className="max-w-[39rem] text-[1.24rem] font-semibold leading-[1.36] tracking-tight sm:text-[1.48rem] sm:leading-[1.32]">
-                {result.emotionalInterpretation}
-              </p>
+              <div className="max-w-[39rem]">
+                {isClearMessage ? (
+                  <>
+                    <p className="text-[1.24rem] font-semibold leading-[1.36] tracking-tight sm:text-[1.48rem] sm:leading-[1.32]">
+                      Your message already sounds reasonable and easy to understand. There may not be much to change.
+                    </p>
+                    <p className="mt-3 text-sm font-semibold leading-6 text-[#CBD5E1] sm:text-base">
+                      The Perception Gap appears low here.
+                    </p>
+                  </>
+                ) : (
+                  <p className="text-[1.24rem] font-semibold leading-[1.36] tracking-tight sm:text-[1.48rem] sm:leading-[1.32]">
+                    {result.emotionalInterpretation}
+                  </p>
+                )}
+              </div>
               <div className="w-fit shrink-0 rounded-2xl bg-[#FFFDF8] px-3.5 py-2.5 text-[#334155] ring-1 ring-[#C7BDAF] sm:text-right">
                 <p className="text-xs font-semibold leading-4 tracking-normal text-[#64748B]">
                   Intelligence
@@ -1115,7 +1220,9 @@ export default function Home() {
               <div className="mt-2.5 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div className="inline-flex w-fit max-w-full items-center gap-2 rounded-full bg-[#F1F5F9] px-4 py-2 text-sm font-semibold text-[#334155] shadow-sm ring-1 ring-[#D8D2C7]">
                   <span aria-hidden="true">&#128274;</span>
-                  <span>We don&apos;t store or save your messages.</span>
+                  <span>
+                    Private by design. Your original message is not included in copied insights.
+                  </span>
                 </div>
                 <div className="flex items-center justify-end gap-3 px-1 text-xs font-medium text-[#6B7280]">
                   {isAtCharacterLimit ? (
@@ -1370,6 +1477,10 @@ export default function Home() {
                     </div>
                   ) : null}
 
+                  <p className="text-xs font-medium leading-5 text-[#6B7280]">
+                    BetweenLines AI does not read minds or tell you what someone definitely thinks. It helps you understand how your message may come across.
+                  </p>
+
                   {!showRewrite ? (
                     <div className="relative overflow-hidden rounded-[1.45rem] bg-[#FFFFFF] p-4 shadow-[0_14px_40px_-36px_rgba(17,24,39,0.26)] ring-1 ring-[#E5DED3] sm:p-5">
                       <div
@@ -1382,11 +1493,11 @@ export default function Home() {
                         <div className="h-4 w-[64%] rounded-full bg-[#E5DED3]" />
                       </div>
                       <p id="rewrite-preview-label" className="sr-only">
-                        A clearer rewrite is available. Activate the button to reveal it.
+                        {rewritePreviewLabel}
                       </p>
                       <button
                         type="button"
-                        aria-label="Show me a clearer version"
+                        aria-label={rewriteRevealLabel}
                         aria-describedby="rewrite-preview-label"
                         onClick={handleRevealRewrite}
                         disabled={isRevealingRewrite}
@@ -1394,7 +1505,7 @@ export default function Home() {
                       >
                         {isRevealingRewrite ? (
                           <span className="inline-flex items-center justify-center gap-2 text-center leading-snug">
-                            Making this clearer
+                            {rewriteLoadingLabel}
                             <span className="inline-flex gap-1" aria-hidden="true">
                               <span className="rewrite-loading-dot" />
                               <span className="rewrite-loading-dot [animation-delay:140ms]" />
@@ -1402,7 +1513,7 @@ export default function Home() {
                             </span>
                           </span>
                         ) : (
-                          "Show me a clearer version"
+                          rewriteRevealLabel
                         )}
                       </button>
                     </div>
@@ -1420,10 +1531,10 @@ export default function Home() {
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                         <div className="max-w-[32rem]">
                           <p className="text-sm font-semibold leading-5 tracking-normal text-[#172033]">
-                            A Clearer Version
+                            {rewriteTitle}
                           </p>
                           <p className="mt-1.5 text-sm leading-6 text-[#6B7280]">
-                            Use this as a starting point — edit it so it still sounds like you.
+                            {rewriteDescription}
                           </p>
                         </div>
                         <span className="inline-flex w-fit shrink-0 rounded-full bg-[#F3E8D6] px-2.5 py-1 text-[0.68rem] font-semibold text-[#64748B] ring-1 ring-[#D8CDBE]">
@@ -1437,11 +1548,11 @@ export default function Home() {
                       </div>
                       <button
                         type="button"
-                        aria-label="Copy clearer version"
+                        aria-label={copyRewriteLabel}
                         onClick={handleCopyRewrite}
                         className="mt-5 inline-flex min-h-[46px] items-center justify-center rounded-full bg-[#172033] px-5 py-2.5 text-sm font-semibold text-[#FFFFFF] shadow-[0_14px_34px_-28px_rgba(17,24,39,0.62)] outline-none transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#334155] focus-visible:ring-4 focus-visible:ring-[#334155]/20"
                       >
-                        {rewriteCopied ? "Copied" : "Copy clearer version"}
+                        {rewriteCopied ? "Copied" : copyRewriteLabel}
                       </button>
                     </div>
                   </div>
