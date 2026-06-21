@@ -76,7 +76,7 @@ const client = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
-const PROMPT_VERSION = "betweenlines-ci-v2.1.0";
+const PROMPT_VERSION = "betweenlines-ci-v2.1.1";
 const OPENAI_MODEL = "gpt-4.1-mini";
 const MESSAGE_CHARACTER_LIMIT = 750;
 const RELATIONSHIP_CONTEXT_CHARACTER_LIMIT = 180;
@@ -497,6 +497,22 @@ function completePerceptionGap(perceptionGap: string) {
   return `${perceptionGap} A clearer ask or softer opening would reduce that gap.`;
 }
 
+function hasRepeatedTentativeSofteners(message: string) {
+  const softenerPatterns = [
+    /\bsorry\b/i,
+    /\bprobably annoying\b/i,
+    /\breally busy\b/i,
+    /\bdon't want to be a pain\b/i,
+    /\bdon’t want to be a pain\b/i,
+    /\bwas wondering\b/i,
+    /\bjust (wanted|wondering|checking)\b/i,
+    /\bmaybe\b/i,
+    /\bhad a chance\b/i,
+  ];
+
+  return softenerPatterns.filter((pattern) => pattern.test(message)).length >= 2;
+}
+
 function softenAnalysisLanguage(text: string) {
   return text
     .replace(/\bmanipulative\b/gi, "emotionally high-pressure")
@@ -656,6 +672,7 @@ function createDemoAnalysis(
       trimmedMessage,
     );
   const isBlunt = trimmedMessage.length < 40 || soundsAngry;
+  const hasTentativeSofteners = hasRepeatedTentativeSofteners(trimmedMessage);
   const label = isDevelopment ? "Demo mode: " : "";
 
   let improvedRewrite =
@@ -850,7 +867,13 @@ function createDemoAnalysis(
     );
   const hasWidePerceptionGap =
     !soundsCalmOrHealthy && (hasHighPressure || isBlunt || soundsTentative);
-  const confidenceScore = soundsCalmOrHealthy ? 9 : isBlunt || soundsTentative ? 6 : 8;
+  const confidenceScore = soundsCalmOrHealthy
+    ? 9
+    : hasTentativeSofteners
+      ? 5
+      : isBlunt || soundsTentative
+        ? 6
+        : 8;
   const clarityScore = soundsCalmOrHealthy ? 9 : isBlunt ? 6 : 8;
   const communicationIntelligenceScore = createCommunicationIntelligenceScore({
     clarityScore,
@@ -882,6 +905,8 @@ function createDemoAnalysis(
         : "The emotional pressure is low enough for the content to stay easy to receive.",
       confidenceSignal: soundsTentative
         ? "The message signals some uncertainty through softening or indirect phrasing."
+        : hasTentativeSofteners
+          ? "The message is understandable, but repeated softeners make it sound less confident than the core request needs to be."
         : soundsCalmOrHealthy
           ? "The message sounds grounded and clear enough to send without much adjustment."
           : "The message signals enough confidence for the core point to be understood.",
@@ -917,6 +942,7 @@ function normalizeAnalysisResult(
   if (!value || typeof value !== "object") return fallback;
 
   const result = value as Record<string, unknown>;
+  const hasTentativeSofteners = hasRepeatedTentativeSofteners(message);
   const intentVsImpact =
     result.intentVsImpact &&
     typeof result.intentVsImpact === "object"
@@ -940,7 +966,9 @@ function normalizeAnalysisResult(
         : fallback.tone,
     confidenceScore:
       typeof result.confidenceScore === "number"
-        ? result.confidenceScore
+        ? hasTentativeSofteners
+          ? Math.min(result.confidenceScore, 6)
+          : result.confidenceScore
         : fallback.confidenceScore,
     clarityScore:
       typeof result.clarityScore === "number"
@@ -1292,7 +1320,7 @@ Analyze the draft and return ONLY valid JSON. Do not include markdown, comments,
 
 Required JSON keys:
 - tone: string
-- confidenceScore: number from 0-10
+- confidenceScore: number from 0-10. Do not confuse clarity with confidence; understandable messages can still sound tentative, over-apologetic, or under-confident.
 - clarityScore: number from 0-10
 - communicationIntelligenceScore: number from 0-100, where higher means clearer, steadier, lower-pressure, and better aligned with likely perception
 - classification: object with exactly these keys:
@@ -1327,6 +1355,8 @@ Analysis style rules:
 - Prefer "You want..." or "You may be trying..." over "The sender wants..." while keeping uncertainty words such as "may," "might," "could," and "can sometimes."
 - Do not overpersonalize, diagnose, or make the read sound like therapy.
 - Consider reassurance-seeking, frustration, uncertainty, fear of being ignored, guilt, avoidance, vulnerability, pressure, defensiveness, overexplaining, mixed signals, and indirectness.
+- Do not confuse clarity with confidence. A message can be understandable but still tentative, over-apologetic, or under-confident.
+- If the message contains repeated softeners such as "sorry," "I don't want to be a pain," "maybe," "just wondering," or similar language, avoid labeling it as confident unless the overall tone is clearly assured.
 - Name likely perception only when it helps the user understand communication impact.
 - If the message is serious, vulnerable, or high-stakes, be sincere. If it is clear, calm, confident, or healthy, say that directly.
 - The intentVsImpact section should separate the user's likely good intent from the way the recipient may receive it.

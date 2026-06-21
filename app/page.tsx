@@ -469,6 +469,32 @@ function isClearMessageResult(result: AnalysisResult) {
   );
 }
 
+function hasTentativeApologeticSignal(result: AnalysisResult, message: string) {
+  const messageText = message.toLowerCase();
+  const analysisText = getAnalysisText(result, message);
+  const softenerPatterns = [
+    /\bsorry\b/,
+    /\bprobably annoying\b/,
+    /\breally busy\b/,
+    /\bdon't want to be a pain\b/,
+    /\bdon’t want to be a pain\b/,
+    /\bwas wondering\b/,
+    /\bjust (wanted|wondering|checking)\b/,
+    /\bmaybe\b/,
+    /\bhad a chance\b/,
+  ];
+  const softenerCount = softenerPatterns.filter((pattern) =>
+    pattern.test(messageText),
+  ).length;
+
+  return (
+    softenerCount >= 2 ||
+    /over-apolog|overapolog|tentative|under-confident|low-confidence|softened and uncertain/.test(
+      analysisText,
+    )
+  );
+}
+
 function getSignaturePhrases(result: AnalysisResult, message: string) {
   const messageText = message.toLowerCase();
   const matchedCategories = signaturePhrases.filter((phrase) =>
@@ -485,6 +511,10 @@ function getReadSeverity(result: AnalysisResult, message: string) {
 
   if (isClearMessageResult(result)) {
     return "Looks Clear";
+  }
+
+  if (hasTentativeApologeticSignal(result, message)) {
+    return "Over-apologetic";
   }
 
   if (
