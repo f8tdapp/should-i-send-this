@@ -11,6 +11,8 @@
 - Timeout: 20 seconds
 - Daily analysis limit in code: 5 per IP/day
 - Burst limit in code: 3 per IP/30 seconds
+- Feedback limit in code: 10 submissions per IP/hour
+- Production requests fail safely when Upstash or OpenAI configuration is missing
 - Production enforcement and current provider prices: **TBD**
 
 ## Cost drivers
@@ -31,7 +33,7 @@
 
 ### Upstash/rate limiting
 
-- Redis commands per analysis and feedback path.
+- Redis commands for analysis and feedback rate-limit checks.
 - Database plan, request volume, storage, bandwidth, and region.
 - Effect of burst and daily checks on command count.
 
@@ -79,7 +81,7 @@ For each scenario, record assumptions about success rate, retries, free/paid mix
 - Review output-token limits against actual useful response length.
 - Choose models by measured quality per cost, not price alone; keep a synthetic evaluation gate for model changes.
 - Separate demo/test traffic from production metrics and cost reporting.
-- Add abuse controls for feedback-only endpoints if evidence warrants it.
+- Monitor the feedback-only 10-per-hour limit and adjust only from real usage evidence.
 - Establish a safe degraded mode and kill switch before paid acquisition.
 
 ## Decision thresholds

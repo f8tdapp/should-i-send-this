@@ -12,6 +12,8 @@ BetweenLines AI is designed as a privacy-first, pre-send communication-guidance 
 - The raw draft must be transmitted to the application server and AI provider to generate a live result.
 - Application code does not intentionally write raw messages to an app database.
 - The OpenAI request sets `store: false` where supported by the configured API.
+- Production analysis fails safely instead of returning demo output when the OpenAI key is missing.
+- Production analysis and feedback fail safely when Upstash rate limiting is not configured or unavailable.
 - Application error/feedback logging is designed to exclude raw drafts.
 - Vercel/platform logs, OpenAI account/project retention, network/security systems, and production access controls still require external confirmation.
 
@@ -20,8 +22,8 @@ BetweenLines AI is designed as a privacy-first, pre-send communication-guidance 
 Feedback-only requests are intended to contain:
 
 - An allowlisted feedback label.
-- Derived classification and bounded score metadata.
-- Rewrite-visible state and a rounded character-count signal.
+- An allowlisted severity value and bounded score metadata.
+- Rewrite-visible state and a bounded character count; server logs bucket the count.
 - Prompt/model/success metadata available to the server.
 
 They must contain:
@@ -34,10 +36,12 @@ They must contain:
 
 Only derived metadata should be retained or used for aggregate quality work. This behavior should be reverified in browser network requests, application logs, analytics events, and production infrastructure after material changes.
 
+Feedback-only requests are limited to 10 submissions per IP/hour in non-development environments and do not call OpenAI. Unknown severity text is discarded rather than logged.
+
 ## Analytics and copied content
 
 - Browser analytics are limited in code to coarse derived properties; raw drafts and full results must never be analytics properties.
-- Copied insights omit the original message. Copying a rewrite is an explicit user action.
+- Copied insights omit the original message and the on-screen Most Revealing Line quote. Copying a rewrite is an explicit user action.
 - Vercel Analytics/Speed Insights and PostHog activation, configuration, geography, access, and retention need production confirmation.
 
 ## Safety and legal posture
@@ -66,7 +70,7 @@ Only derived metadata should be retained or used for aggregate quality work. Thi
 - [ ] Confirm Upstash contains only rate-limit data and review IP handling/retention.
 - [ ] Confirm PostHog events, settings, retention, consent needs, and production activation.
 - [ ] Inspect real production-like feedback and analytics payloads.
-- [ ] Review feedback-only abuse/rate limiting.
+- [ ] Verify analysis and feedback rate limits in the deployed production environment.
 - [ ] Establish incident response, deletion/contact handling, access review, and vendor register.
 - [ ] Obtain legal review of privacy, terms, disclaimer, cookies/analytics, age/territory, and data-transfer requirements.
 - [ ] Keep public privacy claims aligned with verified infrastructure—not only application code.

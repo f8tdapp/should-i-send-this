@@ -83,6 +83,19 @@ const RELATIONSHIP_CONTEXT_CHARACTER_LIMIT = 180;
 const DESIRED_TONE_CHARACTER_LIMIT = 80;
 const MESSAGE_GOAL_CHARACTER_LIMIT = 160;
 const OPENAI_TIMEOUT_MS = 20_000;
+const ALLOWLISTED_FEEDBACK_SEVERITIES = new Set([
+  "Looks Clear",
+  "Over-apologetic",
+  "Calm",
+  "Confident",
+  "Overexplaining",
+  "Defensive",
+  "Detached",
+  "Emotionally Pressured",
+  "Emotionally Loaded",
+  "Thoughtful",
+  "Unclear",
+]);
 const ALLOWLISTED_FEEDBACK_TAGS = new Set([
   "accurate",
   "unclear",
@@ -102,6 +115,10 @@ const RATE_LIMITED_MESSAGE =
   "You've used today's private reads. Give it some time and try again later.";
 const BURST_RATE_LIMITED_MESSAGE =
   "Tiny pause. Give it a moment before the next interpretation.";
+const FEEDBACK_RATE_LIMITED_MESSAGE =
+  "Thanks — that's enough feedback for now. Please try again later.";
+const SERVICE_UNAVAILABLE_MESSAGE =
+  "Analysis is temporarily unavailable. Please try again later.";
 const TIMEOUT_MESSAGE =
   "This is taking longer than expected. Your message can wait; try again in a moment.";
 const GENERIC_ERROR_MESSAGE =
@@ -130,6 +147,16 @@ const burstRateLimit = redis
       prefix: "textpanic:analyze:burst",
     })
   : null;
+
+const feedbackRateLimit = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(10, "1 h"),
+      prefix: "betweenlines:feedback:hourly",
+    })
+  : null;
+
+let hasLoggedMissingRateLimitConfiguration = false;
 
 function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -287,8 +314,9 @@ function getSafeFeedbackMetadata(
   const safeMetadata: SafeFeedbackMetadataInput = {
     characterCount: getBoundedNumber(record.characterCount, 0, MESSAGE_CHARACTER_LIMIT),
     severity:
-      typeof record.severity === "string"
-        ? record.severity.trim().slice(0, 40)
+      typeof record.severity === "string" &&
+      ALLOWLISTED_FEEDBACK_SEVERITIES.has(record.severity)
+        ? record.severity
         : undefined,
     confidenceScore: getBoundedNumber(record.confidenceScore, 0, 10),
     clarityScore: getBoundedNumber(record.clarityScore, 0, 10),
@@ -383,13 +411,29 @@ async function checkRateLimit(ip: string) {
   }
 
   if (!dailyRateLimit || !burstRateLimit) {
-    return { success: true };
+    if (!hasLoggedMissingRateLimitConfiguration) {
+      console.error("Analyze: rate limiting is not configured.", {
+        hasUpstashUrl: Boolean(process.env.UPSTASH_REDIS_REST_URL),
+        hasUpstashToken: Boolean(process.env.UPSTASH_REDIS_REST_TOKEN),
+      });
+      hasLoggedMissingRateLimitConfiguration = true;
+    }
+
+    return { success: false, code: "rate_limit_unavailable" };
   }
 
-  const [dailyLimit, burstLimit] = await Promise.all([
-    dailyRateLimit.limit(ip),
-    burstRateLimit.limit(ip),
-  ]);
+  let dailyLimit;
+  let burstLimit;
+
+  try {
+    [dailyLimit, burstLimit] = await Promise.all([
+      dailyRateLimit.limit(ip),
+      burstRateLimit.limit(ip),
+    ]);
+  } catch (error) {
+    console.error("Analyze: rate limit check failed.", getSafeErrorDetails(error));
+    return { success: false, code: "rate_limit_unavailable" };
+  }
 
   if (!dailyLimit.success) {
     return {
@@ -411,6 +455,38 @@ async function checkRateLimit(ip: string) {
     success: true,
     reset: Math.max(dailyLimit.reset, burstLimit.reset),
   };
+}
+
+async function checkFeedbackRateLimit(ip: string) {
+  if (process.env.NODE_ENV === "development") {
+    return { success: true };
+  }
+
+  if (!feedbackRateLimit) {
+    if (!hasLoggedMissingRateLimitConfiguration) {
+      console.error("Analyze: rate limiting is not configured.", {
+        hasUpstashUrl: Boolean(process.env.UPSTASH_REDIS_REST_URL),
+        hasUpstashToken: Boolean(process.env.UPSTASH_REDIS_REST_TOKEN),
+      });
+      hasLoggedMissingRateLimitConfiguration = true;
+    }
+
+    return { success: false, code: "rate_limit_unavailable" };
+  }
+
+  try {
+    const feedbackLimit = await feedbackRateLimit.limit(ip);
+
+    return feedbackLimit.success
+      ? { success: true }
+      : { success: false, code: "feedback_limit_exceeded" };
+  } catch (error) {
+    console.error(
+      "Analyze: feedback rate limit check failed.",
+      getSafeErrorDetails(error),
+    );
+    return { success: false, code: "rate_limit_unavailable" };
+  }
 }
 
 function inferDemoContext(message: string) {
@@ -1179,6 +1255,34 @@ export async function POST(request: Request) {
     if (record.feedbackOnly === true) {
       const safeFeedback = getSafeFeedback(record);
       const debug = createDebugMetadata({ success: true });
+      const feedbackLimit = await checkFeedbackRateLimit(getRequestIp(request));
+
+      if (!feedbackLimit.success) {
+        const isUnavailable = feedbackLimit.code === "rate_limit_unavailable";
+
+        return jsonResponse(
+          withDevelopmentDebug(
+            {
+              error: isUnavailable
+                ? SERVICE_UNAVAILABLE_MESSAGE
+                : FEEDBACK_RATE_LIMITED_MESSAGE,
+              code: feedbackLimit.code,
+            },
+            createDebugMetadata({
+              success: false,
+              failureReason: feedbackLimit.code,
+            }),
+          ),
+          isUnavailable ? 503 : 429,
+        );
+      }
+
+      if (!safeFeedback) {
+        return jsonResponse(
+          withDevelopmentDebug({ ok: false }, debug),
+          400,
+        );
+      }
 
       trackSafeFeedback({
         feedback: safeFeedback,
@@ -1187,8 +1291,8 @@ export async function POST(request: Request) {
       });
 
       return jsonResponse(
-        withDevelopmentDebug({ ok: Boolean(safeFeedback) }, debug),
-        safeFeedback ? 200 : 400,
+        withDevelopmentDebug({ ok: true }, debug),
+        200,
       );
     }
   }
@@ -1213,6 +1317,7 @@ export async function POST(request: Request) {
   const rateLimit = await checkRateLimit(getRequestIp(request));
 
   if (!rateLimit.success) {
+    const isUnavailable = rateLimit.code === "rate_limit_unavailable";
     const debug = createDebugMetadata({
       success: false,
       failureReason: rateLimit.code,
@@ -1222,18 +1327,33 @@ export async function POST(request: Request) {
       withDevelopmentDebug(
         {
           error:
-            rateLimit.code === "burst_limit_exceeded"
-              ? BURST_RATE_LIMITED_MESSAGE
-              : RATE_LIMITED_MESSAGE,
+            isUnavailable
+              ? SERVICE_UNAVAILABLE_MESSAGE
+              : rateLimit.code === "burst_limit_exceeded"
+                ? BURST_RATE_LIMITED_MESSAGE
+                : RATE_LIMITED_MESSAGE,
           code: rateLimit.code,
         },
         debug,
       ),
-      429,
+      isUnavailable ? 503 : 429,
     );
   }
 
   if (!client) {
+    if (process.env.NODE_ENV !== "development") {
+      console.error("Analyze: OPENAI_API_KEY is not configured.");
+      const debug = createDebugMetadata({
+        success: false,
+        failureReason: "openai_api_key_missing",
+      });
+
+      return jsonResponse(
+        withDevelopmentDebug({ error: SERVICE_UNAVAILABLE_MESSAGE }, debug),
+        503,
+      );
+    }
+
     console.error(
       "Analyze: OPENAI_API_KEY is not configured. Returning demo analysis fallback.",
     );
