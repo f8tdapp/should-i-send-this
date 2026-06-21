@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { captureBetweenLinesEvent } from "./lib/analytics";
 
@@ -1646,6 +1647,27 @@ export default function Home() {
           </section>
 
         </div>
+
+        <footer className="mx-auto mt-5 w-full max-w-[60rem] px-2 text-center text-[#F8FAFC] sm:mt-6">
+          <p className="text-xs font-medium leading-5 text-[#F8FAFC]/86">
+            BetweenLines AI provides communication guidance only. You are
+            responsible for what you choose to send.
+          </p>
+          <nav
+            aria-label="Legal pages"
+            className="mt-2.5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold"
+          >
+            <Link className="underline decoration-[#F8FAFC]/45 underline-offset-4 transition hover:text-white" href="/privacy">
+              Privacy
+            </Link>
+            <Link className="underline decoration-[#F8FAFC]/45 underline-offset-4 transition hover:text-white" href="/terms">
+              Terms
+            </Link>
+            <Link className="underline decoration-[#F8FAFC]/45 underline-offset-4 transition hover:text-white" href="/disclaimer">
+              Disclaimer
+            </Link>
+          </nav>
+        </footer>
       </main>
     </div>
   );
