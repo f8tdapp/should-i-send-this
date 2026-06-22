@@ -20,6 +20,28 @@ if (!baseUrl) {
 const ENDPOINT = `${baseUrl.replace(/\/+$/, "")}/api/analyze`;
 const SYNTHETIC_MESSAGE = "Can you send me the report when you get a chance?";
 const rateLimitDebugToken = process.env.RATE_LIMIT_DEBUG_TOKEN;
+const RATE_LIMIT_COOKIE_NAME = "betweenlines_rate_limit";
+let rateLimitCookie;
+
+async function initializeRateLimitCookie() {
+  const response = await fetch(baseUrl, { redirect: "follow" });
+  const setCookieHeaders =
+    typeof response.headers.getSetCookie === "function"
+      ? response.headers.getSetCookie()
+      : [response.headers.get("set-cookie")].filter(Boolean);
+  const rateLimitSetCookie = setCookieHeaders.find((value) =>
+    value.startsWith(`${RATE_LIMIT_COOKIE_NAME}=`),
+  );
+
+  if (!rateLimitSetCookie) {
+    throw new Error(
+      `No ${RATE_LIMIT_COOKIE_NAME} cookie was received. Verify RATE_LIMIT_COOKIE_SECRET is configured on the deployed environment.`,
+    );
+  }
+
+  rateLimitCookie = rateLimitSetCookie.split(";", 1)[0];
+  console.log("Signed anonymous rate-limit cookie captured and reused.");
+}
 
 async function postJson(body) {
   const response = await fetch(ENDPOINT, {
@@ -29,6 +51,7 @@ async function postJson(body) {
       ...(rateLimitDebugToken
         ? { "x-rate-limit-debug-token": rateLimitDebugToken }
         : {}),
+      ...(rateLimitCookie ? { Cookie: rateLimitCookie } : {}),
     },
     body: JSON.stringify(body),
   });
@@ -162,6 +185,7 @@ async function main() {
   console.log("BetweenLines AI production rate-limit test script");
   console.log(`Endpoint: ${ENDPOINT}`);
 
+  await initializeRateLimitCookie();
   await runBurstTest();
   await runFeedbackTest();
 

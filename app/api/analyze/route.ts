@@ -2,6 +2,12 @@ import OpenAI from "openai";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 import { createHash } from "node:crypto";
+import type { NextRequest } from "next/server";
+
+import {
+  RATE_LIMIT_COOKIE_NAME,
+  verifySignedRateLimitCookieValue,
+} from "@/app/lib/rate-limit-identity";
 
 type AnalysisResult = {
   tone: string;
@@ -230,6 +236,15 @@ function getRequestIp(request: Request) {
   const firstForwardedIp = forwardedFor?.split(",")[0]?.trim();
 
   return firstForwardedIp || "anonymous";
+}
+
+function getRateLimitIdentifier(request: NextRequest) {
+  const signedCookieId = verifySignedRateLimitCookieValue(
+    request.cookies.get(RATE_LIMIT_COOKIE_NAME)?.value,
+    process.env.RATE_LIMIT_COOKIE_SECRET,
+  );
+
+  return signedCookieId ? `cookie:${signedCookieId}` : getRequestIp(request);
 }
 
 function getShortSha256Hash(value: string | null | undefined) {
@@ -1388,7 +1403,7 @@ function trackSafeFeedback({
   });
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   let body: unknown;
 
   try {
@@ -1415,7 +1430,9 @@ export async function POST(request: Request) {
     if (record.feedbackOnly === true) {
       const safeFeedback = getSafeFeedback(record);
       const debug = createDebugMetadata({ success: true });
-      const feedbackLimit = await checkFeedbackRateLimit(getRequestIp(request));
+      const feedbackLimit = await checkFeedbackRateLimit(
+        getRateLimitIdentifier(request),
+      );
 
       if (!feedbackLimit.success) {
         const isUnavailable = feedbackLimit.code === "rate_limit_unavailable";
@@ -1479,7 +1496,7 @@ export async function POST(request: Request) {
   const message = validatedMessage.message;
   const optionalContext = validatedMessage.context;
   const safeFeedback = validatedMessage.feedback;
-  const rateLimitIdentifier = getRequestIp(request);
+  const rateLimitIdentifier = getRateLimitIdentifier(request);
   const rateLimit = await checkRateLimit(rateLimitIdentifier);
   const rateLimitDebugHeaders = getRateLimitDebugHeaders(
     request,
