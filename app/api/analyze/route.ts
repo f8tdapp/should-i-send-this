@@ -232,6 +232,26 @@ function getRequestIp(request: Request) {
   return firstForwardedIp || "anonymous";
 }
 
+function getShortSha256Hash(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+
+  return createHash("sha256").update(value).digest("hex").slice(0, 12);
+}
+
+function setHashedDebugHeader(
+  headers: Headers,
+  name: string,
+  value: string | null | undefined,
+) {
+  const hash = getShortSha256Hash(value);
+
+  if (hash) {
+    headers.set(name, hash);
+  }
+}
+
 function getRateLimitDebugHeaders(
   request: Request,
   identifier: string,
@@ -253,10 +273,8 @@ function getRateLimitDebugHeaders(
     return headers;
   }
 
-  const identifierHash = createHash("sha256")
-    .update(identifier)
-    .digest("hex")
-    .slice(0, 12);
+  const forwardedFor = request.headers.get("x-forwarded-for");
+  const firstForwardedFor = forwardedFor?.split(",")[0]?.trim();
 
   headers.set("x-debug-analysis-daily-limit", String(ANALYSIS_DAILY_LIMIT));
   headers.set("x-debug-analysis-burst-limit", String(ANALYSIS_BURST_LIMIT));
@@ -264,7 +282,42 @@ function getRateLimitDebugHeaders(
     "x-debug-analysis-burst-window-seconds",
     String(ANALYSIS_BURST_WINDOW_SECONDS),
   );
-  headers.set("x-debug-rate-limit-id-hash", identifierHash);
+  setHashedDebugHeader(headers, "x-debug-rate-limit-id-hash", identifier);
+  setHashedDebugHeader(
+    headers,
+    "x-debug-x-forwarded-for-full-hash",
+    forwardedFor,
+  );
+  setHashedDebugHeader(
+    headers,
+    "x-debug-x-forwarded-for-first-hash",
+    firstForwardedFor,
+  );
+  setHashedDebugHeader(
+    headers,
+    "x-debug-x-real-ip-hash",
+    request.headers.get("x-real-ip"),
+  );
+  setHashedDebugHeader(
+    headers,
+    "x-debug-x-vercel-forwarded-for-hash",
+    request.headers.get("x-vercel-forwarded-for"),
+  );
+  setHashedDebugHeader(
+    headers,
+    "x-debug-forwarded-hash",
+    request.headers.get("forwarded"),
+  );
+  setHashedDebugHeader(
+    headers,
+    "x-debug-x-vercel-proxied-for-hash",
+    request.headers.get("x-vercel-proxied-for"),
+  );
+  setHashedDebugHeader(
+    headers,
+    "x-debug-x-vercel-ip-hash",
+    request.headers.get("x-vercel-ip"),
+  );
 
   if (typeof rateLimit.dailySuccess === "boolean") {
     headers.set("x-debug-daily-success", String(rateLimit.dailySuccess));
