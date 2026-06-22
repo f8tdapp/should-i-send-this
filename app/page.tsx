@@ -80,13 +80,16 @@ const MESSAGE_CHARACTER_LIMIT = 750;
 const ACTIVE_INSIGHT_CARD_CLASS =
   "bg-[#172033] text-[#FFFFFF] ring-[#9CA3AF] shadow-[0_34px_88px_-46px_rgba(17,24,39,0.68)]";
 
-const feedbackOptions: { label: FeedbackLabel; text: string }[] = [
+const readFeedbackOptions: { label: FeedbackLabel; text: string }[] = [
   { label: "felt_accurate", text: "Felt accurate" },
   { label: "overreacted", text: "Overreacted" },
   { label: "too_vague", text: "Too vague" },
   { label: "missed_point", text: "Missed the point" },
-  { label: "rewrite_natural", text: "Rewrite sounded natural" },
-  { label: "rewrite_fake", text: "Rewrite sounded fake" },
+];
+
+const rewriteFeedbackOptions: { label: FeedbackLabel; text: string }[] = [
+  { label: "rewrite_natural", text: "Natural" },
+  { label: "rewrite_fake", text: "Sounded unnatural" },
 ];
 
 const communicationStyleOptions: {
@@ -1584,48 +1587,6 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="border-t border-[#E5DED3] pt-3.5">
-                    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-xs font-medium leading-5 text-[#6B7280]">
-                        Was this read useful?
-                      </p>
-                      <div
-                        className="flex flex-wrap gap-1.5"
-                        aria-label="Feedback options"
-                      >
-                        {feedbackOptions.map((option) => {
-                          const isSelected =
-                            selectedFeedbackLabel === option.label;
-
-                          return (
-                            <button
-                              key={option.label}
-                              type="button"
-                              onClick={() => handleFeedbackClick(option.label)}
-                              disabled={feedbackStatus === "saving"}
-                              className={`inline-flex min-h-[30px] items-center justify-center rounded-full px-2.5 py-1 text-[0.72rem] font-semibold leading-4 transition duration-200 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/12 disabled:cursor-wait disabled:opacity-70 ${
-                                isSelected
-                                  ? "bg-[#172033] text-[#FFFFFF] ring-1 ring-[#172033]"
-                                  : "bg-[#F8F4EC] text-[#64748B] ring-1 ring-[#E5DED3] hover:bg-[#EFE8DD] hover:text-[#334155]"
-                              }`}
-                            >
-                              {option.text}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                    <p
-                      className="mt-2 min-h-5 text-xs font-medium leading-5 text-[#64748B]"
-                      role="status"
-                    >
-                      {feedbackStatus === "saved"
-                        ? "Thanks — feedback saved."
-                        : feedbackStatus === "error"
-                          ? "Feedback did not save. Try one more time."
-                          : ""}
-                    </p>
-                  </div>
                 </div>
               ) : (
                 <div className="relative overflow-hidden rounded-[1.45rem] bg-[#FFFFFF] px-5 py-5 shadow-[0_16px_46px_-42px_rgba(17,24,39,0.34)] ring-1 ring-[#E5DED3] sm:px-6 sm:py-6">
@@ -1641,6 +1602,98 @@ export default function Home() {
               )}
             </div>
           </section>
+
+          {result ? (
+            <section
+              aria-labelledby="feedback-heading"
+              className="mt-4 rounded-[1.45rem] bg-[#F8F4EC] px-4 py-4 shadow-[0_14px_38px_-36px_rgba(17,24,39,0.28)] ring-1 ring-[#D8D2C7] sm:mt-5 sm:px-5 sm:py-5"
+            >
+              <div className="max-w-[38rem]">
+                <h2
+                  id="feedback-heading"
+                  className="text-sm font-semibold leading-5 text-[#172033] sm:text-base"
+                >
+                  Help improve BetweenLines
+                </h2>
+                <p className="mt-1 text-xs leading-5 text-[#6B7280]">
+                  A quick signal helps make future reads more useful.
+                </p>
+              </div>
+
+              <div
+                className={`mt-4 grid gap-4 ${showRewrite ? "sm:grid-cols-2" : ""}`}
+              >
+                <fieldset>
+                  <legend className="text-xs font-semibold leading-5 text-[#334155]">
+                    Did this read feel right?
+                  </legend>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {readFeedbackOptions.map((option) => {
+                      const isSelected =
+                        selectedFeedbackLabel === option.label;
+
+                      return (
+                        <button
+                          key={option.label}
+                          type="button"
+                          onClick={() => handleFeedbackClick(option.label)}
+                          disabled={feedbackStatus === "saving"}
+                          className={`inline-flex min-h-10 items-center justify-center rounded-full px-3 py-2 text-xs font-semibold leading-4 transition duration-200 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/12 disabled:cursor-wait disabled:opacity-70 ${
+                            isSelected
+                              ? "bg-[#172033] text-[#FFFFFF] ring-1 ring-[#172033]"
+                              : "bg-[#FFFDF8] text-[#64748B] ring-1 ring-[#D8D2C7] hover:bg-[#EFE8DD] hover:text-[#334155]"
+                          }`}
+                        >
+                          {option.text}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </fieldset>
+
+                {showRewrite ? (
+                  <fieldset className="border-t border-[#E5DED3] pt-4 sm:border-l sm:border-t-0 sm:pl-4 sm:pt-0">
+                    <legend className="text-xs font-semibold leading-5 text-[#334155]">
+                      How was the rewrite?
+                    </legend>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {rewriteFeedbackOptions.map((option) => {
+                        const isSelected =
+                          selectedFeedbackLabel === option.label;
+
+                        return (
+                          <button
+                            key={option.label}
+                            type="button"
+                            onClick={() => handleFeedbackClick(option.label)}
+                            disabled={feedbackStatus === "saving"}
+                            className={`inline-flex min-h-10 items-center justify-center rounded-full px-3 py-2 text-xs font-semibold leading-4 transition duration-200 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/12 disabled:cursor-wait disabled:opacity-70 ${
+                              isSelected
+                                ? "bg-[#172033] text-[#FFFFFF] ring-1 ring-[#172033]"
+                                : "bg-[#FFFDF8] text-[#64748B] ring-1 ring-[#D8D2C7] hover:bg-[#EFE8DD] hover:text-[#334155]"
+                            }`}
+                          >
+                            {option.text}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </fieldset>
+                ) : null}
+              </div>
+
+              <p
+                className="mt-3 min-h-5 text-xs font-medium leading-5 text-[#64748B]"
+                role="status"
+              >
+                {feedbackStatus === "saved"
+                  ? "Thanks — this helps improve future reads."
+                  : feedbackStatus === "error"
+                    ? "Feedback did not save. Try one more time."
+                    : ""}
+              </p>
+            </section>
+          ) : null}
 
         </div>
 
