@@ -19,7 +19,6 @@ if (!baseUrl) {
 
 const ENDPOINT = `${baseUrl.replace(/\/+$/, "")}/api/analyze`;
 const SYNTHETIC_MESSAGE = "Can you send me the report when you get a chance?";
-const rateLimitDebugToken = process.env.RATE_LIMIT_DEBUG_TOKEN;
 const RATE_LIMIT_COOKIE_NAME = "betweenlines_rate_limit";
 let rateLimitCookie;
 
@@ -48,9 +47,6 @@ async function postJson(body) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(rateLimitDebugToken
-        ? { "x-rate-limit-debug-token": rateLimitDebugToken }
-        : {}),
       ...(rateLimitCookie ? { Cookie: rateLimitCookie } : {}),
     },
     body: JSON.stringify(body),
@@ -69,11 +65,6 @@ async function postJson(body) {
     status: response.status,
     body: parsed,
     retryAfter: response.headers.get("Retry-After") || undefined,
-    debugHeaders: Object.fromEntries(
-      [...response.headers.entries()].filter(([name]) =>
-        name.startsWith("x-debug-"),
-      ),
-    ),
   };
 }
 
@@ -95,15 +86,6 @@ async function runBurstTest() {
       typeof result.body === "string" ? result.body : JSON.stringify(result.body)
     }`);
     console.log(`  Retry-After: ${result.retryAfter || "not provided"}`);
-    const debugHeaderEntries = Object.entries(result.debugHeaders);
-    if (debugHeaderEntries.length === 0) {
-      console.log("  debug headers: not provided");
-    } else {
-      console.log("  debug headers:");
-      for (const [name, value] of debugHeaderEntries) {
-        console.log(`    ${name}: ${value}`);
-      }
-    }
   }
 }
 

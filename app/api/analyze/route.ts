@@ -1,7 +1,6 @@
 import OpenAI from "openai";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
-import { createHash } from "node:crypto";
 import type { NextRequest } from "next/server";
 
 import {
@@ -220,15 +219,15 @@ function withDevelopmentDebug<T extends Record<string, unknown>>(
   return { ...body, debug };
 }
 
-function analysisResponse(analysis: AnalysisResult, responseHeaders?: HeadersInit) {
+function analysisResponse(analysis: AnalysisResult) {
   if (process.env.NODE_ENV === "development") {
-    return jsonResponse(analysis, 200, responseHeaders);
+    return jsonResponse(analysis);
   }
 
   const publicAnalysis = { ...analysis };
   delete (publicAnalysis as Partial<AnalysisResult>).debug;
 
-  return jsonResponse(publicAnalysis, 200, responseHeaders);
+  return jsonResponse(publicAnalysis);
 }
 
 function getRequestIp(request: Request) {
@@ -245,112 +244,6 @@ function getRateLimitIdentifier(request: NextRequest) {
   );
 
   return signedCookieId ? `cookie:${signedCookieId}` : getRequestIp(request);
-}
-
-function getShortSha256Hash(value: string | null | undefined) {
-  if (!value) {
-    return null;
-  }
-
-  return createHash("sha256").update(value).digest("hex").slice(0, 12);
-}
-
-function setHashedDebugHeader(
-  headers: Headers,
-  name: string,
-  value: string | null | undefined,
-) {
-  const hash = getShortSha256Hash(value);
-
-  if (hash) {
-    headers.set(name, hash);
-  }
-}
-
-function getRateLimitDebugHeaders(
-  request: Request,
-  identifier: string,
-  rateLimit: {
-    dailySuccess?: boolean;
-    burstSuccess?: boolean;
-    burstRemaining?: number;
-    burstReset?: number;
-  },
-  responseHeaders?: HeadersInit,
-) {
-  const headers = new Headers(responseHeaders);
-  const debugToken = process.env.RATE_LIMIT_DEBUG_TOKEN;
-
-  if (
-    !debugToken ||
-    request.headers.get("x-rate-limit-debug-token") !== debugToken
-  ) {
-    return headers;
-  }
-
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const firstForwardedFor = forwardedFor?.split(",")[0]?.trim();
-
-  headers.set("x-debug-analysis-daily-limit", String(ANALYSIS_DAILY_LIMIT));
-  headers.set("x-debug-analysis-burst-limit", String(ANALYSIS_BURST_LIMIT));
-  headers.set(
-    "x-debug-analysis-burst-window-seconds",
-    String(ANALYSIS_BURST_WINDOW_SECONDS),
-  );
-  setHashedDebugHeader(headers, "x-debug-rate-limit-id-hash", identifier);
-  setHashedDebugHeader(
-    headers,
-    "x-debug-x-forwarded-for-full-hash",
-    forwardedFor,
-  );
-  setHashedDebugHeader(
-    headers,
-    "x-debug-x-forwarded-for-first-hash",
-    firstForwardedFor,
-  );
-  setHashedDebugHeader(
-    headers,
-    "x-debug-x-real-ip-hash",
-    request.headers.get("x-real-ip"),
-  );
-  setHashedDebugHeader(
-    headers,
-    "x-debug-x-vercel-forwarded-for-hash",
-    request.headers.get("x-vercel-forwarded-for"),
-  );
-  setHashedDebugHeader(
-    headers,
-    "x-debug-forwarded-hash",
-    request.headers.get("forwarded"),
-  );
-  setHashedDebugHeader(
-    headers,
-    "x-debug-x-vercel-proxied-for-hash",
-    request.headers.get("x-vercel-proxied-for"),
-  );
-  setHashedDebugHeader(
-    headers,
-    "x-debug-x-vercel-ip-hash",
-    request.headers.get("x-vercel-ip"),
-  );
-
-  if (typeof rateLimit.dailySuccess === "boolean") {
-    headers.set("x-debug-daily-success", String(rateLimit.dailySuccess));
-  }
-
-  if (typeof rateLimit.burstSuccess === "boolean") {
-    headers.set("x-debug-burst-success", String(rateLimit.burstSuccess));
-  }
-
-  if (typeof rateLimit.burstRemaining === "number") {
-    headers.set("x-debug-burst-remaining", String(rateLimit.burstRemaining));
-  }
-
-  if (typeof rateLimit.burstReset === "number") {
-    headers.set("x-debug-burst-reset", String(rateLimit.burstReset));
-  }
-
-  return headers;
 }
 
 function createDebugMetadata({
@@ -599,10 +492,6 @@ async function checkRateLimit(ip: string) {
       success: false,
       code: "daily_limit_exceeded",
       reset: dailyLimit.reset,
-      dailySuccess: dailyLimit.success,
-      burstSuccess: burstLimit.success,
-      burstRemaining: burstLimit.remaining,
-      burstReset: burstLimit.reset,
     };
   }
 
@@ -611,20 +500,12 @@ async function checkRateLimit(ip: string) {
       success: false,
       code: "burst_limit_exceeded",
       reset: burstLimit.reset,
-      dailySuccess: dailyLimit.success,
-      burstSuccess: burstLimit.success,
-      burstRemaining: burstLimit.remaining,
-      burstReset: burstLimit.reset,
     };
   }
 
   return {
     success: true,
     reset: Math.max(dailyLimit.reset, burstLimit.reset),
-    dailySuccess: dailyLimit.success,
-    burstSuccess: burstLimit.success,
-    burstRemaining: burstLimit.remaining,
-    burstReset: burstLimit.reset,
   };
 }
 
@@ -1498,11 +1379,6 @@ export async function POST(request: NextRequest) {
   const safeFeedback = validatedMessage.feedback;
   const rateLimitIdentifier = getRateLimitIdentifier(request);
   const rateLimit = await checkRateLimit(rateLimitIdentifier);
-  const rateLimitDebugHeaders = getRateLimitDebugHeaders(
-    request,
-    rateLimitIdentifier,
-    rateLimit,
-  );
 
   if (!rateLimit.success) {
     const isUnavailable = rateLimit.code === "rate_limit_unavailable";
@@ -1525,16 +1401,9 @@ export async function POST(request: NextRequest) {
         debug,
       ),
       isUnavailable ? 503 : 429,
-      getRateLimitDebugHeaders(
-        request,
-        rateLimitIdentifier,
-        rateLimit,
-        isUnavailable
-          ? undefined
-          : getRetryAfterHeaders(
-              "reset" in rateLimit ? rateLimit.reset : undefined,
-            ),
-      ),
+      isUnavailable
+        ? undefined
+        : getRetryAfterHeaders("reset" in rateLimit ? rateLimit.reset : undefined),
     );
   }
 
@@ -1549,7 +1418,6 @@ export async function POST(request: NextRequest) {
       return jsonResponse(
         withDevelopmentDebug({ error: SERVICE_UNAVAILABLE_MESSAGE }, debug),
         503,
-        rateLimitDebugHeaders,
       );
     }
 
@@ -1571,7 +1439,7 @@ export async function POST(request: NextRequest) {
       characterCount: message.length,
     });
 
-    return analysisResponse(analysis, rateLimitDebugHeaders);
+    return analysisResponse(analysis);
   }
 
   const abortController = new AbortController();
@@ -1768,7 +1636,7 @@ ${message}`;
         characterCount: message.length,
       });
 
-      return analysisResponse(analysis, rateLimitDebugHeaders);
+      return analysisResponse(analysis);
     }
 
     const successDebug = createDebugMetadata({
@@ -1800,7 +1668,7 @@ ${message}`;
       characterCount: message.length,
     });
 
-    return analysisResponse(analysis, rateLimitDebugHeaders);
+    return analysisResponse(analysis);
   } catch (error) {
     if (abortController.signal.aborted) {
       console.error("Analyze route OpenAI request timed out.");
@@ -1812,7 +1680,6 @@ ${message}`;
       return jsonResponse(
         withDevelopmentDebug({ error: TIMEOUT_MESSAGE }, debug),
         504,
-        rateLimitDebugHeaders,
       );
     }
 
@@ -1829,7 +1696,6 @@ ${message}`;
     return jsonResponse(
       withDevelopmentDebug({ error: GENERIC_ERROR_MESSAGE }, debug),
       502,
-      rateLimitDebugHeaders,
     );
   } finally {
     clearTimeout(timeout);
