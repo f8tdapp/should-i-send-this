@@ -9,11 +9,22 @@
 - Maximum output tokens: 780
 - Temperature: 0.2
 - Timeout: 20 seconds
-- Daily analysis limit in code: 5 per IP/day
-- Burst limit in code: 3 per IP/30 seconds
-- Feedback limit in code: 10 submissions per IP/hour
+- Daily analysis limit: configurable; default 5 per IP/day
+- Burst limit: configurable; default 3 per IP/30 seconds
+- Feedback limit: configurable; default 10 submissions per IP/hour
 - Production requests fail safely when Upstash or OpenAI configuration is missing
 - Production enforcement and current provider prices: **TBD**
+
+Server-only rate-limit variables:
+
+| Variable | Safe default |
+|---|---:|
+| `ANALYSIS_DAILY_LIMIT` | 5 |
+| `ANALYSIS_BURST_LIMIT` | 3 |
+| `ANALYSIS_BURST_WINDOW_SECONDS` | 30 |
+| `FEEDBACK_HOURLY_LIMIT` | 10 |
+
+Missing, non-integer, zero, or negative values fall back to the safe defaults. These names must not use the `NEXT_PUBLIC_` prefix.
 
 ## Cost drivers
 
@@ -81,7 +92,7 @@ For each scenario, record assumptions about success rate, retries, free/paid mix
 - Review output-token limits against actual useful response length.
 - Choose models by measured quality per cost, not price alone; keep a synthetic evaluation gate for model changes.
 - Separate demo/test traffic from production metrics and cost reporting.
-- Monitor the feedback-only 10-per-hour limit and adjust only from real usage evidence.
+- Monitor the configurable feedback limit and adjust only from real usage evidence.
 - Establish a safe degraded mode and kill switch before paid acquisition.
 
 ## Decision thresholds

@@ -76,6 +76,20 @@ const client = process.env.OPENAI_API_KEY
   ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   : null;
 
+function getPositiveIntegerEnv(name: string, fallback: number) {
+  const value = process.env[name];
+
+  if (!value) {
+    return fallback;
+  }
+
+  const parsedValue = Number(value);
+
+  return Number.isSafeInteger(parsedValue) && parsedValue > 0
+    ? parsedValue
+    : fallback;
+}
+
 const PROMPT_VERSION = "betweenlines-ci-v2.1.1";
 const OPENAI_MODEL = "gpt-4.1-mini";
 const MESSAGE_CHARACTER_LIMIT = 750;
@@ -83,6 +97,13 @@ const RELATIONSHIP_CONTEXT_CHARACTER_LIMIT = 180;
 const DESIRED_TONE_CHARACTER_LIMIT = 80;
 const MESSAGE_GOAL_CHARACTER_LIMIT = 160;
 const OPENAI_TIMEOUT_MS = 20_000;
+const ANALYSIS_DAILY_LIMIT = getPositiveIntegerEnv("ANALYSIS_DAILY_LIMIT", 5);
+const ANALYSIS_BURST_LIMIT = getPositiveIntegerEnv("ANALYSIS_BURST_LIMIT", 3);
+const ANALYSIS_BURST_WINDOW_SECONDS = getPositiveIntegerEnv(
+  "ANALYSIS_BURST_WINDOW_SECONDS",
+  30,
+);
+const FEEDBACK_HOURLY_LIMIT = getPositiveIntegerEnv("FEEDBACK_HOURLY_LIMIT", 10);
 const ALLOWLISTED_FEEDBACK_SEVERITIES = new Set([
   "Looks Clear",
   "Over-apologetic",
@@ -112,9 +133,9 @@ const ALLOWLISTED_FEEDBACK_TAGS = new Set([
   "rewrite_fake",
 ]);
 const RATE_LIMITED_MESSAGE =
-  "You've used today's private reads. Give it some time and try again later.";
+  "You've used today's private reads. Please try again tomorrow.";
 const BURST_RATE_LIMITED_MESSAGE =
-  "Tiny pause. Give it a moment before the next interpretation.";
+  "Too many reads in a short time. Please wait a moment and try again.";
 const FEEDBACK_RATE_LIMITED_MESSAGE =
   "Thanks — that's enough feedback for now. Please try again later.";
 const SERVICE_UNAVAILABLE_MESSAGE =
@@ -135,7 +156,7 @@ const redis =
 const dailyRateLimit = redis
   ? new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(5, "1 d"),
+      limiter: Ratelimit.slidingWindow(ANALYSIS_DAILY_LIMIT, "1 d"),
       prefix: "textpanic:analyze:daily",
     })
   : null;
@@ -143,7 +164,10 @@ const dailyRateLimit = redis
 const burstRateLimit = redis
   ? new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(3, "30 s"),
+      limiter: Ratelimit.slidingWindow(
+        ANALYSIS_BURST_LIMIT,
+        `${ANALYSIS_BURST_WINDOW_SECONDS} s`,
+      ),
       prefix: "textpanic:analyze:burst",
     })
   : null;
@@ -151,18 +175,31 @@ const burstRateLimit = redis
 const feedbackRateLimit = redis
   ? new Ratelimit({
       redis,
-      limiter: Ratelimit.slidingWindow(10, "1 h"),
+      limiter: Ratelimit.slidingWindow(FEEDBACK_HOURLY_LIMIT, "1 h"),
       prefix: "betweenlines:feedback:hourly",
     })
   : null;
 
 let hasLoggedMissingRateLimitConfiguration = false;
 
-function jsonResponse(body: unknown, status = 200) {
+function jsonResponse(body: unknown, status = 200, responseHeaders?: HeadersInit) {
+  const headers = new Headers(responseHeaders);
+  headers.set("Content-Type", "application/json");
+
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers,
   });
+}
+
+function getRetryAfterHeaders(reset?: number) {
+  if (typeof reset !== "number" || !Number.isFinite(reset)) {
+    return undefined;
+  }
+
+  return {
+    "Retry-After": String(Math.max(1, Math.ceil((reset - Date.now()) / 1000))),
+  };
 }
 
 function withDevelopmentDebug<T extends Record<string, unknown>>(
@@ -479,7 +516,11 @@ async function checkFeedbackRateLimit(ip: string) {
 
     return feedbackLimit.success
       ? { success: true }
-      : { success: false, code: "feedback_limit_exceeded" };
+      : {
+          success: false,
+          code: "feedback_limit_exceeded",
+          reset: feedbackLimit.reset,
+        };
   } catch (error) {
     console.error(
       "Analyze: feedback rate limit check failed.",
@@ -1274,6 +1315,11 @@ export async function POST(request: Request) {
             }),
           ),
           isUnavailable ? 503 : 429,
+          isUnavailable
+            ? undefined
+            : getRetryAfterHeaders(
+                "reset" in feedbackLimit ? feedbackLimit.reset : undefined,
+              ),
         );
       }
 
@@ -1337,6 +1383,9 @@ export async function POST(request: Request) {
         debug,
       ),
       isUnavailable ? 503 : 429,
+      isUnavailable
+        ? undefined
+        : getRetryAfterHeaders("reset" in rateLimit ? rateLimit.reset : undefined),
     );
   }
 

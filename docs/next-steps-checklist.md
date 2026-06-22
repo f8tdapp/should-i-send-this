@@ -15,6 +15,10 @@ This checklist is a launch and follow-up companion to `docs/project-build-record
   - `OPENAI_API_KEY`
   - `UPSTASH_REDIS_REST_URL`
   - `UPSTASH_REDIS_REST_TOKEN`
+  - `ANALYSIS_DAILY_LIMIT` (optional, server-only; default `5`)
+  - `ANALYSIS_BURST_LIMIT` (optional, server-only; default `3`)
+  - `ANALYSIS_BURST_WINDOW_SECONDS` (optional, server-only; default `30`)
+  - `FEEDBACK_HOURLY_LIMIT` (optional, server-only; default `10`)
   - `NEXT_PUBLIC_POSTHOG_KEY`
   - `NEXT_PUBLIC_POSTHOG_HOST`, if not using PostHog default host.
 - [ ] Confirm production hosting/logging behavior.
@@ -23,8 +27,8 @@ This checklist is a launch and follow-up companion to `docs/project-build-record
   - Code only initializes PostHog if `NEXT_PUBLIC_POSTHOG_KEY` exists.
 - [ ] Confirm whether Vercel Analytics and Speed Insights are intended for launch.
   - Evidence: both are mounted in `app/layout.tsx`.
-- [ ] Confirm the daily limit of 5 reads and burst limit of 3 reads per 30 seconds are intended launch limits.
-  - Evidence: `dailyRateLimit` and `burstRateLimit` in `app/api/analyze/route.ts`.
+- [ ] Confirm the configured launch limits; safe defaults are 5 reads/day, 3 reads/30 seconds, and 10 feedback submissions/hour.
+  - Evidence: server-only rate-limit variables and their fallbacks in `app/api/analyze/route.ts`.
 - [ ] Confirm whether stale `textpanic:analyze:*` Upstash prefixes should remain to preserve existing counters or be renamed before launch.
 - [ ] Confirm if share-card remnants are intentional.
   - Evidence: `html-to-image` remains in `package.json`; share-card event names remain in `app/lib/analytics.ts`; no current share-card UI was found.
