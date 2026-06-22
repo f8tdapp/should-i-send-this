@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
+import { createHash } from "node:crypto";
 
 type AnalysisResult = {
   tone: string;
@@ -213,15 +214,15 @@ function withDevelopmentDebug<T extends Record<string, unknown>>(
   return { ...body, debug };
 }
 
-function analysisResponse(analysis: AnalysisResult) {
+function analysisResponse(analysis: AnalysisResult, responseHeaders?: HeadersInit) {
   if (process.env.NODE_ENV === "development") {
-    return jsonResponse(analysis);
+    return jsonResponse(analysis, 200, responseHeaders);
   }
 
   const publicAnalysis = { ...analysis };
   delete (publicAnalysis as Partial<AnalysisResult>).debug;
 
-  return jsonResponse(publicAnalysis);
+  return jsonResponse(publicAnalysis, 200, responseHeaders);
 }
 
 function getRequestIp(request: Request) {
@@ -229,6 +230,59 @@ function getRequestIp(request: Request) {
   const firstForwardedIp = forwardedFor?.split(",")[0]?.trim();
 
   return firstForwardedIp || "anonymous";
+}
+
+function getRateLimitDebugHeaders(
+  request: Request,
+  identifier: string,
+  rateLimit: {
+    dailySuccess?: boolean;
+    burstSuccess?: boolean;
+    burstRemaining?: number;
+    burstReset?: number;
+  },
+  responseHeaders?: HeadersInit,
+) {
+  const headers = new Headers(responseHeaders);
+  const debugToken = process.env.RATE_LIMIT_DEBUG_TOKEN;
+
+  if (
+    !debugToken ||
+    request.headers.get("x-rate-limit-debug-token") !== debugToken
+  ) {
+    return headers;
+  }
+
+  const identifierHash = createHash("sha256")
+    .update(identifier)
+    .digest("hex")
+    .slice(0, 12);
+
+  headers.set("x-debug-analysis-daily-limit", String(ANALYSIS_DAILY_LIMIT));
+  headers.set("x-debug-analysis-burst-limit", String(ANALYSIS_BURST_LIMIT));
+  headers.set(
+    "x-debug-analysis-burst-window-seconds",
+    String(ANALYSIS_BURST_WINDOW_SECONDS),
+  );
+  headers.set("x-debug-rate-limit-id-hash", identifierHash);
+
+  if (typeof rateLimit.dailySuccess === "boolean") {
+    headers.set("x-debug-daily-success", String(rateLimit.dailySuccess));
+  }
+
+  if (typeof rateLimit.burstSuccess === "boolean") {
+    headers.set("x-debug-burst-success", String(rateLimit.burstSuccess));
+  }
+
+  if (typeof rateLimit.burstRemaining === "number") {
+    headers.set("x-debug-burst-remaining", String(rateLimit.burstRemaining));
+  }
+
+  if (typeof rateLimit.burstReset === "number") {
+    headers.set("x-debug-burst-reset", String(rateLimit.burstReset));
+  }
+
+  return headers;
 }
 
 function createDebugMetadata({
@@ -477,6 +531,10 @@ async function checkRateLimit(ip: string) {
       success: false,
       code: "daily_limit_exceeded",
       reset: dailyLimit.reset,
+      dailySuccess: dailyLimit.success,
+      burstSuccess: burstLimit.success,
+      burstRemaining: burstLimit.remaining,
+      burstReset: burstLimit.reset,
     };
   }
 
@@ -485,12 +543,20 @@ async function checkRateLimit(ip: string) {
       success: false,
       code: "burst_limit_exceeded",
       reset: burstLimit.reset,
+      dailySuccess: dailyLimit.success,
+      burstSuccess: burstLimit.success,
+      burstRemaining: burstLimit.remaining,
+      burstReset: burstLimit.reset,
     };
   }
 
   return {
     success: true,
     reset: Math.max(dailyLimit.reset, burstLimit.reset),
+    dailySuccess: dailyLimit.success,
+    burstSuccess: burstLimit.success,
+    burstRemaining: burstLimit.remaining,
+    burstReset: burstLimit.reset,
   };
 }
 
@@ -1360,7 +1426,13 @@ export async function POST(request: Request) {
   const message = validatedMessage.message;
   const optionalContext = validatedMessage.context;
   const safeFeedback = validatedMessage.feedback;
-  const rateLimit = await checkRateLimit(getRequestIp(request));
+  const rateLimitIdentifier = getRequestIp(request);
+  const rateLimit = await checkRateLimit(rateLimitIdentifier);
+  const rateLimitDebugHeaders = getRateLimitDebugHeaders(
+    request,
+    rateLimitIdentifier,
+    rateLimit,
+  );
 
   if (!rateLimit.success) {
     const isUnavailable = rateLimit.code === "rate_limit_unavailable";
@@ -1383,9 +1455,16 @@ export async function POST(request: Request) {
         debug,
       ),
       isUnavailable ? 503 : 429,
-      isUnavailable
-        ? undefined
-        : getRetryAfterHeaders("reset" in rateLimit ? rateLimit.reset : undefined),
+      getRateLimitDebugHeaders(
+        request,
+        rateLimitIdentifier,
+        rateLimit,
+        isUnavailable
+          ? undefined
+          : getRetryAfterHeaders(
+              "reset" in rateLimit ? rateLimit.reset : undefined,
+            ),
+      ),
     );
   }
 
@@ -1400,6 +1479,7 @@ export async function POST(request: Request) {
       return jsonResponse(
         withDevelopmentDebug({ error: SERVICE_UNAVAILABLE_MESSAGE }, debug),
         503,
+        rateLimitDebugHeaders,
       );
     }
 
@@ -1421,7 +1501,7 @@ export async function POST(request: Request) {
       characterCount: message.length,
     });
 
-    return analysisResponse(analysis);
+    return analysisResponse(analysis, rateLimitDebugHeaders);
   }
 
   const abortController = new AbortController();
@@ -1618,7 +1698,7 @@ ${message}`;
         characterCount: message.length,
       });
 
-      return analysisResponse(analysis);
+      return analysisResponse(analysis, rateLimitDebugHeaders);
     }
 
     const successDebug = createDebugMetadata({
@@ -1650,7 +1730,7 @@ ${message}`;
       characterCount: message.length,
     });
 
-    return analysisResponse(analysis);
+    return analysisResponse(analysis, rateLimitDebugHeaders);
   } catch (error) {
     if (abortController.signal.aborted) {
       console.error("Analyze route OpenAI request timed out.");
@@ -1662,6 +1742,7 @@ ${message}`;
       return jsonResponse(
         withDevelopmentDebug({ error: TIMEOUT_MESSAGE }, debug),
         504,
+        rateLimitDebugHeaders,
       );
     }
 
@@ -1675,7 +1756,11 @@ ${message}`;
       failureReason: "openai_request_failed",
     });
 
-    return jsonResponse(withDevelopmentDebug({ error: GENERIC_ERROR_MESSAGE }, debug), 502);
+    return jsonResponse(
+      withDevelopmentDebug({ error: GENERIC_ERROR_MESSAGE }, debug),
+      502,
+      rateLimitDebugHeaders,
+    );
   } finally {
     clearTimeout(timeout);
   }
