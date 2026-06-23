@@ -650,7 +650,7 @@ function formatAnalysisForClipboard(
   socialMirror: SocialMirror,
 ) {
   return [
-    "BetweenLines AI",
+    "BetweenLines AI™",
     `Communication Intelligence: ${result.communicationIntelligenceScore}/100`,
     `Signal: ${socialMirror.severity}`,
     "",
@@ -1160,7 +1160,7 @@ export default function Home() {
             <BrandMark className="mt-0.5 h-10 w-10" />
             <div className="min-w-0">
               <p className="text-[1.16rem] font-black leading-none tracking-[-0.03em] text-[#111827] sm:text-[1.32rem]">
-                BetweenLines<span className="text-[#475569]"> AI</span>
+                BetweenLines<span className="text-[#475569]"> AI™</span>
               </p>
               <p className="mt-1.5 max-w-[22rem] text-[0.76rem] font-medium leading-[1.4] text-[#4B5A68] [text-wrap:balance] sm:max-w-[34rem] sm:text-[0.88rem]">
                 Communication intelligence designed to create clarity, not chaos.
@@ -1274,7 +1274,7 @@ export default function Home() {
                       A quick note
                     </h2>
                     <p className="mt-0.5 text-xs font-medium leading-5 text-[#4B5A68] sm:text-[0.82rem]">
-                      We can&apos;t read minds, but we can help you catch how your message might land.
+                      BetweenLines™ can&apos;t read minds, but we can help you catch how your message might land.
                     </p>
                   </div>
                 </aside>
@@ -1640,6 +1640,9 @@ export default function Home() {
           <p className="text-xs font-medium leading-5 text-[#F8FAFC]/86">
             BetweenLines AI provides communication guidance only. You are
             responsible for what you choose to send.
+          </p>
+          <p className="mt-2 text-[0.68rem] font-medium leading-5 text-[#F8FAFC]/64">
+            BetweenLines™, BetweenLines AI™, and Perception Gap™ are trademarks used by BetweenLines AI.
           </p>
           <nav
             aria-label="Legal pages"
