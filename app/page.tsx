@@ -40,11 +40,6 @@ type MessageClassification = {
   rewriteStrategy: string;
 };
 
-type InsightCardId =
-  | "communication"
-  | "perception"
-  | "landing";
-
 type SignaturePhrase = {
   name: string;
   phrases: string[];
@@ -76,8 +71,6 @@ type RelationshipContext =
   | "other";
 
 const MESSAGE_CHARACTER_LIMIT = 750;
-const ACTIVE_INSIGHT_CARD_CLASS =
-  "bg-[#172033] text-[#FFFFFF] ring-[#9CA3AF] shadow-[0_34px_88px_-46px_rgba(17,24,39,0.68)]";
 
 const readFeedbackOptions: { label: FeedbackLabel; text: string }[] = [
   { label: "felt_accurate", text: "Felt accurate" },
@@ -645,33 +638,6 @@ function getSafeAnalyticsProperties(message: string, severity?: string) {
   };
 }
 
-function formatAnalysisForClipboard(
-  result: AnalysisResult,
-  socialMirror: SocialMirror,
-) {
-  return [
-    "BetweenLines AI™",
-    `Communication Intelligence: ${result.communicationIntelligenceScore}/100`,
-    `Signal: ${socialMirror.severity}`,
-    "",
-    "BETWEEN THE LINES",
-    result.emotionalInterpretation,
-    "",
-    "PERCEPTION GAP™",
-    "What you mean vs. what they may hear.",
-    result.perceptionGap,
-    "",
-    "INTENT VS IMPACT",
-    `You meant: ${result.intentVsImpact.youMeant}`,
-    `They may hear: ${result.intentVsImpact.theyMayHear}`,
-    "",
-    "HOW THIS MIGHT LAND",
-    result.recipientLikelyPerception,
-    "",
-    "BetweenLines AI",
-  ].join("\n");
-}
-
 function BrandMark({ className = "" }: { className?: string }) {
   return (
     <div
@@ -697,15 +663,9 @@ export default function Home() {
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState("");
   const [rewriteCopied, setRewriteCopied] = useState(false);
-  const [analysisCopied, setAnalysisCopied] = useState(false);
   const [showRewrite, setShowRewrite] = useState(false);
-  const [isRevealingRewrite, setIsRevealingRewrite] = useState(false);
+  const [showLimitHelp, setShowLimitHelp] = useState(false);
   const [socialMirror, setSocialMirror] = useState<SocialMirror | null>(null);
-  const [activeInsightCardId, setActiveInsightCardId] =
-    useState<InsightCardId>("communication");
-  const [viewedInsightCardIds, setViewedInsightCardIds] = useState<
-    InsightCardId[]
-  >([]);
   const [selectedFeedbackLabel, setSelectedFeedbackLabel] =
     useState<FeedbackLabel | null>(null);
   const [feedbackStatus, setFeedbackStatus] =
@@ -714,10 +674,6 @@ export default function Home() {
     useState<RelationshipContext>("not_sure");
   const [thoughtIndex, setThoughtIndex] = useState(0);
   const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const analysisCopyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
-  const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSubtextRef = useRef<string | null>(null);
   const messageLength = message.length;
   const isMessageEmpty = message.trim().length === 0;
@@ -731,10 +687,8 @@ export default function Home() {
 
   const resetAnalysisUiState = ({
     clearResult = true,
-    viewedInsightCards = [],
   }: {
     clearResult?: boolean;
-    viewedInsightCards?: InsightCardId[];
   } = {}) => {
     if (clearResult) {
       setResult(null);
@@ -743,22 +697,13 @@ export default function Home() {
 
     setError("");
     setRewriteCopied(false);
-    setAnalysisCopied(false);
     setShowRewrite(false);
-    setIsRevealingRewrite(false);
-    setActiveInsightCardId("communication");
-    setViewedInsightCardIds(viewedInsightCards);
     setSelectedFeedbackLabel(null);
     setFeedbackStatus("idle");
   };
 
   const handleAnalyze = async () => {
     if (isLoading) return;
-
-    if (revealTimeoutRef.current) {
-      clearTimeout(revealTimeoutRef.current);
-      revealTimeoutRef.current = null;
-    }
 
     resetAnalysisUiState();
 
@@ -813,7 +758,6 @@ export default function Home() {
       });
       resetAnalysisUiState({
         clearResult: false,
-        viewedInsightCards: ["communication"],
       });
       captureBetweenLinesEvent("text_analyzed", {
         ...getSafeAnalyticsProperties(message, severity),
@@ -839,49 +783,15 @@ export default function Home() {
       copyTimeoutRef.current = null;
     }
 
-    if (analysisCopyTimeoutRef.current) {
-      clearTimeout(analysisCopyTimeoutRef.current);
-      analysisCopyTimeoutRef.current = null;
-    }
-
-    if (revealTimeoutRef.current) {
-      clearTimeout(revealTimeoutRef.current);
-      revealTimeoutRef.current = null;
-    }
   };
 
-  const handleOpenInsightCard = (cardId: InsightCardId) => {
-    setActiveInsightCardId(cardId);
-    setViewedInsightCardIds((currentCardIds) =>
-      currentCardIds.includes(cardId)
-        ? currentCardIds
-        : [...currentCardIds, cardId],
-    );
-  };
+  const handleShowRewrite = () => {
+    if (showRewrite) return;
 
-  const handleRevealRewrite = () => {
-    if (isRevealingRewrite || showRewrite) return;
-
-    const rewriteEventProperties = {
+    setShowRewrite(true);
+    captureBetweenLinesEvent("rewrite_revealed", {
       ...getSafeAnalyticsProperties(message, socialMirror?.severity),
-    };
-    const prefersReducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-
-    if (prefersReducedMotion) {
-      setShowRewrite(true);
-      captureBetweenLinesEvent("rewrite_revealed", rewriteEventProperties);
-      return;
-    }
-
-    setIsRevealingRewrite(true);
-    revealTimeoutRef.current = setTimeout(() => {
-      setShowRewrite(true);
-      setIsRevealingRewrite(false);
-      revealTimeoutRef.current = null;
-      captureBetweenLinesEvent("rewrite_revealed", rewriteEventProperties);
-    }, 650);
+    });
   };
 
   const handleCopyRewrite = async () => {
@@ -904,32 +814,6 @@ export default function Home() {
     } catch {
       setError(
         "Copy did not work in this browser. You can still select the rewrite manually.",
-      );
-    }
-  };
-
-  const handleCopyAnalysis = async () => {
-    if (!result || !socialMirror) return;
-
-    try {
-      await navigator.clipboard.writeText(
-        formatAnalysisForClipboard(result, socialMirror),
-      );
-      setAnalysisCopied(true);
-      captureBetweenLinesEvent("result_copied", {
-        ...getSafeAnalyticsProperties(message, socialMirror.severity),
-      });
-
-      if (analysisCopyTimeoutRef.current) {
-        clearTimeout(analysisCopyTimeoutRef.current);
-      }
-
-      analysisCopyTimeoutRef.current = setTimeout(() => {
-        setAnalysisCopied(false);
-      }, 1600);
-    } catch {
-      setError(
-        "Copy did not work in this browser. The read is still right there.",
       );
     }
   };
@@ -979,13 +863,6 @@ export default function Home() {
         clearTimeout(copyTimeoutRef.current);
       }
 
-      if (analysisCopyTimeoutRef.current) {
-        clearTimeout(analysisCopyTimeoutRef.current);
-      }
-
-      if (revealTimeoutRef.current) {
-        clearTimeout(revealTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -1024,120 +901,9 @@ export default function Home() {
 
   const loadingMessage = loadingMessages[message.length % loadingMessages.length];
   const currentThought = rotatingThoughts[thoughtIndex];
-  const isClearMessage = result ? isClearMessageResult(result) : false;
-  const rewritePreviewLabel = isClearMessage
-    ? "Optional polish is available. Activate the button to reveal it."
-    : "A clearer rewrite is available. Activate the button to reveal it.";
-  const rewriteRevealLabel = isClearMessage
-    ? "Show optional polish"
-    : "Show me a clearer version";
-  const rewriteLoadingLabel = isClearMessage
-    ? "Preparing optional polish"
-    : "Making this clearer";
-  const rewriteTitle = isClearMessage
-    ? "Optional Polish"
-    : "A Clearer Version";
-  const rewriteDescription = isClearMessage
-    ? "Your original already works. This is only a slightly cleaner version if you want it."
-    : "Use this as a starting point - edit it so it still sounds like you.";
-  const copyRewriteLabel = isClearMessage
-    ? "Copy optional polish"
-    : "Copy clearer version";
-  const insightCards = result
-    ? [
-        {
-          id: "communication" as const,
-          title: isClearMessage ? "This Looks Clear" : "Between the Lines",
-          activeClassName: ACTIVE_INSIGHT_CARD_CLASS,
-          inactiveClassName:
-            "bg-[#F8FAF9] text-[#334155] ring-[#CBD3D8] shadow-[0_14px_32px_-28px_rgba(17,24,39,0.28)]",
-          content: (
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="max-w-[39rem]">
-                {isClearMessage ? (
-                  <>
-                    <p className="text-[1.24rem] font-semibold leading-[1.36] tracking-tight sm:text-[1.48rem] sm:leading-[1.32]">
-                      Your message already sounds reasonable and easy to understand. There may not be much to change.
-                    </p>
-                    <p className="mt-3 text-sm font-semibold leading-6 text-[#CBD5E1] sm:text-base">
-                      The Perception Gap appears low here.
-                    </p>
-                  </>
-                ) : (
-                  <p className="text-[1.24rem] font-semibold leading-[1.36] tracking-tight sm:text-[1.48rem] sm:leading-[1.32]">
-                    {result.emotionalInterpretation}
-                  </p>
-                )}
-              </div>
-              <div className="w-fit shrink-0 rounded-2xl bg-[#F8FAF9] px-3.5 py-2.5 text-[#334155] ring-1 ring-[#CBD3D8] sm:text-right">
-                <p className="text-xs font-semibold leading-4 tracking-normal text-[#64748B]">
-                  Intelligence
-                </p>
-                <p className="mt-1 text-2xl font-semibold leading-none tracking-tight">
-                  {result.communicationIntelligenceScore}
-                  <span className="text-sm text-[#64748B]">/100</span>
-                </p>
-              </div>
-            </div>
-          ),
-        },
-        {
-          id: "perception" as const,
-          title: "Perception Gap™",
-          activeClassName: ACTIVE_INSIGHT_CARD_CLASS,
-          inactiveClassName:
-            "bg-[#F3F6F7] text-[#334155] ring-[#CBD3D8] shadow-[0_12px_30px_-28px_rgba(17,24,39,0.2)]",
-          content: (
-            <div className="mt-3 max-w-[39rem]">
-              <p className="text-sm font-semibold leading-5 tracking-normal text-[#E5E7EB]">
-                What you mean vs. what they may hear.
-              </p>
-              <p className="mt-2 text-sm font-medium leading-6 tracking-normal text-[#F8FAFC]/88 sm:text-base">
-                {result.perceptionGap}
-              </p>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[1.05rem] bg-[#F8FAF9] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] ring-1 ring-[#CBD3D8]">
-                  <p className="text-xs font-semibold uppercase leading-4 tracking-[0.12em] text-[#64748B]">
-                    What you likely mean
-                  </p>
-                  <p className="mt-1.5 text-sm font-semibold leading-6 tracking-normal text-[#334155] sm:text-base">
-                    {result.intentVsImpact.youMeant}
-                  </p>
-                </div>
-                <div className="rounded-[1.05rem] bg-[#F8FAF9] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.86)] ring-1 ring-[#CBD3D8]">
-                  <p className="text-xs font-semibold uppercase leading-4 tracking-[0.12em] text-[#64748B]">
-                    What they may hear
-                  </p>
-                  <p className="mt-1.5 text-sm font-semibold leading-6 tracking-normal text-[#334155] sm:text-base">
-                    {result.intentVsImpact.theyMayHear}
-                  </p>
-                </div>
-              </div>
-            </div>
-          ),
-        },
-        {
-          id: "landing" as const,
-          title: "How This Might Land",
-          activeClassName: ACTIVE_INSIGHT_CARD_CLASS,
-          inactiveClassName:
-            "bg-[#F3F6F7] text-[#334155] ring-[#CBD3D8] shadow-[0_12px_30px_-28px_rgba(17,24,39,0.2)]",
-          content: (
-            <p className="mt-3 max-w-[39rem] text-base font-medium leading-7 tracking-normal text-[#F8FAFC]/88 sm:text-[1.06rem]">
-              {result.recipientLikelyPerception}
-            </p>
-          ),
-        },
-      ]
-    : [];
-  const visibleInsightCards =
-    insightCards.length > 0
-      ? [
-          insightCards.find((card) => card.id === activeInsightCardId) ??
-            insightCards[0],
-          ...insightCards.filter((card) => card.id !== activeInsightCardId),
-        ]
-      : [];
+  const rewriteDescription =
+    "Use this as a starting point — edit it so it still sounds like you.";
+  const copyRewriteLabel = "Copy clearer version";
 
   return (
     // This full-screen wrapper is the visible canvas behind the app card.
@@ -1170,17 +936,20 @@ export default function Home() {
 
           <div className="mx-auto mt-5 max-w-[34rem] text-center sm:mx-0 sm:mt-7 sm:max-w-[42rem] sm:text-left lg:max-w-[44rem]">
             <h1 className="max-w-full text-[clamp(1.84rem,7.8vw,2.32rem)] font-semibold leading-[1.12] tracking-tight text-[#111827] [overflow-wrap:break-word] [text-wrap:balance] sm:text-[clamp(2.08rem,4vw,2.48rem)] sm:leading-[1.1]">
-              See the gap between what you mean and what others may hear.
+              Check the Perception Gap™ before you send.
             </h1>
+            <p className="mt-3 max-w-[39rem] text-sm font-medium leading-6 text-[#4B5A68] sm:text-base">
+              See how your message might land — and get a clearer version if you need one.
+            </p>
           </div>
 
-          <div className="mt-5 space-y-4 sm:mt-5 sm:space-y-[1.125rem]">
+          <div className="mt-5 space-y-4 sm:mt-6 sm:space-y-[1.125rem]">
             <label htmlFor="message" className="sr-only">
               Message input
             </label>
-            <div className="mx-auto max-w-[42rem] border-y border-[#CBD3D8] px-3 py-2 text-center">
+            <div className="mx-auto max-w-[46rem] border-y border-[#CBD3D8] px-3 py-2 text-center">
               <p className="text-[0.82rem] font-semibold leading-5 text-[#4B5A68]">
-                Understand how your message may land before you send it.
+                Paste your message below.
               </p>
               <div className="mt-2 min-h-[1.7rem] overflow-hidden text-center">
                 <p
@@ -1191,7 +960,7 @@ export default function Home() {
                 </p>
               </div>
             </div>
-            <div className="rounded-[1.85rem] bg-[#E2E8EB] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_22px_58px_-46px_rgba(17,24,39,0.42)] ring-1 ring-[#CBD3D8] sm:p-3">
+            <div className="rounded-[1.85rem] bg-[#E2E8EB] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.72),0_28px_72px_-44px_rgba(17,24,39,0.48)] ring-1 ring-[#CBD3D8] sm:p-3">
               <textarea
                 id="message"
                 aria-label="Message to analyze"
@@ -1201,12 +970,15 @@ export default function Home() {
                 onChange={(event) => {
                   setMessage(event.target.value);
                 }}
-                placeholder="Paste a message before you send it..."
-                className="w-full min-h-[205px] rounded-[1.45rem] border border-[#B8C4CB] bg-[#FFFFFF] px-5 py-[1.125rem] text-base leading-7 text-[#172033] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),inset_0_20px_44px_-36px_rgba(184,196,203,0.58),0_12px_34px_-30px_rgba(17,24,39,0.38)] placeholder:text-[#4B5A68] outline-none transition duration-300 ease-out hover:border-[#AAB8C0] hover:bg-[#F8FAF9] focus:border-[#334155] focus:bg-[#FFFFFF] focus:ring-4 focus:ring-[#334155]/16 sm:min-h-[230px] sm:px-7 sm:py-5 sm:text-[1.04rem]"
+                placeholder="Paste the text, DM, email, or work message you’re thinking of sending…"
+                className="w-full min-h-[245px] rounded-[1.45rem] border border-[#AAB8C0] bg-[#FFFFFF] px-5 py-[1.125rem] text-base leading-7 text-[#172033] shadow-[inset_0_1px_0_rgba(255,255,255,0.92),inset_0_20px_44px_-36px_rgba(184,196,203,0.58),0_18px_46px_-34px_rgba(17,24,39,0.48)] placeholder:text-[#4B5A68] outline-none transition duration-300 ease-out hover:border-[#8EA0AB] hover:bg-[#F8FAF9] focus:border-[#334155] focus:bg-[#FFFFFF] focus:ring-4 focus:ring-[#334155]/16 sm:min-h-[285px] sm:px-7 sm:py-5 sm:text-[1.04rem]"
               />
               <details className="group mt-2.5">
                 <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-3 rounded-full px-3.5 text-sm font-semibold text-[#4B5A68] outline-none transition hover:bg-[#F8FAF9] hover:text-[#172033] focus-visible:ring-4 focus-visible:ring-[#334155]/12 marker:hidden [&::-webkit-details-marker]:hidden">
-                  <span>+ Add context</span>
+                  <span>
+                    <span aria-hidden="true">* </span>
+                    Add context
+                  </span>
                   {relationshipContext !== "not_sure" ? (
                     <span className="truncate text-xs font-medium text-[#64748B]">
                       {selectedRelationshipContext?.label}
@@ -1239,63 +1011,44 @@ export default function Home() {
                   </select>
                 </div>
               </details>
-              <div className="mt-2.5 grid gap-2.5 md:grid-cols-2">
-                <div className="flex items-start gap-3 rounded-[1.05rem] bg-[#E8F0F2] px-4 py-3 text-[#27364A] shadow-[0_12px_30px_-25px_rgba(17,24,39,0.38)] ring-1 ring-[#C3D0D6]">
-                  <span
-                    aria-hidden="true"
-                    className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFFFFF] text-sm ring-1 ring-[#C3D0D6]"
+              <div className="mt-2 flex flex-col items-end gap-1.5 px-1 text-xs font-medium text-[#4B5A68]">
+                <div className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5">
+                  {isAtCharacterLimit ? (
+                    <span className="text-[#334155]">
+                      That&apos;s enough text for one interpretation.
+                    </span>
+                  ) : null}
+                  <button
+                    type="button"
+                    aria-expanded={showLimitHelp}
+                    aria-controls="character-limit-help"
+                    onClick={() => {
+                      setShowLimitHelp((isVisible) => !isVisible);
+                    }}
+                    className="rounded-full px-2 py-1 text-xs font-semibold text-[#475569] underline decoration-[#94A3B8]/55 underline-offset-4 transition hover:bg-[#F8FAF9] hover:text-[#172033] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#334155]/12"
                   >
-                    &#128274;
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-semibold leading-5 text-[#172033]">
-                      Private by design
-                    </span>
-                    <span className="mt-0.5 block text-xs font-medium leading-5 text-[#4B5A68] sm:text-[0.82rem]">
-                      Original messages are not saved in feedback or included when you copy insights.
-                    </span>
+                    Why the limit?
+                  </button>
+                  <span
+                    className={`tabular-nums transition-colors ${
+                      isAtCharacterLimit
+                        ? "font-semibold text-[#334155]"
+                        : isNearCharacterLimit
+                          ? "font-semibold text-[#475569]"
+                          : "text-[#4B5A68]"
+                    }`}
+                  >
+                    {messageLength} / {MESSAGE_CHARACTER_LIMIT}
                   </span>
                 </div>
-                <aside
-                  aria-labelledby="pre-send-certainty-heading"
-                  className="flex items-start gap-3 rounded-[1.05rem] bg-[#E8F0F2] px-4 py-3 text-[#27364A] shadow-[0_12px_30px_-25px_rgba(17,24,39,0.38)] ring-1 ring-[#C3D0D6]"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFFFFF] text-xs font-bold text-[#334155] ring-1 ring-[#C3D0D6]"
+                {showLimitHelp ? (
+                  <p
+                    id="character-limit-help"
+                    className="max-w-[26rem] rounded-[0.95rem] bg-[#F8FAF9] px-3 py-2 text-left text-xs font-medium leading-5 text-[#4B5A68] shadow-[0_10px_26px_-24px_rgba(17,24,39,0.34)] ring-1 ring-[#D8E0E4]"
                   >
-                    i
-                  </span>
-                  <div className="min-w-0">
-                    <h2
-                      id="pre-send-certainty-heading"
-                      className="text-sm font-semibold leading-5 text-[#172033]"
-                    >
-                      A quick note
-                    </h2>
-                    <p className="mt-0.5 text-xs font-medium leading-5 text-[#4B5A68] sm:text-[0.82rem]">
-                      BetweenLines™ can&apos;t read minds, but we can help you catch how your message might land.
-                    </p>
-                  </div>
-                </aside>
-              </div>
-              <div className="mt-2 flex items-center justify-end gap-3 px-1 text-xs font-medium text-[#4B5A68]">
-                {isAtCharacterLimit ? (
-                  <span className="text-[#334155]">
-                    That&apos;s enough text for one interpretation.
-                  </span>
+                    Less is often more. Shorter messages usually make it easier to spot the Perception Gap™ and suggest a clearer version. Longer-message support may come later.
+                  </p>
                 ) : null}
-                <span
-                  className={`tabular-nums transition-colors ${
-                    isAtCharacterLimit
-                      ? "font-semibold text-[#334155]"
-                      : isNearCharacterLimit
-                        ? "font-semibold text-[#475569]"
-                        : "text-[#4B5A68]"
-                  }`}
-                >
-                  {messageLength} / {MESSAGE_CHARACTER_LIMIT}
-                </span>
               </div>
             </div>
 
@@ -1336,18 +1089,8 @@ export default function Home() {
             </div>
           </div>
 
-          <section className="mt-7 rounded-[1.65rem] bg-[#F8FAF9] p-4 shadow-[0_24px_70px_-48px_rgba(17,24,39,0.4)] ring-1 ring-[#CBD3D8] sm:mt-9 sm:p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-[1.02rem] font-semibold leading-6 tracking-normal text-[#172033]">
-                  Between the Lines
-                </p>
-              </div>
-            </div>
-
-            <div
-              className="mt-3 space-y-3.5 transition-all duration-500 ease-out sm:mt-3.5 sm:space-y-4"
-            >
+          {isLoading || result ? (
+            <section className="mt-6 rounded-[1.65rem] bg-[#F8FAF9] p-4 shadow-[0_24px_70px_-48px_rgba(17,24,39,0.4)] ring-1 ring-[#CBD3D8] sm:mt-8 sm:p-6">
               {isLoading ? (
                 <div className="rounded-[1.35rem] bg-[#FFFFFF] px-5 py-6 shadow-[0_16px_44px_-34px_rgba(17,24,39,0.34)] ring-1 ring-[#CBD3D8]">
                   <div className="inline-flex items-center gap-3 text-sm font-semibold leading-6 text-[#334155]">
@@ -1355,221 +1098,110 @@ export default function Home() {
                     {loadingMessage}
                   </div>
                   <p className="mt-3 max-w-md text-sm leading-6 text-[#4B5A68]">
-                    BetweenLines AI is reading the communication impact. Privately. Carefully.
-                    Usefully.
+                    BetweenLines AI is checking how this might land.
                   </p>
                 </div>
               ) : result ? (
-                <div className="space-y-4 sm:space-y-5">
-                  <div className="space-y-2.5">
-                    {socialMirror ? (
-                      <div className="inline-flex max-w-full rounded-full bg-[#172033] px-2.5 py-0.5 text-[0.68rem] font-semibold text-[#FFFFFF] shadow-[0_10px_24px_-22px_rgba(17,24,39,0.42)]">
-                        <span className="truncate">
-                          {socialMirror.severity}
+                <div className="space-y-3.5 sm:space-y-4">
+                  <article className="rounded-[1.45rem] bg-[#172033] p-5 text-[#FFFFFF] shadow-[0_28px_76px_-44px_rgba(17,24,39,0.68)] ring-1 ring-[#9CA3AF] sm:p-6">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-xs font-bold uppercase leading-4 tracking-[0.12em] text-[#CBD5E1]">
+                          Core insight
+                        </p>
+                        <h2 className="mt-1 text-xl font-bold leading-7 tracking-normal text-[#FFFFFF]">
+                          Perception Gap™
+                        </h2>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {socialMirror ? (
+                          <span className="inline-flex w-fit shrink-0 rounded-full bg-[#F8FAF9] px-3 py-1.5 text-xs font-semibold text-[#334155] ring-1 ring-[#CBD3D8]">
+                            {socialMirror.severity}
+                          </span>
+                        ) : null}
+                        <span className="inline-flex w-fit shrink-0 rounded-full bg-[#F8FAF9] px-3 py-1.5 text-xs font-bold text-[#334155] ring-1 ring-[#CBD3D8]">
+                          BetweenLines AI™
                         </span>
                       </div>
-                    ) : null}
-
-                    <div className="flex flex-wrap gap-1.5 text-[0.72rem] font-semibold text-[#4B5A68]">
-                      <span className="rounded-full bg-[#E8EEF0] px-2.5 py-1 ring-1 ring-[#CBD3D8]">
-                        Signal: <span className="text-[#334155]">{result.tone}</span>
-                      </span>
-                      <span className="rounded-full bg-[#E8EEF0] px-2.5 py-1 ring-1 ring-[#CBD3D8]">
-                        Confidence signal:{" "}
-                        <span className="text-[#334155]">
-                          {result.confidenceScore}/10
-                        </span>
-                      </span>
-                      <span className="rounded-full bg-[#E8EEF0] px-2.5 py-1 ring-1 ring-[#CBD3D8]">
-                        Clarity:{" "}
-                        <span className="text-[#334155]">
-                          {result.clarityScore}/10
-                        </span>
-                      </span>
                     </div>
-                  </div>
-
-                  <div
-                    className="guided-read-deck rounded-[1.9rem] bg-[#DCE4E8] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.72),inset_0_-18px_34px_-30px_rgba(71,85,105,0.3),0_20px_54px_-44px_rgba(17,24,39,0.36)] ring-1 ring-[#C3CDD3] sm:p-3"
-                    aria-label="Communication insight deck"
-                  >
-                    {visibleInsightCards.map((card, index) => {
-                      const isActive = card.id === activeInsightCardId;
-                      const hasBeenViewed = viewedInsightCardIds.includes(card.id);
-                      const isHeroCard = card.id === "communication";
-
-                      return (
-                        <button
-                          key={card.id}
-                          type="button"
-                          aria-label={
-                            isActive
-                              ? `${card.title} insight currently selected`
-                              : hasBeenViewed
-                                ? `Show ${card.title} insight, already read`
-                                : `Show ${card.title} insight, unread`
-                          }
-                          aria-current={isActive ? "true" : undefined}
-                          aria-expanded={isActive}
-                          onClick={() => handleOpenInsightCard(card.id)}
-                          style={{ zIndex: isActive ? 50 : 40 - index }}
-                          className={`guided-read-card insight-deck-card result-card-enter relative block w-full rounded-[1.45rem] border-0 text-left outline-none ring-1 transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:ring-4 focus-visible:ring-[#64748B]/24 ${
-                            isActive
-                              ? `${card.activeClassName} z-50 ${isHeroCard ? "min-h-[250px] p-6 sm:min-h-[292px] sm:p-8" : "min-h-[136px] p-5 sm:min-h-[152px] sm:p-6"}`
-                              : `${card.inactiveClassName} -mt-2 min-h-[60px] px-5 py-3.5 hover:-translate-y-0.5 hover:shadow-[0_18px_42px_-36px_rgba(17,24,39,0.28)] sm:-mt-3 sm:min-h-[64px] sm:px-6 ${
-                                  hasBeenViewed
-                                    ? "bg-[#F1F5F6] ring-[#CBD3D8] shadow-[0_12px_30px_-28px_rgba(17,24,39,0.2)]"
-                                    : ""
-                                }`
-                          }`}
-                        >
-                          {isActive && isHeroCard ? (
-                            <span className="sr-only">{card.title}</span>
-                          ) : (
-                            <div className="flex items-center justify-between gap-3">
-                              <p className="inline-flex min-w-0 items-center gap-2 text-[0.84rem] font-semibold leading-5 tracking-normal sm:text-[0.95rem]">
-                                {!isActive && hasBeenViewed ? (
-                                  <span
-                                    aria-hidden="true"
-                                    className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#F1F5F9] text-[0.62rem] font-bold leading-none text-[#64748B] ring-1 ring-[#CBD3D8]"
-                                  >
-                                    &#10003;
-                                  </span>
-                                ) : null}
-                                <span className="truncate">
-                                  {card.title}
-                                </span>
-                              </p>
-                              {!isActive ? (
-                                <span
-                                  className={`shrink-0 rounded-full px-2.5 py-1 text-[0.68rem] font-semibold tracking-normal opacity-90 ring-1 ${
-                                    hasBeenViewed
-                                      ? "bg-[#F1F5F9] text-[#64748B] ring-[#CBD3D8]"
-                                      : "bg-[#FFFFFF]/80 ring-[#CBD3D8]"
-                                  }`}
-                                >
-                                  {hasBeenViewed ? "Read" : "Tap"}
-                                </span>
-                              ) : null}
-                            </div>
-                          )}
-                          {isActive ? (
-                            <div className="insight-active-content">
-                              {card.content}
-                            </div>
-                          ) : null}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {socialMirror ? (
-                    <div className="flex flex-col gap-2 border-t border-[#D8E0E4] pt-3 sm:flex-row sm:items-center sm:justify-between">
-                      <p className="text-xs font-medium leading-5 text-[#4B5A68]">
-                        No original text included.
+                    <p className="mt-3 text-sm font-semibold leading-6 text-[#F8FAFC]/90 sm:text-base">
+                      {result.perceptionGap}
+                    </p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-[1.05rem] bg-[#F8FAF9] px-4 py-3 text-[#172033] shadow-[0_16px_38px_-30px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.86)] ring-1 ring-[#CBD3D8]">
+                        <p className="text-xs font-bold leading-4 text-[#334155]">
+                          You may mean
+                        </p>
+                        <p className="mt-1.5 text-sm font-semibold leading-6 text-[#172033]">
+                          {result.intentVsImpact.youMeant}
+                        </p>
+                      </div>
+                      <div className="rounded-[1.05rem] bg-[#F8FAF9] px-4 py-3 text-[#172033] shadow-[0_16px_38px_-30px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.86)] ring-1 ring-[#CBD3D8]">
+                        <p className="text-xs font-bold leading-4 text-[#334155]">
+                          They may hear
+                        </p>
+                        <p className="mt-1.5 text-sm font-semibold leading-6 text-[#172033]">
+                          {result.intentVsImpact.theyMayHear}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 rounded-[1.05rem] bg-[#E8EEF0] px-4 py-3 text-[#172033] shadow-[inset_3px_0_0_#9CA3AF,0_16px_38px_-32px_rgba(0,0,0,0.38)] ring-1 ring-[#CBD3D8]">
+                      <p className="text-xs font-bold leading-4 text-[#334155]">
+                        Why it matters
                       </p>
-                      <button
-                        type="button"
-                        aria-label="Copy insight"
-                        onClick={handleCopyAnalysis}
-                        className="inline-flex min-h-[36px] w-fit items-center justify-center rounded-full px-1.5 text-sm font-semibold text-[#475569] transition duration-200 ease-out hover:text-[#172033] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/12"
-                      >
-                        {analysisCopied ? "Insight copied" : "Copy insight"}
-                      </button>
+                      <p className="mt-1.5 text-sm font-semibold leading-6 text-[#263446]">
+                        {result.recipientLikelyPerception}
+                      </p>
                     </div>
-                  ) : null}
+                  </article>
 
                   {!showRewrite ? (
-                    <div className="relative overflow-hidden rounded-[1.45rem] bg-[#FFFFFF] p-4 shadow-[0_14px_40px_-32px_rgba(17,24,39,0.34)] ring-1 ring-[#CBD3D8] sm:p-5">
-                      <div
+                    <button
+                      type="button"
+                      onClick={handleShowRewrite}
+                      className="flex min-h-[46px] w-full items-center justify-between gap-3 rounded-[1.1rem] bg-[#E8EEF0] px-4 py-3 text-left text-sm font-semibold text-[#334155] shadow-[0_12px_30px_-28px_rgba(17,24,39,0.28)] ring-1 ring-[#CBD3D8] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#DCE5E8] hover:text-[#172033] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/16"
+                    >
+                      <span>Tap for clearer version</span>
+                      <span
                         aria-hidden="true"
-                        className="space-y-2.5 blur-[3px] transition duration-500"
+                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFFFFF] text-base leading-none text-[#475569] ring-1 ring-[#CBD3D8]"
                       >
-                        <div className="h-3.5 w-24 rounded-full bg-[#CBD3D8]" />
-                        <div className="h-4 w-[92%] rounded-full bg-[#D8E0E4]" />
-                        <div className="h-4 w-[78%] rounded-full bg-[#D8E0E4]" />
-                        <div className="h-4 w-[64%] rounded-full bg-[#D8E0E4]" />
-                      </div>
-                      <p id="rewrite-preview-label" className="sr-only">
-                        {rewritePreviewLabel}
-                      </p>
-                      <button
-                        type="button"
-                        aria-label={rewriteRevealLabel}
-                        aria-describedby="rewrite-preview-label"
-                        onClick={handleRevealRewrite}
-                        disabled={isRevealingRewrite}
-                        className="absolute inset-x-4 top-1/2 inline-flex min-h-[52px] -translate-y-1/2 items-center justify-center rounded-full bg-[#334155] px-7 py-3 text-base font-semibold text-[#FFFFFF] shadow-[0_16px_38px_-30px_rgba(17,24,39,0.58)] outline-none transition duration-300 ease-out hover:-translate-y-[52%] hover:bg-[#172033] active:-translate-y-1/2 active:scale-[0.98] focus-visible:ring-4 focus-visible:ring-[#64748B]/22 disabled:cursor-wait disabled:bg-[#64748B] motion-reduce:transition-none sm:left-1/2 sm:right-auto sm:w-auto sm:min-w-[17rem] sm:-translate-x-1/2"
-                      >
-                        {isRevealingRewrite ? (
-                          <span className="inline-flex items-center justify-center gap-2 text-center leading-snug">
-                            {rewriteLoadingLabel}
-                            <span className="inline-flex gap-1" aria-hidden="true">
-                              <span className="rewrite-loading-dot" />
-                              <span className="rewrite-loading-dot [animation-delay:140ms]" />
-                              <span className="rewrite-loading-dot [animation-delay:280ms]" />
-                            </span>
-                          </span>
-                        ) : (
-                          rewriteRevealLabel
-                        )}
-                      </button>
-                    </div>
-                  ) : null}
-
-                  <div
-                    aria-hidden={!showRewrite}
-                    className={`overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
-                      showRewrite
-                        ? "max-h-[520px] translate-y-0 opacity-100 blur-0"
-                        : "max-h-0 translate-y-5 opacity-0 blur-md"
-                    }`}
-                  >
-                    <div className="rounded-[1.45rem] bg-[#F2F5F5] p-5 text-[#172033] shadow-[0_18px_52px_-38px_rgba(17,24,39,0.32)] ring-1 ring-[#CBD3D8] transition duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none sm:p-6">
+                        +
+                      </span>
+                    </button>
+                  ) : (
+                    <article className="rounded-[1.55rem] bg-[#FFFFFF] p-5 text-[#172033] shadow-[0_24px_62px_-40px_rgba(17,24,39,0.42)] ring-1 ring-[#B8C4CB] sm:p-6">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                        <div className="max-w-[32rem]">
-                          <p className="text-sm font-semibold leading-5 tracking-normal text-[#172033]">
-                            {rewriteTitle}
-                          </p>
-                          <p className="mt-1.5 text-sm leading-6 text-[#4B5A68]">
+                        <div className="max-w-[34rem]">
+                          <h2 className="text-base font-semibold leading-6 text-[#172033]">
+                            Clearer version
+                          </h2>
+                          <p className="mt-1 text-sm leading-6 text-[#4B5A68]">
                             {rewriteDescription}
                           </p>
                         </div>
-                        <span className="inline-flex w-fit shrink-0 rounded-full bg-[#E8EEF0] px-2.5 py-1 text-[0.68rem] font-semibold text-[#4B5A68] ring-1 ring-[#CBD3D8]">
-                          Optional
-                        </span>
                       </div>
                       <div className="mt-4 rounded-[1.15rem] bg-[#E8EEF0] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] ring-1 ring-[#CBD3D8] sm:px-5">
                         <p className="text-base font-medium leading-7 text-[#111827] sm:text-[1.06rem] sm:leading-8">
                           {result.improvedRewrite}
                         </p>
                       </div>
-                      <button
-                        type="button"
-                        aria-label={copyRewriteLabel}
-                        onClick={handleCopyRewrite}
-                        className="mt-5 inline-flex min-h-[46px] items-center justify-center rounded-full bg-[#172033] px-5 py-2.5 text-sm font-semibold text-[#FFFFFF] shadow-[0_14px_34px_-28px_rgba(17,24,39,0.62)] outline-none transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#334155] focus-visible:ring-4 focus-visible:ring-[#334155]/20"
-                      >
-                        {rewriteCopied ? "Copied" : copyRewriteLabel}
-                      </button>
-                    </div>
-                  </div>
-
+                      <div className="mt-5 flex">
+                        <button
+                          type="button"
+                          aria-label={copyRewriteLabel}
+                          onClick={handleCopyRewrite}
+                          className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-[#172033] px-5 py-2.5 text-sm font-semibold text-[#FFFFFF] shadow-[0_14px_34px_-28px_rgba(17,24,39,0.62)] outline-none transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#334155] focus-visible:ring-4 focus-visible:ring-[#334155]/20"
+                        >
+                          {rewriteCopied ? "Copied" : copyRewriteLabel}
+                        </button>
+                      </div>
+                    </article>
+                  )}
                 </div>
-              ) : (
-                <div className="relative overflow-hidden rounded-[1.45rem] bg-[#FFFFFF] px-5 py-5 shadow-[0_16px_46px_-38px_rgba(17,24,39,0.34)] ring-1 ring-[#CBD3D8] sm:px-6 sm:py-6">
-                  <div className="max-w-[34rem]">
-                    <h3 className="text-lg font-semibold leading-7 tracking-tight text-[#111827] sm:text-xl">
-                      Paste a message to reveal the Perception Gap™.
-                    </h3>
-                    <p className="mt-2 text-sm leading-6 text-[#4B5A68] sm:text-base">
-                      The difference between what you mean and what they may hear.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </section>
+              ) : null}
+            </section>
+          ) : null}
 
           {result ? (
             <section
@@ -1637,11 +1269,18 @@ export default function Home() {
         </div>
 
         <footer className="mx-auto mt-5 w-full max-w-[60rem] px-2 text-center text-[#F8FAFC] sm:mt-6">
-          <p className="text-xs font-medium leading-5 text-[#F8FAFC]/86">
-            BetweenLines AI provides communication guidance only. You are
-            responsible for what you choose to send.
-          </p>
-          <p className="mt-2 text-[0.68rem] font-medium leading-5 text-[#F8FAFC]/64">
+          <section
+            aria-label="Privacy and guidance note"
+            className="mx-auto max-w-[46rem] rounded-[1.15rem] bg-[#F8FAFC]/7 px-4 py-3 text-left text-xs font-medium leading-5 text-[#F8FAFC]/78 ring-1 ring-[#F8FAFC]/14 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.72)]"
+          >
+            <p className="font-semibold text-[#F8FAFC]/86">
+              Private by design. Original messages are not saved in feedback or included when you copy insights.
+            </p>
+            <p className="mt-1.5">
+              BetweenLines AI provides communication guidance only. We can&apos;t read minds — we help you spot possible perception gaps before you send. You are responsible for what you choose to send.
+            </p>
+          </section>
+          <p className="mt-3 text-[0.68rem] font-medium leading-5 text-[#F8FAFC]/64">
             BetweenLines™, BetweenLines AI™, and Perception Gap™ are trademarks used by BetweenLines AI.
           </p>
           <nav
