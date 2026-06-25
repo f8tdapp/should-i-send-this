@@ -1046,7 +1046,7 @@ export default function Home() {
                     id="character-limit-help"
                     className="max-w-[26rem] rounded-[0.95rem] bg-[#F8FAF9] px-3 py-2 text-left text-xs font-medium leading-5 text-[#4B5A68] shadow-[0_10px_26px_-24px_rgba(17,24,39,0.34)] ring-1 ring-[#D8E0E4]"
                   >
-                    Less is often more. Shorter messages usually make it easier to spot the Perception Gap™ and suggest a clearer version. Longer-message support may come later.
+                    Less is often more. Shorter messages usually make it easier to spot the Perception Gap™ and suggest a clearer version.
                   </p>
                 ) : null}
               </div>
@@ -1089,99 +1089,77 @@ export default function Home() {
             </div>
           </div>
 
-          {isLoading || result ? (
+          {result ? (
             <section className="mt-6 rounded-[1.65rem] bg-[#F8FAF9] p-4 shadow-[0_24px_70px_-48px_rgba(17,24,39,0.4)] ring-1 ring-[#CBD3D8] sm:mt-8 sm:p-6">
-              {isLoading ? (
-                <div className="rounded-[1.35rem] bg-[#FFFFFF] px-5 py-6 shadow-[0_16px_44px_-34px_rgba(17,24,39,0.34)] ring-1 ring-[#CBD3D8]">
-                  <div className="inline-flex items-center gap-3 text-sm font-semibold leading-6 text-[#334155]">
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#64748B]/25 border-t-[#64748B]" />
-                    {loadingMessage}
+              <div className="space-y-3.5 sm:space-y-4">
+                <article className="rounded-[1.45rem] bg-[#172033] p-5 text-[#FFFFFF] shadow-[0_28px_76px_-44px_rgba(17,24,39,0.68)] ring-1 ring-[#9CA3AF] sm:p-6">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-xs font-bold uppercase leading-4 tracking-[0.12em] text-[#CBD5E1]">
+                        Core insight
+                      </p>
+                      <h2 className="mt-1 text-xl font-bold leading-7 tracking-normal text-[#FFFFFF]">
+                        Perception Gap™
+                      </h2>
+                    </div>
+                    {socialMirror ? (
+                      <span className="inline-flex w-fit shrink-0 rounded-full bg-[#F8FAF9] px-3 py-1.5 text-xs font-semibold text-[#334155] ring-1 ring-[#CBD3D8]">
+                        {socialMirror.severity}
+                      </span>
+                    ) : null}
                   </div>
-                  <p className="mt-3 max-w-md text-sm leading-6 text-[#4B5A68]">
-                    BetweenLines AI is checking how this might land.
+                  <p className="mt-3 text-sm font-semibold leading-6 text-[#F8FAFC]/90 sm:text-base">
+                    {result.perceptionGap}
                   </p>
-                </div>
-              ) : result ? (
-                <div className="space-y-3.5 sm:space-y-4">
-                  <article className="rounded-[1.45rem] bg-[#172033] p-5 text-[#FFFFFF] shadow-[0_28px_76px_-44px_rgba(17,24,39,0.68)] ring-1 ring-[#9CA3AF] sm:p-6">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <p className="text-xs font-bold uppercase leading-4 tracking-[0.12em] text-[#CBD5E1]">
-                          Core insight
-                        </p>
-                        <h2 className="mt-1 text-xl font-bold leading-7 tracking-normal text-[#FFFFFF]">
-                          Perception Gap™
-                        </h2>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {socialMirror ? (
-                          <span className="inline-flex w-fit shrink-0 rounded-full bg-[#F8FAF9] px-3 py-1.5 text-xs font-semibold text-[#334155] ring-1 ring-[#CBD3D8]">
-                            {socialMirror.severity}
-                          </span>
-                        ) : null}
-                        <span className="inline-flex w-fit shrink-0 rounded-full bg-[#F8FAF9] px-3 py-1.5 text-xs font-bold text-[#334155] ring-1 ring-[#CBD3D8]">
-                          BetweenLines AI™
-                        </span>
-                      </div>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-[1.05rem] bg-[#F8FAF9] px-4 py-3 text-[#172033] shadow-[0_16px_38px_-30px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.86)] ring-1 ring-[#B8C4CB]">
+                      <p className="text-sm font-extrabold leading-5 text-[#172033]">
+                        You may mean
+                      </p>
+                      <p className="mt-2 border-t border-[#CBD3D8] pt-2 text-sm font-semibold leading-6 text-[#172033]">
+                        {result.intentVsImpact.youMeant}
+                      </p>
                     </div>
-                    <p className="mt-3 text-sm font-semibold leading-6 text-[#F8FAFC]/90 sm:text-base">
-                      {result.perceptionGap}
+                    <div className="rounded-[1.05rem] bg-[#F8FAF9] px-4 py-3 text-[#172033] shadow-[0_16px_38px_-30px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.86)] ring-1 ring-[#B8C4CB]">
+                      <p className="text-sm font-extrabold leading-5 text-[#172033]">
+                        They may hear
+                      </p>
+                      <p className="mt-2 border-t border-[#CBD3D8] pt-2 text-sm font-semibold leading-6 text-[#172033]">
+                        {result.intentVsImpact.theyMayHear}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="mt-3 rounded-[1.05rem] bg-[#F8FAF9] px-4 py-3 text-[#172033] shadow-[0_16px_38px_-30px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.86)] ring-1 ring-[#B8C4CB]">
+                    <p className="text-sm font-extrabold leading-5 text-[#172033]">
+                      Why it matters
                     </p>
-                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                      <div className="rounded-[1.05rem] bg-[#F8FAF9] px-4 py-3 text-[#172033] shadow-[0_16px_38px_-30px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.86)] ring-1 ring-[#CBD3D8]">
-                        <p className="text-xs font-bold leading-4 text-[#334155]">
-                          You may mean
-                        </p>
-                        <p className="mt-1.5 text-sm font-semibold leading-6 text-[#172033]">
-                          {result.intentVsImpact.youMeant}
-                        </p>
-                      </div>
-                      <div className="rounded-[1.05rem] bg-[#F8FAF9] px-4 py-3 text-[#172033] shadow-[0_16px_38px_-30px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.86)] ring-1 ring-[#CBD3D8]">
-                        <p className="text-xs font-bold leading-4 text-[#334155]">
-                          They may hear
-                        </p>
-                        <p className="mt-1.5 text-sm font-semibold leading-6 text-[#172033]">
-                          {result.intentVsImpact.theyMayHear}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="mt-3 rounded-[1.05rem] bg-[#E8EEF0] px-4 py-3 text-[#172033] shadow-[inset_3px_0_0_#9CA3AF,0_16px_38px_-32px_rgba(0,0,0,0.38)] ring-1 ring-[#CBD3D8]">
-                      <p className="text-xs font-bold leading-4 text-[#334155]">
-                        Why it matters
-                      </p>
-                      <p className="mt-1.5 text-sm font-semibold leading-6 text-[#263446]">
-                        {result.recipientLikelyPerception}
-                      </p>
-                    </div>
-                  </article>
+                    <p className="mt-2 border-t border-[#CBD3D8] pt-2 text-sm font-semibold leading-6 text-[#172033]">
+                      {result.recipientLikelyPerception}
+                    </p>
+                  </div>
+                </article>
 
                   {!showRewrite ? (
                     <button
                       type="button"
                       onClick={handleShowRewrite}
-                      className="flex min-h-[46px] w-full items-center justify-between gap-3 rounded-[1.1rem] bg-[#E8EEF0] px-4 py-3 text-left text-sm font-semibold text-[#334155] shadow-[0_12px_30px_-28px_rgba(17,24,39,0.28)] ring-1 ring-[#CBD3D8] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#DCE5E8] hover:text-[#172033] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/16"
+                      className="flex min-h-[46px] w-full items-center justify-center rounded-[1.45rem] bg-[#172033] px-4 py-3 text-center text-sm font-semibold text-[#FFFFFF] shadow-[0_28px_76px_-44px_rgba(17,24,39,0.68)] ring-1 ring-[#9CA3AF] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#1e2a3a] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#64748B]/16"
                     >
                       <span>Tap for clearer version</span>
-                      <span
-                        aria-hidden="true"
-                        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFFFFF] text-base leading-none text-[#475569] ring-1 ring-[#CBD3D8]"
-                      >
-                        +
-                      </span>
                     </button>
                   ) : (
-                    <article className="rounded-[1.55rem] bg-[#FFFFFF] p-5 text-[#172033] shadow-[0_24px_62px_-40px_rgba(17,24,39,0.42)] ring-1 ring-[#B8C4CB] sm:p-6">
+                    <article className="rounded-[1.45rem] bg-[#172033] p-5 text-[#FFFFFF] shadow-[0_28px_76px_-44px_rgba(17,24,39,0.68)] ring-1 ring-[#9CA3AF] sm:p-6">
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                         <div className="max-w-[34rem]">
-                          <h2 className="text-base font-semibold leading-6 text-[#172033]">
+                          <h2 className="text-base font-bold leading-6 text-[#FFFFFF]">
                             Clearer version
                           </h2>
-                          <p className="mt-1 text-sm leading-6 text-[#4B5A68]">
+                          <p className="mt-1 text-sm font-medium leading-6 text-[#CBD5E1]">
                             {rewriteDescription}
                           </p>
                         </div>
                       </div>
-                      <div className="mt-4 rounded-[1.15rem] bg-[#E8EEF0] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] ring-1 ring-[#CBD3D8] sm:px-5">
+                      <div className="mt-4 rounded-[1.15rem] bg-[#F8FAF9] px-4 py-4 text-[#172033] shadow-[0_16px_38px_-30px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.86)] ring-1 ring-[#B8C4CB] sm:px-5">
                         <p className="text-base font-medium leading-7 text-[#111827] sm:text-[1.06rem] sm:leading-8">
                           {result.improvedRewrite}
                         </p>
@@ -1191,15 +1169,14 @@ export default function Home() {
                           type="button"
                           aria-label={copyRewriteLabel}
                           onClick={handleCopyRewrite}
-                          className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-[#172033] px-5 py-2.5 text-sm font-semibold text-[#FFFFFF] shadow-[0_14px_34px_-28px_rgba(17,24,39,0.62)] outline-none transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#334155] focus-visible:ring-4 focus-visible:ring-[#334155]/20"
+                          className="inline-flex min-h-[46px] items-center justify-center rounded-full bg-[#F8FAF9] px-5 py-2.5 text-sm font-bold text-[#172033] shadow-[0_14px_34px_-28px_rgba(0,0,0,0.62)] outline-none transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#E8EEF0] focus-visible:ring-4 focus-visible:ring-[#F8FAFC]/28"
                         >
                           {rewriteCopied ? "Copied" : copyRewriteLabel}
                         </button>
                       </div>
                     </article>
                   )}
-                </div>
-              ) : null}
+              </div>
             </section>
           ) : null}
 
@@ -1271,7 +1248,7 @@ export default function Home() {
         <footer className="mx-auto mt-5 w-full max-w-[60rem] px-2 text-center text-[#F8FAFC] sm:mt-6">
           <section
             aria-label="Privacy and guidance note"
-            className="mx-auto max-w-[46rem] rounded-[1.15rem] bg-[#F8FAFC]/7 px-4 py-3 text-left text-xs font-medium leading-5 text-[#F8FAFC]/78 ring-1 ring-[#F8FAFC]/14 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.72)]"
+            className="mx-auto max-w-[46rem] rounded-[1.15rem] bg-[#F8FAFC]/7 px-4 py-3 text-center text-xs font-medium leading-5 text-[#F8FAFC]/78 ring-1 ring-[#F8FAFC]/14 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.72)]"
           >
             <p className="font-semibold text-[#F8FAFC]/86">
               Private by design. Original messages are not saved in feedback or included when you copy insights.
