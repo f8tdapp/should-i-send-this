@@ -1,0 +1,340 @@
+#betweenlines-extension-root,
+#betweenlines-extension-root * {
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.betweenlines-trigger {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 2147483646;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 0;
+  border-radius: 999px;
+  background: #172033;
+  padding: 9px 16px 9px 10px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+  box-shadow: 0 18px 44px -18px rgba(15, 23, 42, 0.72);
+  cursor: pointer;
+}
+
+.betweenlines-trigger:hover {
+  background: #263247;
+  transform: translateY(-1px);
+}
+
+.betweenlines-trigger:focus-visible {
+  outline: 4px solid rgba(49, 87, 184, 0.28);
+}
+
+.betweenlines-trigger:disabled {
+  cursor: wait;
+  opacity: 0.82;
+}
+
+.betweenlines-trigger[hidden],
+.betweenlines-panel[hidden],
+.betweenlines-alternative[hidden] {
+  display: none !important;
+}
+
+.betweenlines-mark {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #fff;
+  color: #172033;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.betweenlines-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 999px;
+  animation: betweenlines-spin 700ms linear infinite;
+}
+
+.betweenlines-panel {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 2147483647;
+  width: min(380px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  color: #172033;
+}
+
+.betweenlines-panel-card {
+  border: 1px solid #c5d0d6;
+  border-radius: 20px;
+  background: #f8faf9;
+  padding: 18px;
+  box-shadow: 0 28px 90px -34px rgba(15, 23, 42, 0.82);
+}
+
+.betweenlines-panel-loading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.betweenlines-panel-loading .betweenlines-mark {
+  background: #172033;
+  color: #fff;
+}
+
+.betweenlines-panel-loading p {
+  margin: 0;
+  color: #596876;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.betweenlines-panel-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.betweenlines-panel-header h2 {
+  margin: 10px 0 0;
+  color: #172033;
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.betweenlines-close {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 999px;
+  background: #e8edf0;
+  color: #596876;
+  font-size: 21px;
+  cursor: pointer;
+}
+
+.betweenlines-risk {
+  display: inline-flex;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 5px 9px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.betweenlines-risk-low {
+  border-color: #b9d9c3;
+  background: #e6f3ea;
+  color: #245c38;
+}
+
+.betweenlines-risk-medium {
+  border-color: #e9cd91;
+  background: #fff2d7;
+  color: #7a4b00;
+}
+
+.betweenlines-risk-high {
+  border-color: #e8b8b5;
+  background: #fce5e4;
+  color: #8a2925;
+}
+
+.betweenlines-summary {
+  margin: 14px 0 0;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.55;
+}
+
+.betweenlines-insight,
+.betweenlines-before-send,
+.betweenlines-alternative {
+  margin-top: 12px;
+  border: 1px solid #d7dfe3;
+  border-radius: 13px;
+  background: #fff;
+  padding: 13px;
+}
+
+.betweenlines-before-send {
+  border-color: #ced8e8;
+  background: #e9eef6;
+}
+
+.betweenlines-alternative {
+  border-color: #172033;
+  background: #172033;
+  color: #fff;
+}
+
+.betweenlines-insight h3,
+.betweenlines-before-send h3,
+.betweenlines-alternative h3 {
+  margin: 0;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.betweenlines-alternative h3 {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.betweenlines-insight p,
+.betweenlines-before-send p,
+.betweenlines-alternative p {
+  margin: 8px 0 0;
+  color: #172033;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.betweenlines-alternative p {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.betweenlines-alternative .betweenlines-alternative-warning {
+  border: 1px solid rgba(255, 199, 92, 0.72);
+  border-radius: 10px;
+  background: rgba(255, 199, 92, 0.12);
+  padding: 10px;
+  color: #ffe1a8;
+  font-size: 11px;
+}
+
+.betweenlines-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.betweenlines-primary,
+.betweenlines-secondary {
+  min-height: 40px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.betweenlines-primary {
+  border: 1px solid #172033;
+  background: #172033;
+  color: #fff;
+}
+
+.betweenlines-alternative .betweenlines-primary {
+  margin-top: 12px;
+  border-color: #fff;
+  background: #fff;
+  color: #172033;
+}
+
+.betweenlines-secondary {
+  border: 1px solid #c8d1d6;
+  background: #fff;
+  color: #334155;
+}
+
+.betweenlines-privacy {
+  margin: 13px 0 0;
+  color: #71808c;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.betweenlines-feedback {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 14px;
+  border-top: 1px solid #d7dfe3;
+  padding-top: 13px;
+  color: #64748b;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.betweenlines-feedback button {
+  min-height: 30px;
+  border: 1px solid #c8d1d6;
+  border-radius: 999px;
+  background: #fff;
+  padding: 5px 10px;
+  color: #334155;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.betweenlines-feedback button:hover {
+  border-color: #80909c;
+  background: #eef2f4;
+}
+
+.betweenlines-feedback button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+@keyframes betweenlines-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 520px) {
+  .betweenlines-trigger {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .betweenlines-panel {
+    top: 8px;
+    right: 8px;
+    width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .betweenlines-trigger,
+  .betweenlines-spinner {
+    animation: none;
+    transition: none;
+  }
+}

@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BetweenLines AI</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <div class="brand"><span>BL</span> BetweenLines AI™</div>
+      <h1>Write normally.</h1>
+      <p>
+        Focus a draft in Gmail or Outlook. When it contains enough text, choose
+        <strong>Check how this lands</strong>.
+      </p>
+      <label for="work-mode">Work mode</label>
+      <select id="work-mode">
+        <option value="general">General professional</option>
+        <option value="property">Property &amp; lettings</option>
+        <option value="complaints">Customer complaints</option>
+      </select>
+      <p class="mode-note" id="mode-note">
+        Set this once. BetweenLines will automatically calibrate future checks.
+      </p>
+      <div class="status"><span></span> User-triggered checks only</div>
+      <a href="http://localhost:3000/business/demo" target="_blank">Open product demo</a>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

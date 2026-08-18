@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "BetweenLines AI — Perception Gap Check",
+  "description": "Check how a message may be received before you send it.",
+  "version": "0.1.0",
+  "permissions": ["storage"],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "https://betweenlines.ai/*"
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://mail.google.com/*",
+        "https://outlook.office.com/*",
+        "https://outlook.live.com/*"
+      ],
+      "js": ["content-script.js"],
+      "css": ["content-styles.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "BetweenLines AI",
+    "default_popup": "popup.html"
+  }
+}
