@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:pilot-security": "node --experimental-strip-types scripts/test-hosted-pilot.mjs"
   },
   "dependencies": {
     "@upstash/ratelimit": "^2.0.8",

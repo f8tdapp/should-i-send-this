@@ -23,6 +23,22 @@
       <p class="mode-note" id="mode-note">
         Set this once. BetweenLines will automatically calibrate future checks.
       </p>
+      <section class="activation" aria-labelledby="activation-title">
+        <h2 id="activation-title">Hosted pilot</h2>
+        <div id="activation-form">
+          <label for="pilot-credential">One-time activation code</label>
+          <input
+            id="pilot-credential"
+            type="password"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button id="activate-pilot" type="button">Activate once</button>
+        </div>
+        <p class="mode-note" id="activation-status" aria-live="polite">
+          Localhost remains available until this extension is activated.
+        </p>
+      </section>
       <div class="status"><span></span> User-triggered checks only</div>
       <a href="http://localhost:3000/business/demo" target="_blank">Open product demo</a>
     </main>

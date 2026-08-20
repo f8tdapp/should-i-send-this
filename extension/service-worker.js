@@ -1,4 +1,5 @@
-const DEFAULT_API_BASE = "http://localhost:3000";
+const LOCAL_API_BASE = "http://localhost:3000";
+const HOSTED_API_BASE = "https://pilot.betweenlinesai.com";
 
 const WORK_MODES = {
   general: {
@@ -72,10 +73,36 @@ function createErrorResponse(error) {
   };
 }
 
-async function getApiBase() {
-  const stored = await chrome.storage.local.get("betweenlinesApiBase");
+async function getApiConnection() {
+  const stored = await chrome.storage.local.get([
+    "betweenlinesApiBase",
+    "betweenlinesPilotInstallationToken",
+  ]);
   const configured = String(stored.betweenlinesApiBase || "").trim();
-  return (configured || DEFAULT_API_BASE).replace(/\/$/, "");
+  const installationToken = String(
+    stored.betweenlinesPilotInstallationToken || "",
+  ).trim();
+  const apiBase = (
+    configured || (installationToken ? HOSTED_API_BASE : LOCAL_API_BASE)
+  ).replace(/\/$/, "");
+  const usesSecureTransport =
+    apiBase.startsWith("https://") ||
+    /^http:\/\/(?:localhost|127\.0\.0\.1)(?::\d+)?$/.test(apiBase);
+
+  if (installationToken && !usesSecureTransport) {
+    throw new Error("Pilot access requires HTTPS outside local development.");
+  }
+
+  return {
+    apiBase,
+    endpoint: installationToken ? "/api/extension/analyze" : "/api/analyze",
+    headers: {
+      "Content-Type": "application/json",
+      ...(installationToken
+        ? { Authorization: `Bearer ${installationToken}` }
+        : {}),
+    },
+  };
 }
 
 async function getWorkMode() {
@@ -96,7 +123,10 @@ async function analyzeMessage(message, isSaferRetry = false) {
     throw new Error("This prototype currently checks messages up to 750 characters.");
   }
 
-  const [apiBase, workMode] = await Promise.all([getApiBase(), getWorkMode()]);
+  const [apiConnection, workMode] = await Promise.all([
+    getApiConnection(),
+    getWorkMode(),
+  ]);
   const isPaymentDispute =
     /\b(invoice|payment|paid|withhold)\b/i.test(cleanMessage) &&
     /\b(contractor|work|photograph|evidence|fix|correct)\b/i.test(cleanMessage);
@@ -113,14 +143,17 @@ async function analyzeMessage(message, isSaferRetry = false) {
               : RETRY_MESSAGE_GOALS.default,
       }
     : workMode.context;
-  const response = await fetch(`${apiBase}/api/analyze`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      message: cleanMessage,
-      ...requestContext,
-    }),
-  });
+  const response = await fetch(
+    `${apiConnection.apiBase}${apiConnection.endpoint}`,
+    {
+      method: "POST",
+      headers: apiConnection.headers,
+      body: JSON.stringify({
+        message: cleanMessage,
+        ...requestContext,
+      }),
+    },
+  );
 
   const data = await response.json().catch(() => null);
 
@@ -674,25 +707,28 @@ async function submitFeedback(feedback) {
     throw new Error("That feedback option is not supported.");
   }
 
-  const apiBase = await getApiBase();
-  const response = await fetch(`${apiBase}/api/analyze`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      feedbackOnly: true,
-      feedback: { tags: [tag] },
-      metadata: {
-        characterCount:
-          typeof feedback.characterCount === "number"
-            ? feedback.characterCount
+  const apiConnection = await getApiConnection();
+  const response = await fetch(
+    `${apiConnection.apiBase}${apiConnection.endpoint}`,
+    {
+      method: "POST",
+      headers: apiConnection.headers,
+      body: JSON.stringify({
+        feedbackOnly: true,
+        feedback: { tags: [tag] },
+        metadata: {
+          characterCount:
+            typeof feedback.characterCount === "number"
+              ? feedback.characterCount
+              : undefined,
+          severity: ["low", "medium", "high"].includes(feedback.severity)
+            ? feedback.severity
             : undefined,
-        severity: ["low", "medium", "high"].includes(feedback.severity)
-          ? feedback.severity
-          : undefined,
-        rewriteVisible: feedback.rewriteVisible === true,
-      },
-    }),
-  });
+          rewriteVisible: feedback.rewriteVisible === true,
+        },
+      }),
+    },
+  );
 
   if (!response.ok) {
     throw new Error("Feedback could not be saved.");

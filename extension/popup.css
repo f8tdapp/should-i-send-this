@@ -51,7 +51,8 @@ label {
   font-weight: 900;
 }
 
-select {
+select,
+input {
   width: 100%;
   min-height: 40px;
   margin-top: 6px;
@@ -65,9 +66,43 @@ select {
   outline: none;
 }
 
-select:focus {
+select:focus,
+input:focus {
   border-color: #3157b8;
   box-shadow: 0 0 0 3px rgba(49, 87, 184, 0.14);
+}
+
+.activation {
+  margin-top: 16px;
+  border-top: 1px solid #d7dfe3;
+  padding-top: 14px;
+}
+
+.activation h2 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.activation label {
+  margin-top: 10px;
+}
+
+.activation button {
+  width: 100%;
+  min-height: 38px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 10px;
+  background: #3157b8;
+  color: #fff;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.activation button:disabled {
+  cursor: wait;
+  opacity: 0.65;
 }
 
 .mode-note {

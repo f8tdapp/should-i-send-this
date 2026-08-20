@@ -11,6 +11,6 @@ export default function TermsPage() {
     <LegalSection title="Responsible use"><p>You must not use the service for unlawful, harmful, abusive, threatening, harassing, deceptive, or emergency purposes, or to violate another person&apos;s rights.</p></LegalSection>
     <LegalSection title="Urgent or dangerous situations"><p>Do not rely on BetweenLines AI in an emergency, urgent safety situation, or where someone may be at risk. Contact local emergency services, a trusted person, or an appropriately qualified professional instead.</p></LegalSection>
     <LegalSection title="Changes to the service"><p>The service, its features, access limits, and these pre-launch terms may be changed, limited, suspended, or discontinued. Material legal wording should be reviewed before public launch and updated when the service changes.</p></LegalSection>
-    <LegalSection title="Contact"><p>Questions can be sent to <a className="font-semibold underline underline-offset-4" href="mailto:hello@betweenlines.ai">hello@betweenlines.ai</a>.</p></LegalSection>
+    <LegalSection title="Contact"><p>Questions can be sent to <a className="font-semibold underline underline-offset-4" href="mailto:hello@betweenlinesai.com">hello@betweenlinesai.com</a>.</p></LegalSection>
   </LegalPage>;
 }
